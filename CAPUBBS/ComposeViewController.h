@@ -9,33 +9,31 @@
 #import <UIKit/UIKit.h>
 #import "MBProgressHUD.h"
 #import "ActionPerformer.h"
-#import "ASIFormDataRequest.h"
 
-@interface ComposeViewController : UIViewController<UITextViewDelegate,UIActionSheetDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,ASIHTTPRequestDelegate,NSXMLParserDelegate>{
-    CGRect origin;
-    CGFloat delta;
+@interface ComposeViewController : UIViewController<UITextFieldDelegate, UITextViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate> {
     MBProgressHUD *hud;
     ActionPerformer *performer;
-    ASIFormDataRequest *httpRequest;
-    NSInteger uploaded;
-    NSInteger total;
-    
-    NSMutableArray *finalData;
-    NSString *currentField;
-    NSMutableString *currentString;
-    NSMutableDictionary *tempData;
-    UIImage* image;
+    NSUserActivity *activity;
+    UIImage *image;
+    int toolbarEditor;
+    UIToolbar *toolbar;
 }
+
 @property (weak, nonatomic) IBOutlet UITextField *textTitle;
 @property (weak, nonatomic) IBOutlet UITextView *textBody;
-- (IBAction)didEndOnExit:(id)sender;
+@property (weak, nonatomic) IBOutlet UIButton *saveDraft;
+@property (weak, nonatomic) IBOutlet UIButton *restoreDraft;
+@property (weak, nonatomic) IBOutlet UIButton *buttonPic;
+@property (weak, nonatomic) IBOutlet UIButton *buttonTools;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *segmentedControl;
-- (IBAction)selectPic:(id)sender;
-@property NSString *navigationTitle;
-@property NSString *reply;
+@property (weak, nonatomic) IBOutlet UIView *viewTools;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *constraintTop;
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *constraintBottom;
+
+@property NSString *bid;
+@property NSString *tid;
 @property NSString *defaultTitle;
 @property NSString *defaultContent;
-@property NSString *b;
 @property NSString *floor;
 @property BOOL isEdit;
 

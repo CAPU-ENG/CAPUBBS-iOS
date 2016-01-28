@@ -21,7 +21,18 @@
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
     // Initialization code
+    [self.icon.layer setMasksToBounds:YES];
+    [self.webView.layer setCornerRadius:10.0];
+    [self.webView.layer setBorderColor:GREEN_LIGHT.CGColor];
+    [self.webView.layer setBorderWidth:1.0];
+    [self.webView.layer setMasksToBounds:YES];
+    [self.webView.scrollView setScrollEnabled:NO];
+    [self.webView setBackgroundColor:[UIColor whiteColor]];
+    if (IOS >= 9.0) {
+        [self.webView setAllowsLinkPreview:YES];
+    }
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated

@@ -7,8 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "ActionPerformer.h"
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface AppDelegate : UIResponder <UIApplicationDelegate> {
+    ActionPerformer *performer;
+}
 
 @property (strong, nonatomic) UIWindow *window;
 

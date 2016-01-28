@@ -9,31 +9,28 @@
 #import <UIKit/UIKit.h>
 #import "MBProgressHUD.h"
 #import "ActionPerformer.h"
+#import "AsyncImageView.h"
 
-@interface LoginViewController : UIViewController<UIAlertViewDelegate>{
+@interface LoginViewController : UIViewController<UIAlertViewDelegate, UITableViewDelegate>{
     MBProgressHUD *hud;
     NSArray *news;
-    NSString *b;
-    NSString *see;
     NSString *title;
     ActionPerformer *performer;
-    ActionPerformer *performerLink;
-    UINavigationController *navi;
-    NSString *tempurl;
+    ActionPerformer *performerInfo;
+    ActionPerformer *performerUser;
+    UIRefreshControl *control;
+    NSString *newVerURL;
+    BOOL userInfoRefreshing;
 }
 @property (weak, nonatomic) IBOutlet UITextField *textUid;
 @property (weak, nonatomic) IBOutlet UITextField *textPass;
-- (IBAction)login:(id)sender;
-- (IBAction)gotoMain:(id)sender;
-- (IBAction)didEndOnExit:(id)sender;
-@property (weak, nonatomic) IBOutlet UIButton *link1;
-@property (weak, nonatomic) IBOutlet UIButton *link2;
-@property (weak, nonatomic) IBOutlet UIButton *link3;
-@property (weak, nonatomic) IBOutlet UIButton *link4;
-@property (weak, nonatomic) IBOutlet UIButton *link5;
-@property (weak, nonatomic) IBOutlet UIButton *link6;
-@property (weak, nonatomic) IBOutlet UIButton *link7;
-@property (weak, nonatomic) IBOutlet UIButton *link8;
+@property (weak, nonatomic) IBOutlet AsyncImageView *iconUser;
+@property (weak, nonatomic) IBOutlet UIButton *buttonLogin;
+@property (weak, nonatomic) IBOutlet UIButton *buttonRegister;
 @property (weak, nonatomic) IBOutlet UIButton *buttonEnter;
+@property (weak, nonatomic) IBOutlet UIButton *buttonAddNews;
+@property (weak, nonatomic) IBOutlet UITableView *tableview;
+
++ (void)updateIDSaves;
 
 @end

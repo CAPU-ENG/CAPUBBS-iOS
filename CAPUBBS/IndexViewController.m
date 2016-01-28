@@ -6,8 +6,11 @@
 //  Copyright (c) 2014年 熊典. All rights reserved.
 //
 
+#import <AVFoundation/AVFoundation.h>
 #import "IndexViewController.h"
 #import "ListViewController.h"
+#import "ContentViewController.h"
+#import "SettingViewController.h"
 
 @interface IndexViewController ()
 
@@ -15,21 +18,16 @@
 
 @implementation IndexViewController
 
-- (id)initWithStyle:(UITableViewStyle)style
-{
-    self = [super initWithStyle:style];
-    if (self) {
-        // Custom initialization
-    }
-    return self;
-}
-
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
-    numbers=@[@1,@2,@3,@4,@5,@6,@7,@9,@28];
-    data=@[@"车协工作区",@"行者足音",@"车友宝典",@"纯净水",@"考察与社会",@"五湖四海",@"一技之长",@"竞赛竞技",@"网络维护"];
+    self.view.backgroundColor = GREEN_BACK;
     
+    cellWidth = cellHeight = 0;
+    [NOTIFICATION addObserver:self selector:@selector(setVibrate) name:@"userChanged" object:nil];
+    [NOTIFICATION addObserver:self selector:@selector(changeNoti) name:@"infoRefreshed" object:nil];
+    [self setVibrate];
+    [self changeNoti];
+
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     
@@ -37,87 +35,219 @@
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
 }
 
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    //    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
+    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
+    //    }
+//    if (![[DEFAULTS objectForKey:@"FeaturePersonalCenter3.0"] boolValue]) {
+//        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePersonalCenter3.0"];
+//    }
 }
 
-#pragma mark - Table view data source
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    cellWidth = cellHeight = 0;
+    [self.collectionView reloadData];
+}
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
-{
-    // Return the number of sections.
+- (void)setVibrate {
+    shouldVibrate = YES;
+}
+
+- (void)changeNoti {
+    if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""] && [[USERINFO objectForKey:@"newmsg"] integerValue] > 0) {
+        self.buttonUser.image = [UIImage imageNamed:@"user-noti"];
+        if (shouldVibrate && [[DEFAULTS objectForKey:@"vibrate"] boolValue] == YES) {
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+            NSLog(@"Vibreate");
+        }
+        shouldVibrate = NO;
+    }else {
+        self.buttonUser.image = [UIImage imageNamed:@"user"];
+    }
+}
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+
+- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+    return NUMBERS.count + 1;
+}
+
+- (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
     return 1;
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
-{
-    // Return the number of rows in the section.
-    return data.count;
-}
-
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
-    cell.textLabel.text=[data objectAtIndex:indexPath.row];
-    // Configure the cell...
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    IndexViewCell * cell;
+    if (indexPath.row < NUMBERS.count) {
+        cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"indexcell" forIndexPath:indexPath];
+        cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:[NUMBERS objectAtIndex:indexPath.row]]];
+        cell.text.text = [ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:indexPath.row]];
+    }else {
+        cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"collectioncell" forIndexPath:indexPath];
+    }
+    cell.text.font = [UIFont systemFontOfSize:fontSize];
+    [cell.layer setCornerRadius:cell.frame.size.width / 15];
     
     return cell;
 }
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
-    return @"请点按相应版块浏览";
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+    if (cellWidth == 0 || cellHeight == 0) {
+        // iPhone 5s及之前:320 iPhone 6:375 iPhone 6 Plus:414 iPad:768 iPad Pro:1024
+        float width = collectionView.frame.size.width;
+        int num = width / 450 + 2;
+        fontSize = 15 + num;
+        cellSpace = (0.1 + 0.025 * num) * (width / num);
+        cellWidth = (width - cellSpace * (num + 1)) / num;
+        cellHeight = cellWidth * (11.0 / 15.0) + 2 * fontSize;
+    }
+    return CGSizeMake(cellWidth, cellHeight);
 }
 
-/*
-// Override to support conditional editing of the table view.
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the specified item to be editable.
-    return YES;
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+    return UIEdgeInsetsMake(20, cellSpace, 20, cellSpace); // top, left, bottom, right
 }
-*/
 
-/*
-// Override to support editing the table view.
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        // Delete the row from the data source
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-    }   
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
+    return cellSpace;
 }
-*/
 
-/*
-// Override to support rearranging the table view.
-- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
-{
+- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
+    UICollectionReusableView *reusableview = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"header" forIndexPath:indexPath];
+    return reusableview;
 }
-*/
 
-/*
-// Override to support conditional rearranging of the table view.
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the item to be re-orderable.
-    return YES;
+- (void)collectionView:(UICollectionView *)collectionView didHighlightItemAtIndexPath:(NSIndexPath *)indexPath {
+    UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
+    [cell setAlpha:0.5];
+    [cell setTransform:CGAffineTransformMakeScale(1.05, 1.05)];
 }
-*/
 
+- (void)collectionView:(UICollectionView *)collectionView didUnhighlightItemAtIndexPath:(nonnull NSIndexPath *)indexPath {
+    UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
+    [UIView animateWithDuration:0.5 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+        [cell setAlpha:1.0];
+        [cell setTransform:CGAffineTransformMakeScale(1, 1)];
+    }completion:nil];
+}
 
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
+- (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
+    if (sender.state == UIGestureRecognizerStateEnded) {
+        [self performSegueWithIdentifier:@"hotlist" sender:nil];
+    }
+}
+
+- (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
+        if (sender.state == UIGestureRecognizerStateEnded) {
+            [self back:nil];
+        }
+}
+
+- (IBAction)smart:(id)sender {
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"快速访问" message:[NSString stringWithFormat: @"输入带有帖子链接的文本进行快速访问\n\n高级功能\n输入要连接的论坛地址\n目前地址：%@\n链接会被自动判别", [DEFAULTS objectForKey:@"URL"]] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+    alert.alertViewStyle = UIAlertViewStylePlainTextInput;
+    [alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeURL;
+    [alert textFieldAtIndex:0].text = @"www.chexie.net";
+    [alert textFieldAtIndex:0].placeholder = @"地址链接";
+    [alert show];
+}
+
+- (IBAction)back:(id)sender {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
+    if (buttonIndex == alertView.cancelButtonIndex) {
+        return;
+    }
+    if ([alertView.title isEqualToString:@"快速访问"]) {
+        NSString *oriURL = [DEFAULTS objectForKey:@"URL"];
+        NSString *text = [alertView textFieldAtIndex:0].text;
+        
+        if ([text containsString:@"filesize"]) {
+            NSString *result = [self folderInfo:NSHomeDirectory() showAll:[text containsString:@"all"]];
+            [[[UIAlertView alloc] initWithTitle:@"空间用量\n内容已复制到剪贴板" message:result delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [[UIPasteboard generalPasteboard] setString:result];
+            return;
+        }
+        
+        NSDictionary *dict = [ContentViewController getLink:text];
+        if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
+            ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
+            next.bid = dict[@"bid"];
+            next.tid = dict[@"tid"];
+            next.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+            next.title=@"帖子跳转中";
+            [self.navigationController pushViewController:next animated:YES];
+            return;
+        }
+        
+        if (!hud && self.navigationController) {
+            hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+            [self.navigationController.view addSubview:hud];
+        }
+        [hud show:YES];
+        hud.mode = MBProgressHUDModeCustomView;
+        if (
+            (([text containsString:@"15"] && [text containsString:@"骑行团"]) || [text containsString:@"I2"] || [text containsString:@"维茨C"] || [text containsString:@"好男人"] || [text containsString:@"老蒋"] || [text containsString:@"猿"] || [text containsString:@"小猴子"] || [text containsString:@"熊典"] || [text containsString:@"陈章"] || [text containsString:@"范志康"] || [text containsString:@"蒋雨蒙"] || [text containsString:@"扈煊"] || [text containsString:@"侯书漪"])
+            && ([text containsString:@"赞"] || [text containsString:@"棒"] || [text containsString:@"给力"] || [text containsString:@"威武"] || [text containsString:@"牛"] || [text containsString:@"厉害"] || [text containsString:@"帅"] || [text containsString:@"爱"] || [text containsString:@"V5"] || [text containsString:@"么么哒"] || [text containsString:@"漂亮"])
+            && ![text containsString:@"不"]
+            ) {
+            hud.labelText = @"~\(≧▽≦)/~"; // (>^ω^<)
+            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
+            [hud hide:YES afterDelay:1];
+            [DEFAULTS setObject:[NSNumber numberWithInt:MAX_ID_NUM] forKey:@"IDNum"];
+            [DEFAULTS setObject:[NSNumber numberWithInt:MAX_HOT_NUM] forKey:@"hotNum"];
+        }else {
+            [DEFAULTS removeObjectForKey:@"IDNum"];
+            [DEFAULTS removeObjectForKey:@"hotNum"];
+            if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"])) {
+                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"不是有效的链接" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                hud.labelText = @"设置失败";
+                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
+            }else {
+                hud.labelText = @"设置成功";
+                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
+                [DEFAULTS setObject:text forKey:@"URL"];
+                if (![text isEqualToString:oriURL]) {
+                    [DEFAULTS removeObjectForKey:@"token"];
+                    [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+                }
+            }
+            [hud hide:YES afterDelay:0.5];
+        }
+    }
+}
+
+- (NSString *)folderInfo:(NSString *)rootFolder showAll:(BOOL)all {
+    NSString *result = @"";
+    NSArray *childPaths = [MANAGER subpathsAtPath:rootFolder];
+    for (NSString *path in childPaths) {
+        NSString *childPath = [NSString stringWithFormat:@"%@/%@", rootFolder, path];
+        NSArray *testPaths = [MANAGER subpathsAtPath:childPath];
+        if (!(testPaths.count == 0 && all == NO)) {
+            result = [NSString stringWithFormat:@"%@%@:%.2fKB\n", result, path, (float)[SettingViewController folderSizeAtPath:childPath] / (1024)];
+        }
+    }
+    return result;
+}
+
+#pragma mark - Navigation
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     // Get the new view controller using [segue destinationViewController].
     // Pass the selected object to the new view controller.
-    if ([segue.identifier isEqualToString:@"list"]) {
-        ListViewController *dest=segue.destinationViewController;
-        [dest setB:[[numbers objectAtIndex:[self.tableView indexPathForSelectedRow].row] stringValue]];
-        [dest setName:[data objectAtIndex:[self.tableView indexPathForSelectedRow].row]];        
+    ListViewController *dest = [segue destinationViewController];
+    if ([segue.identifier isEqualToString:@"hotlist"]) {
+        dest.bid = @"hot";
+    }
+    if ([segue.identifier isEqualToString:@"postlist"]) {
+        int number = (int)[self.collectionView indexPathForCell:(UICollectionViewCell *)sender].row;
+        dest.bid = [NUMBERS objectAtIndex:number];
     }
 }
 
