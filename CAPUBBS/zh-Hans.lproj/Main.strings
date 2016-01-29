@@ -1,0 +1,246 @@
+
+/* Class = "IBUINavigationItem"; title = "楼中楼"; ObjectID = "0MH-ey-ULF"; */
+"0MH-ey-ULF.title" = "楼中楼";
+
+/* Class = "IBUILabel"; text = "个人简介："; ObjectID = "0c3-dK-Pw4"; */
+"0c3-dK-Pw4.text" = "个人简介：";
+
+/* Class = "IBUITextField"; placeholder = "必填，注册码见会员证"; ObjectID = "1Bi-Je-JMQ"; */
+"1Bi-Je-JMQ.placeholder" = "必填，注册码见会员证";
+
+/* Class = "IBUITextField"; placeholder = "选填"; ObjectID = "38t-EG-h96"; */
+"38t-EG-h96.placeholder" = "选填";
+
+/* Class = "IBUITextField"; placeholder = "选填"; ObjectID = "3iX-qY-CDS"; */
+"3iX-qY-CDS.placeholder" = "选填";
+
+/* Class = "IBUILabel"; text = "发表"; ObjectID = "4bv-9C-9q4"; */
+"4bv-9C-9q4.text" = "发表";
+
+/* Class = "IBUITextField"; placeholder = "必填，请认真取您的ID"; ObjectID = "5sV-Kx-PKJ"; */
+"5sV-Kx-PKJ.placeholder" = "必填，请认真取您的ID";
+
+/* Class = "IBUILabel"; text = "注册码："; ObjectID = "5y2-ew-ZZb"; */
+"5y2-ew-ZZb.text" = "注册码：";
+
+/* Class = "IBUIButton"; normalTitle = "注册"; ObjectID = "6Pg-hU-t00"; */
+"6Pg-hU-t00.normalTitle" = "注册";
+
+/* Class = "IBUILabel"; text = "蜂窝网络下不显示图片"; ObjectID = "6bQ-3Y-2JM"; */
+"6bQ-3Y-2JM.text" = "蜂窝网络下不显示图片";
+
+/* Class = "IBUILabel"; text = "我的账号"; ObjectID = "6tf-Lk-Fl1"; */
+"6tf-Lk-Fl1.text" = "我的账号";
+
+/* Class = "IBUIBarButtonItem"; title = "欢迎来到北大车协论坛！"; ObjectID = "7TH-jo-uPd"; */
+"7TH-jo-uPd.title" = "欢迎来到北大车协论坛！";
+
+/* Class = "IBUITableViewSection"; footerTitle = "感谢您的支持，我们还将不断地改进CAPUBBS iOS客户端"; ObjectID = "AZK-8S-c1H"; */
+"AZK-8S-c1H.footerTitle" = "感谢您的支持，我们还将不断地改进CAPUBBS iOS客户端";
+
+/* Class = "IBUITableViewSection"; headerTitle = "更多功能"; ObjectID = "AZK-8S-c1H"; */
+"AZK-8S-c1H.headerTitle" = "更多功能";
+
+/* Class = "IBUILabel"; text = "主席团"; ObjectID = "AkO-dW-4gW"; */
+"AkO-dW-4gW.text" = "主席团";
+
+/* Class = "IBUILabel"; text = "楼中楼内容"; ObjectID = "Atc-Gb-Gj8"; */
+"Atc-Gb-Gj8.text" = "楼中楼内容";
+
+/* Class = "IBUITextField"; placeholder = "必填，密码至少六位数"; ObjectID = "BZ5-wN-XL1"; */
+"BZ5-wN-XL1.placeholder" = "必填，密码至少六位数";
+
+/* Class = "IBUIBarButtonItem"; title = "返回"; ObjectID = "BfK-DS-AIq"; */
+"BfK-DS-AIq.title" = "返回";
+
+/* Class = "IBUILabel"; text = "更多帮助"; ObjectID = "CTe-Q0-wm1"; */
+"CTe-Q0-wm1.text" = "更多帮助";
+
+/* Class = "IBUIBarButtonItem"; title = "取消"; ObjectID = "Dk9-Iu-54t"; */
+"Dk9-Iu-54t.title" = "取消";
+
+/* Class = "IBUINavigationItem"; title = "帖子详情"; ObjectID = "Fpe-Tx-ngb"; */
+"Fpe-Tx-ngb.title" = "帖子详情";
+
+/* Class = "IBUITextField"; placeholder = "用户名"; ObjectID = "G4S-da-c2p"; */
+"G4S-da-c2p.placeholder" = "用户名";
+
+/* Class = "IBUITextField"; placeholder = "选填"; ObjectID = "Gwd-f7-cM9"; */
+"Gwd-f7-cM9.placeholder" = "选填";
+
+/* Class = "IBUINavigationItem"; title = "帖子详情"; ObjectID = "HAJ-vR-m3w"; */
+"HAJ-vR-m3w.title" = "帖子详情";
+
+/* Class = "IBUILabel"; text = "确认密码："; ObjectID = "HgN-6S-OaZ"; */
+"HgN-6S-OaZ.text" = "确认密码：";
+
+/* Class = "IBUILabel"; text = "进入网页版"; ObjectID = "IFL-OT-dLW"; */
+"IFL-OT-dLW.text" = "进入网页版";
+
+/* Class = "IBUITableViewSection"; headerTitle = "更多信息"; ObjectID = "Jsa-2F-QFP"; */
+"Jsa-2F-QFP.headerTitle" = "更多信息";
+
+/* Class = "IBUILabel"; text = "评论 (0)"; ObjectID = "KMo-Pa-7rE"; */
+"KMo-Pa-7rE.text" = "评论 (0)";
+
+/* Class = "IBUIButton"; normalTitle = "主页"; ObjectID = "Kub-Jm-mK3"; */
+"Kub-Jm-mK3.normalTitle" = "主页";
+
+/* Class = "IBUILabel"; text = "#1234#"; ObjectID = "L4e-Dc-ta5"; */
+"L4e-Dc-ta5.text" = "#1234#";
+
+/* Class = "IBUILabel"; text = "主席团"; ObjectID = "ODA-bY-XIS"; */
+"ODA-bY-XIS.text" = "主席团";
+
+/* Class = "IBUIBarButtonItem"; title = "确认"; ObjectID = "OLS-Pq-OUW"; */
+"OLS-Pq-OUW.title" = "确认";
+
+/* Class = "IBUILabel"; text = "尚未登录"; ObjectID = "OOo-CD-6kX"; */
+"OOo-CD-6kX.text" = "尚未登录";
+
+/* Class = "IBUILabel"; text = "密码："; ObjectID = "OYA-f8-v4X"; */
+"OYA-f8-v4X.text" = "密码：";
+
+/* Class = "IBUILabel"; text = "性别："; ObjectID = "Q1I-Ee-AeH"; */
+"Q1I-Ee-AeH.text" = "性别：";
+
+/* Class = "IBUITableViewSection"; footerTitle = "登陆后您才能查看工作区帖子，并享有回复和编辑等权限"; ObjectID = "QLW-nv-7td"; */
+"QLW-nv-7td.footerTitle" = "登陆后您才能查看工作区帖子，并享有回复和编辑等权限";
+
+/* Class = "IBUITableViewSection"; headerTitle = "身份认证"; ObjectID = "QLW-nv-7td"; */
+"QLW-nv-7td.headerTitle" = "身份认证";
+
+/* Class = "IBUILabel"; text = "欢迎来到北大车协论坛！"; ObjectID = "REJ-rU-aBt"; */
+"REJ-rU-aBt.text" = "欢迎来到北大车协论坛！";
+
+/* Class = "IBUIButton"; normalTitle = "如何才能取一个好的ID？"; ObjectID = "SJ9-hh-s8i"; */
+"SJ9-hh-s8i.normalTitle" = "如何才能取一个好的ID？";
+
+/* Class = "IBUILabel"; text = "反馈意见"; ObjectID = "TJx-u8-637"; */
+"TJx-u8-637.text" = "反馈意见";
+
+/* Class = "IBUIBarButtonItem"; title = "取消"; ObjectID = "Uh1-6Y-PZ4"; */
+"Uh1-6Y-PZ4.title" = "取消";
+
+/* Class = "IBUINavigationItem"; title = "注册"; ObjectID = "UxB-J0-vSd"; */
+"UxB-J0-vSd.title" = "注册";
+
+/* Class = "IBUINavigationItem"; title = "用户登录"; ObjectID = "VQ5-9E-hYH"; */
+"VQ5-9E-hYH.title" = "用户登录";
+
+/* Class = "IBUILabel"; text = "主席团"; ObjectID = "Vdy-JN-XHk"; */
+"Vdy-JN-XHk.text" = "主席团";
+
+/* Class = "IBUILabel"; text = "车协工作区"; ObjectID = "Vqp-yL-RIN"; */
+"Vqp-yL-RIN.text" = "车协工作区";
+
+/* Class = "IBUITextField"; placeholder = "用户名"; ObjectID = "Ysg-Is-q5P"; */
+"Ysg-Is-q5P.placeholder" = "用户名";
+
+/* Class = "IBUIButton"; normalTitle = "登录"; ObjectID = "ZGE-LN-2u0"; */
+"ZGE-LN-2u0.normalTitle" = "登录";
+
+/* Class = "IBUITextField"; placeholder = "必填，请再次输入密码"; ObjectID = "aZD-19-b84"; */
+"aZD-19-b84.placeholder" = "必填，请再次输入密码";
+
+/* Class = "IBUILabel"; text = "签名档："; ObjectID = "aek-xu-rqY"; */
+"aek-xu-rqY.text" = "签名档：";
+
+/* Class = "IBUISegmentedControl"; cmD-6r-d5I.segmentTitles[0] = "无"; ObjectID = "cmD-6r-d5I"; */
+"cmD-6r-d5I.segmentTitles[0]" = "无";
+
+/* Class = "IBUISegmentedControl"; cmD-6r-d5I.segmentTitles[1] = "1"; ObjectID = "cmD-6r-d5I"; */
+"cmD-6r-d5I.segmentTitles[1]" = "1";
+
+/* Class = "IBUISegmentedControl"; cmD-6r-d5I.segmentTitles[2] = "2"; ObjectID = "cmD-6r-d5I"; */
+"cmD-6r-d5I.segmentTitles[2]" = "2";
+
+/* Class = "IBUISegmentedControl"; cmD-6r-d5I.segmentTitles[3] = "3"; ObjectID = "cmD-6r-d5I"; */
+"cmD-6r-d5I.segmentTitles[3]" = "3";
+
+/* Class = "IBUIButton"; normalTitle = "最新通知·公告"; ObjectID = "d1J-p0-d8I"; */
+"d1J-p0-d8I.normalTitle" = "最新通知·公告";
+
+/* Class = "IBUILabel"; text = "2015-01-01 00:00:00"; ObjectID = "d8m-6m-Bhf"; */
+"d8m-6m-Bhf.text" = "2015-01-01 00:00:00";
+
+/* Class = "IBUITextField"; placeholder = "帖子标题"; ObjectID = "dRr-cq-NTR"; */
+"dRr-cq-NTR.placeholder" = "帖子标题";
+
+/* Class = "IBUILabel"; text = "欢迎来到北大车协论坛！"; ObjectID = "eDd-NT-avb"; */
+"eDd-NT-avb.text" = "欢迎来到北大车协论坛！";
+
+/* Class = "IBUILabel"; text = "用户名："; ObjectID = "gaw-xv-0Rf"; */
+"gaw-xv-0Rf.text" = "用户名：";
+
+/* Class = "IBUILabel"; text = "2015-01-01"; ObjectID = "geA-8Q-ZZa"; */
+"geA-8Q-ZZa.text" = "2015-01-01";
+
+/* Class = "IBUILabel"; text = "签名档"; ObjectID = "hsx-Qf-0Jh"; */
+"hsx-Qf-0Jh.text" = "签名档";
+
+/* Class = "IBUILabel"; text = "关于本软件"; ObjectID = "iNu-ca-DEP"; */
+"iNu-ca-DEP.text" = "关于本软件";
+
+/* Class = "IBUINavigationItem"; title = "发表回复"; ObjectID = "ioV-t4-eQA"; */
+"ioV-t4-eQA.title" = "发表回复";
+
+/* Class = "IBUIButton"; normalTitle = "登录"; ObjectID = "jHg-Ej-25P"; */
+"jHg-Ej-25P.normalTitle" = "登录";
+
+/* Class = "IBUITextField"; placeholder = "选填"; ObjectID = "kwu-FM-MyJ"; */
+"kwu-FM-MyJ.placeholder" = "选填";
+
+/* Class = "IBUISegmentedControl"; mrm-lM-aaq.segmentTitles[0] = "男"; ObjectID = "mrm-lM-aaq"; */
+"mrm-lM-aaq.segmentTitles[0]" = "男";
+
+/* Class = "IBUISegmentedControl"; mrm-lM-aaq.segmentTitles[1] = "女"; ObjectID = "mrm-lM-aaq"; */
+"mrm-lM-aaq.segmentTitles[1]" = "女";
+
+/* Class = "IBUILabel"; text = "2015-01-01"; ObjectID = "nfu-ie-GSN"; */
+"nfu-ie-GSN.text" = "2015-01-01";
+
+/* Class = "IBUINavigationItem"; title = "主题列表"; ObjectID = "owh-HW-JX5"; */
+"owh-HW-JX5.title" = "主题列表";
+
+/* Class = "IBUILabel"; text = "关于XXXX的通知"; ObjectID = "pKn-hi-HNM"; */
+"pKn-hi-HNM.text" = "关于XXXX的通知";
+
+/* Class = "IBUILabel"; text = "来自于："; ObjectID = "pRH-ix-G9P"; */
+"pRH-ix-G9P.text" = "来自于：";
+
+/* Class = "IBUIButton"; normalTitle = "上传图片"; ObjectID = "pjg-bX-oJp"; */
+"pjg-bX-oJp.normalTitle" = "上传图片";
+
+/* Class = "IBUILabel"; text = "1楼"; ObjectID = "qr6-T7-ZSs"; */
+"qr6-T7-ZSs.text" = "1楼";
+
+/* Class = "IBUILabel"; text = "1楼"; ObjectID = "sDp-5M-DRH"; */
+"sDp-5M-DRH.text" = "1楼";
+
+/* Class = "IBUILabel"; text = "Email："; ObjectID = "t9u-YW-jhG"; */
+"t9u-YW-jhG.text" = "Email：";
+
+/* Class = "IBUITextField"; placeholder = "密码"; ObjectID = "tmi-rJ-5h9"; */
+"tmi-rJ-5h9.placeholder" = "密码";
+
+/* Class = "IBUITextField"; placeholder = "选填"; ObjectID = "vJJ-Vi-kBL"; */
+"vJJ-Vi-kBL.placeholder" = "选填";
+
+/* Class = "IBUINavigationItem"; title = "设置"; ObjectID = "vjf-VW-eh3"; */
+"vjf-VW-eh3.title" = "设置";
+
+/* Class = "IBUILabel"; text = "2015-01-01"; ObjectID = "vtt-On-y0G"; */
+"vtt-On-y0G.text" = "2015-01-01";
+
+/* Class = "IBUILabel"; text = "QQ："; ObjectID = "wR6-hg-UZG"; */
+"wR6-hg-UZG.text" = "QQ：";
+
+/* Class = "IBUIButton"; normalTitle = "评论 (0)"; ObjectID = "xXW-Gn-20u"; */
+"xXW-Gn-20u.normalTitle" = "评论 (0)";
+
+/* Class = "IBUITableViewSection"; headerTitle = "基本信息"; ObjectID = "xgb-78-rPa"; */
+"xgb-78-rPa.headerTitle" = "基本信息";
+
+/* Class = "IBUITextField"; placeholder = "密码"; ObjectID = "zB6-l2-rOI"; */
+"zB6-l2-rOI.placeholder" = "密码";

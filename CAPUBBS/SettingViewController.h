@@ -8,15 +8,34 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
+#import "AppDelegate.h"
+#import "MBProgressHUD.h"
+#import "AsyncImageView.h"
 
-
-@interface SettingViewController : UITableViewController<UIActionSheetDelegate,MFMailComposeViewControllerDelegate>{
-    MFMailComposeViewController *mvc;
+@interface SettingViewController : UITableViewController<MFMailComposeViewControllerDelegate>{
+    MFMailComposeViewController *mail;
+    MBProgressHUD *hud;
 }
+
+@property (weak, nonatomic) IBOutlet AsyncImageView *iconUser;
 @property (weak, nonatomic) IBOutlet UILabel *textUid;
-@property (weak, nonatomic) IBOutlet UISegmentedControl *segmentProxy;
-- (IBAction)proxyChanged:(id)sender;
+@property (weak, nonatomic) IBOutlet UILabel *textUidInfo;
+@property (weak, nonatomic) IBOutlet UITableViewCell *cellUser;
+//@property (weak, nonatomic) IBOutlet UISegmentedControl *segmentProxy;
+@property (weak, nonatomic) IBOutlet UISwitch *autoLogin;
+@property (weak, nonatomic) IBOutlet UISwitch *switchVibrate;
 @property (weak, nonatomic) IBOutlet UISwitch *switchPic;
-- (IBAction)picChanged:(id)sender;
+@property (weak, nonatomic) IBOutlet UISwitch *switchIcon;
+@property (weak, nonatomic) IBOutlet UILabel *iconCacheSize;
+@property (weak, nonatomic) IBOutlet UILabel *appCacheSize;
+@property (weak, nonatomic) IBOutlet UILabel *defaultSize;
+@property (weak, nonatomic) IBOutlet UIStepper *stepperSize;
+@property (weak, nonatomic) IBOutlet UISwitch *autoSave;
+@property (weak, nonatomic) IBOutlet UISwitch *switchSimpleView;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *segmentDirection;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *segmentEditTool;
+
++ (long long) fileSizeAtPath:(NSString *)filePath;
++ (long long) folderSizeAtPath:(NSString *)folderPath;
 
 @end

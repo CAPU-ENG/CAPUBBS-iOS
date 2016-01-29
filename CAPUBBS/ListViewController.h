@@ -9,23 +9,33 @@
 #import <UIKit/UIKit.h>
 #import "MBProgressHUD.h"
 #import "ActionPerformer.h"
+#import <MessageUI/MessageUI.h>
 
-@interface ListViewController : UITableViewController<UIAlertViewDelegate,UISearchBarDelegate,UISearchDisplayDelegate,UIActionSheetDelegate>{
+@interface ListViewController : UITableViewController<UIAlertViewDelegate>{
     ActionPerformer *performer;
-    NSArray *data;
+    ActionPerformer *performerReply;
+    NSMutableArray *data;
+    NSArray *numberEmoji;
     MBProgressHUD *hud;
+    MBProgressHUD *hudSofa;
     NSInteger page;
+    int failCount;
+    BOOL isFirstTime;
     BOOL isLast;
-    NSArray *searchResult;
+    BOOL isRobbingSofa;
+    BOOL isFastRobSofa;
+    NSString *sofaContent;
+    NSString *oriTitle;
     NSInteger selectedRow;
 }
-@property NSString *b;
-- (IBAction)back:(id)sender;
-- (IBAction)forward:(id)sender;
-- (IBAction)compose:(id)sender;
+
+@property NSString *bid;
+@property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonViewOnline;
+@property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonSearch;
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonBack;
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonForward;
-- (IBAction)jump:(id)sender;
-- (IBAction)longPress:(id)sender;
-@property NSString *name;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonJump;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonAction;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonCompose;
+
 @end

@@ -11,7 +11,13 @@
 @implementation LzlCell
 
 - (void)awakeFromNib {
+    [super awakeFromNib];
     // Initialization code
+    
+    [self.imageBottom setAlpha:0.8];
+    [self.icon.layer setMasksToBounds:YES];
+    [self.textPost.layer setCornerRadius:10.0];
+    [self.textPost setScrollsToTop:NO];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
