@@ -1,4 +1,4 @@
 CAPUBBS-iOS
 ===========
 
-iOS client for CAPUBBS
+iOS Client for CAPUBBS
