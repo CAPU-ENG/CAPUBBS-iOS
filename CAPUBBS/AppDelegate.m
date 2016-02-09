@@ -289,7 +289,7 @@
                 [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
                 if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                     [DEFAULTS removeObjectForKey:@"token"];
-                    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登陆失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
                 }else {
                     [DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                     NSLog(@"AutoLog Completed - %@", uid);
