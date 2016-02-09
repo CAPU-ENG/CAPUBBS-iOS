@@ -349,7 +349,7 @@
                     break;
                 }
                 case 1:{
-                    [[[UIAlertView alloc] initWithTitle:@"修改密码失败" message:@"登陆超时，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [[[UIAlertView alloc] initWithTitle:@"修改密码失败" message:@"登录超时，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
                     break;
                 }
                 case 2:{

@@ -109,7 +109,7 @@
 }
 
 - (IBAction)logIn:(id)sender {
-    IDCell *lastCell = nil; // 当前登录的账号最后一次登陆
+    IDCell *lastCell = nil; // 当前登录的账号最后一次登录
     for (int i = 0; i < data.count; i++) {
         IDCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
         if (cell.accessoryType == UITableViewCellAccessoryCheckmark) {
