@@ -938,9 +938,9 @@
 
 + (NSString *)restoreFormat:(NSString *)text { // 恢复正确的格式
     // NSLog(@"%@", text);
-    NSArray *oriExp = @[@"(<quote>)(.*?)(<a href=['\"]/bbs/user)(.*?)(>@)(.*?)(</a> ：<br><br>)((.|\n)*?)(<br><br></font></div></quote>)",
+    NSArray *oriExp = @[@"(<quote>)(.*?)(<a href=['\"]/bbs/user)(.*?)(>@)(.*?)(</a> ：<br><br>)((.|[\r\n])*?)(<br><br></font></div></quote>)",
                         @"(<a href=['\"]/bbs/user)(.*?)(>@)(.*?)(</a>)",
-                        @"(<a href=['\"]#['\"]>)((.|\n)*?)(</a>)", // 修复网页版@格式的错误
+                        @"(<a href=['\"]#['\"]>)((.|[\r\n])*?)(</a>)", // 修复网页版@格式的错误
                         @"(<a href=['\"])(.+?)(['\"][^>]*>)(.+?)(</a>)",
                         @"(<img src=['\"])(.+?)(['\"][^>]*>)",
                         @"(<b>)(.+?)(</b>)",
@@ -958,7 +958,7 @@
         text = [regExp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:[repExp objectAtIndex:i]];
     }
     
-    NSRange range; // 恢复字体
+    NSRange range = NSMakeRange(0, 0); // 恢复字体
     while (YES) {
         BOOL found = NO;
         for (int i = 0; i < text.length; i++) {
@@ -1056,7 +1056,7 @@
 + (NSString *)removeHTML:(NSString *)text {
     text = [self transFromHTML:text];
     
-    NSString *expression = @"<!--((.|\n)*?)-->"; // 去除注释
+    NSString *expression = @"<!--((.|[\r\n])*?)-->"; // 去除注释
     NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
     text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@""];
     
@@ -1093,7 +1093,7 @@
 - (NSString *)getValidQuote:(NSString *)text {
     text = [ContentViewController transFromHTML:text];
     
-    NSString *expression = @"<quote>((.|\n)*?)</quote>"; // 去除帖子中的引用
+    NSString *expression = @"<quote>((.|[\r\n])*?)</quote>"; // 去除帖子中的引用
     NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
     text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@""];
     

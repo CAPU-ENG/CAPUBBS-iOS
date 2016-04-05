@@ -21,7 +21,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     self.preferredContentSize = CGSizeMake(360, 0);
-    if (![ActionPerformer checkRight] > 0) {
+    if (!([ActionPerformer checkRight] > 0)) {
         self.navigationItem.rightBarButtonItems = @[self.buttonStat];
     }
     self.refreshControl = [[UIRefreshControl alloc] init];
@@ -60,7 +60,7 @@
     }
     if (HTMLString && [HTMLString containsString:@"当前在线"]) {
         // NSLog(@"%@", HTMLString);
-        NSRange range = [HTMLString rangeOfString:@"<table((.|\n)*?)</table>" options:NSRegularExpressionSearch];
+        NSRange range = [HTMLString rangeOfString:@"<table((.|[\r\n])*?)</table>" options:NSRegularExpressionSearch];
         if (range.location != NSNotFound) {
             HTMLString = [HTMLString substringWithRange:range];
             while (YES) {
