@@ -8,7 +8,6 @@
 
 #import "CollectionViewController.h"
 #import "CollectionViewCell.h"
-#import "ActionPerformer.h"
 #import "ContentViewController.h"
 
 #define SORT_BY_COLLECTION_DATE 0

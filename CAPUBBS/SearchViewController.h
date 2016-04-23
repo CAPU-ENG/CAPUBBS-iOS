@@ -7,10 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "ActionPerformer.h"
-#import "MBProgressHUD.h"
 #import "SearchViewCell.h"
 #import "AsyncImageView.h"
+#import "MBProgressHUD.h"
 
 @interface SearchViewController : UIViewController <UITableViewDelegate> {
     ActionPerformer *performer;

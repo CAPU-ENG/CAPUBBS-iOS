@@ -7,7 +7,6 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "ActionPerformer.h"
 
 @interface PreviewViewController : UIViewController<UIAlertViewDelegate, UIWebViewDelegate> {
 }

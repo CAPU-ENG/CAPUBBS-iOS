@@ -7,7 +7,6 @@
 //
 
 #import "FacesViewController.h"
-#import "ActionPerformer.h"
 
 @interface FacesViewController ()
 

@@ -7,7 +7,6 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "ActionPerformer.h"
 #import "InternalLoginViewController.h"
 
 @interface IDViewController : UITableViewController<UIAlertViewDelegate> {

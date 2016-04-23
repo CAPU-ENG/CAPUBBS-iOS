@@ -7,9 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "ActionPerformer.h"
-#import "MBProgressHUD.h"
 #import "ChatCell.h"
+#import "MBProgressHUD.h"
 
 @interface ChatViewController : UITableViewController <UIAlertViewDelegate> {
     ActionPerformer *performer;
