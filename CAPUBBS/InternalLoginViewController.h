@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "MBProgressHUD.h"
-#import "ActionPerformer.h"
 
 @interface InternalLoginViewController : UIViewController{
     MBProgressHUD *hud;

@@ -7,9 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MBProgressHUD.h"
-#import "ActionPerformer.h"
 #import "AsyncImageView.h"
+#import "MBProgressHUD.h"
 
 @interface RegisterViewController : UITableViewController<UIAlertViewDelegate>{
     ActionPerformer *performer;

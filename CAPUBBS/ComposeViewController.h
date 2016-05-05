@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "MBProgressHUD.h"
-#import "ActionPerformer.h"
 
 @interface ComposeViewController : UIViewController<UITextFieldDelegate, UITextViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate> {
     MBProgressHUD *hud;

@@ -7,9 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "ActionPerformer.h"
-#import "MBProgressHUD.h"
 #import "MessageCell.h"
+#import "MBProgressHUD.h"
 
 @interface MessageViewController : UIViewController<UITableViewDelegate, UIAlertViewDelegate> {
     ActionPerformer *performer;

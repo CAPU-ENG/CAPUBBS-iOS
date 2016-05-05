@@ -8,9 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
-#import "ActionPerformer.h"
-#import "MBProgressHUD.h"
 #import "AsyncImageView.h"
+#import "MBProgressHUD.h"
 
 @interface UserViewController : UITableViewController <UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
     ActionPerformer *performer;

@@ -205,6 +205,7 @@
         [action addAction:[UIAlertAction actionWithTitle:@"拍照" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
             imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
+            imagePicker.cameraDevice = UIImagePickerControllerCameraDeviceFront;
             imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
             imagePicker.allowsEditing = YES;
             imagePicker.delegate = self;

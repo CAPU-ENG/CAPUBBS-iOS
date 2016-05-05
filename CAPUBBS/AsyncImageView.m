@@ -7,7 +7,6 @@
 //
 
 #import "AsyncImageView.h"
-#import "ActionPerformer.h"
 #import "YLGIFImage.h"
 #import "UIImageEffects.h"
 

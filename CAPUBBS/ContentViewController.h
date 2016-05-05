@@ -9,7 +9,6 @@
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
 #import "MBProgressHUD.h"
-#import "ActionPerformer.h"
 
 @interface ContentViewController : UITableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
     MBProgressHUD *hud;

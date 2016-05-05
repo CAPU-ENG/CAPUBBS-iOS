@@ -7,7 +7,6 @@
 //
 
 #import "TextViewController.h"
-#import "ActionPerformer.h"
 
 @interface TextViewController ()
 

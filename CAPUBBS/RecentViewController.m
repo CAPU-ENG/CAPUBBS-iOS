@@ -8,7 +8,6 @@
 
 #import "RecentViewController.h"
 #import "ContentViewController.h"
-#import "ActionPerformer.h"
 
 @interface RecentViewController ()
 

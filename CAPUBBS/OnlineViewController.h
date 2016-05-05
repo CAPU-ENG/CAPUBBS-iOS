@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "OnlineViewCell.h"
-#import "ActionPerformer.h"
 #import "MBProgressHUD.h"
 
 @interface OnlineViewController : UITableViewController {
