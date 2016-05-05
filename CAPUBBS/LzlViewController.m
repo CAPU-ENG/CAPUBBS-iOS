@@ -107,9 +107,13 @@
         shouldShowHud = NO;
         
         data = [result subarrayWithRange:NSMakeRange(1, result.count - 1)];
-        [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%i", (int)data.count], @"num", self.fid, @"fid", nil]];
+        [self performSelector:@selector(postRefreshLzlNotification) withObject:nil afterDelay:0.5];
         [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
     }];
+}
+
+- (void)postRefreshLzlNotification {
+    [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%i", (int)data.count], @"num", self.fid, @"fid", nil]];
 }
 
 #pragma mark - Table view data source

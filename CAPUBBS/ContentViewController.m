@@ -768,16 +768,10 @@
 }
 
 - (void)refreshLzl:(NSNotification *)notification {
-    if (selectedIndex >= 0 && [[notification.userInfo objectForKey:@"fid"] isEqualToString:[data[selectedIndex] objectForKey:@"fid"]]) {
+    if (notification && [[notification.userInfo objectForKey:@"fid"] isEqualToString:[data[selectedIndex] objectForKey:@"fid"]]) {
         NSString *num = [notification.userInfo objectForKey:@"num"];
-        [self performSelector:@selector(updateLzlLabel:) withObject:num afterDelay:0.5];
-    }
-}
-
-- (void)updateLzlLabel:(NSString *)num {
-    [data[selectedIndex] setObject:num forKey:@"lzl"];
-    ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:selectedIndex inSection:0]];
-    if ([[self.tableView visibleCells] containsObject:cell]) {
+        [data[selectedIndex] setObject:num forKey:@"lzl"];
+        ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:selectedIndex inSection:0]];
         [cell.buttonLzl setTitle:[NSString stringWithFormat:@"评论 (%@)", num] forState:UIControlStateNormal];
         if ([num isEqualToString:@"0"]) {
             [cell.buttonLzl setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
