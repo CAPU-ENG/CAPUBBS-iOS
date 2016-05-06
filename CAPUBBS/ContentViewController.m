@@ -768,7 +768,7 @@
 }
 
 - (void)refreshLzl:(NSNotification *)notification {
-    if (notification && [[notification.userInfo objectForKey:@"fid"] isEqualToString:[data[selectedIndex] objectForKey:@"fid"]]) {
+    if (selectedIndex >= 0 && selectedIndex < data.count && notification && [[notification.userInfo objectForKey:@"fid"] isEqualToString:[data[selectedIndex] objectForKey:@"fid"]]) {
         NSString *num = [notification.userInfo objectForKey:@"num"];
         [data[selectedIndex] setObject:num forKey:@"lzl"];
         ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:selectedIndex inSection:0]];
