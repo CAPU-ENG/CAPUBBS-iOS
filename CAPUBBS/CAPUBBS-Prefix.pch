@@ -16,7 +16,7 @@
 #import <Foundation/Foundation.h>
 #import "ActionPerformer.h"
 
-#define UPDATE_TIME @"2016-04-24"
+#define UPDATE_TIME @"2016-05-14"
 
 #define REPORT_EMAIL @[@"fa_pku@sina.com", @"beidachexie@163.com"]
 #define FEEDBACK_EMAIL @[@"goodman.capu@qq.com", @"beidachexie@163.com"]
