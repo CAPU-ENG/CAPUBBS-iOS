@@ -16,7 +16,6 @@
 #pragma mark Web Request
 
 - (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
-    resultBlock = block;
     
     NSString *postUrl = [NSString stringWithFormat:@"http://%@/api/client.php?ask=%@",CHEXIE, url];
     
@@ -31,25 +30,24 @@
         [requestDictionary setObject:data forKey:key];
     }
     
-    // [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
     AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
     manager.responseSerializer = [AFXMLParserResponseSerializer serializer];
     [manager POST:postUrl parameters:requestDictionary progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-        // [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+
         [responseObject setDelegate:self];
         if (![responseObject parse]) {
-            resultBlock(nil, [responseObject parserError]);
+            block(nil, [responseObject parserError]);
             NSLog(@"%@", [responseObject parserError]);
             [[[UIAlertView alloc] initWithTitle:@"加载失败" message:@"内容解析出现异常\n请使用网页版查看" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
         }else {
-            resultBlock([NSArray arrayWithArray:finalData], nil);
+            block([NSArray arrayWithArray:finalData], nil);
         }
+        return;
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-        // [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+
         NSLog(@"%@", error.localizedDescription);
-        if (resultBlock) {
-            resultBlock(nil, error);
-        }
+        block(nil, error);
+        return;
     }];
 }
 

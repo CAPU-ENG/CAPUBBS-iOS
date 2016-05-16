@@ -44,7 +44,7 @@
 }
 
 - (void)done:(id)sender{
-    [NOTIFICATION postNotificationName:@"publish" object:nil];
+    [NOTIFICATION postNotificationName:@"publishContent" object:nil];
     [self.navigationController popViewControllerAnimated:YES];
 }
 

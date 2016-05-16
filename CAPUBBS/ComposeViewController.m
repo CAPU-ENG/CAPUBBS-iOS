@@ -43,7 +43,7 @@
     [NOTIFICATION addObserver:self selector:@selector(keyboardChange:) name:UIKeyboardWillChangeFrameNotification object:nil];
     [NOTIFICATION addObserver:self selector:@selector(keyboardChange:) name:UIKeyboardDidChangeFrameNotification object:nil];
     [NOTIFICATION addObserver:self selector:@selector(insertContent:) name:@"addContent" object:nil];
-    [NOTIFICATION addObserver:self selector:@selector(done:) name:@"publish" object:nil];
+    [NOTIFICATION addObserver:self selector:@selector(done:) name:@"publishContent" object:nil];
 
     if (self.tid.length == 0) {
         self.title = @"发表新帖";

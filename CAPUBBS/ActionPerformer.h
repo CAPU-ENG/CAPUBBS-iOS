@@ -11,7 +11,6 @@
 typedef void (^ActionPerformerResultBlock)(NSArray* result, NSError* err);
 
 @interface ActionPerformer: NSObject <NSXMLParserDelegate> {
-    ActionPerformerResultBlock resultBlock;
     NSMutableArray *finalData;
     NSMutableString *currentString;
     NSMutableDictionary *tempData;
