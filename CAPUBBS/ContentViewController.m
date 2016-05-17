@@ -302,8 +302,10 @@
     
     if ([[heights objectAtIndex:webView.tag] intValue] <= 1) {
         [heights replaceObjectAtIndex:webView.tag withObject:[webView stringByEvaluatingJavaScriptFromString:@"document.height"]];
-        // [self.tableView reloadData];
-        [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:webView.tag inSection:0]] withRowAnimation:UITableViewRowAnimationAutomatic];
+        ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:webView.tag inSection:0]];
+        [cell.indicatorLoading stopAnimating];
+        [self.tableView beginUpdates];
+        [self.tableView endUpdates];
     }
 }
 
