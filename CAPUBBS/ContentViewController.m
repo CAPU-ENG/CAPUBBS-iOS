@@ -27,7 +27,7 @@
     textSize = [[DEFAULTS objectForKey:@"textSize"] intValue];
     performer = [[ActionPerformer alloc] init];
     if ([self.floor integerValue] > 0) { // 进入时直接跳至指定页
-        page = ([self.floor intValue] - 1) / 12 + 1;
+        page = ceil([self.floor floatValue] / 12);
     }else {
         page = 1;
     }
