@@ -15,6 +15,7 @@
 		01460D991AA8CE3A00762761 /* SearchViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01460D981AA8CE3A00762761 /* SearchViewController.m */; };
 		01460DA21AA9962000762761 /* SearchViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01460DA11AA9962000762761 /* SearchViewCell.m */; };
 		014C43091BFD6AF000A6E352 /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 014C43081BFD6AF000A6E352 /* Reachability.m */; };
+		015FADA41CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.m in Sources */ = {isa = PBXBuildFile; fileRef = 015FADA31CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.m */; };
 		01695D3A1AD98B8A000D6BA5 /* PreviewViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01695D391AD98B8A000D6BA5 /* PreviewViewController.m */; };
 		01729C281B01EFA300BC8218 /* WebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01729C271B01EFA300BC8218 /* WebViewController.m */; };
 		017785E41AAC48400089361C /* IndexViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 017785E31AAC48400089361C /* IndexViewCell.m */; };
@@ -266,6 +267,8 @@
 		01460DA11AA9962000762761 /* SearchViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SearchViewCell.m; sourceTree = "<group>"; };
 		014C43071BFD6AF000A6E352 /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Reachability.h; path = CAPUBBS/Reachability.h; sourceTree = "<group>"; };
 		014C43081BFD6AF000A6E352 /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Reachability.m; path = CAPUBBS/Reachability.m; sourceTree = "<group>"; };
+		015FADA21CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "MFMailComposeViewController+LightContent.h"; path = "CAPUBBS/MFMailComposeViewController+LightContent.h"; sourceTree = "<group>"; };
+		015FADA31CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "MFMailComposeViewController+LightContent.m"; path = "CAPUBBS/MFMailComposeViewController+LightContent.m"; sourceTree = "<group>"; };
 		01695D381AD98B8A000D6BA5 /* PreviewViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PreviewViewController.h; sourceTree = "<group>"; };
 		01695D391AD98B8A000D6BA5 /* PreviewViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = PreviewViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		01729C261B01EFA300BC8218 /* WebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebViewController.h; sourceTree = "<group>"; };
@@ -570,6 +573,8 @@
 				014C43081BFD6AF000A6E352 /* Reachability.m */,
 				01E1B1591C28061500EC680D /* UIImageEffects.h */,
 				01E1B15A1C28061500EC680D /* UIImageEffects.m */,
+				015FADA21CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.h */,
+				015FADA31CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.m */,
 			);
 			name = Utilities;
 			path = ..;
@@ -1291,6 +1296,7 @@
 				01F38EBD1AE1537F007F25D0 /* ChatCell.m in Sources */,
 				8BAC8EEB18B10E6700F68A62 /* IndexViewController.m in Sources */,
 				01E1B15B1C28061500EC680D /* UIImageEffects.m in Sources */,
+				015FADA41CEF18C900AA2A83 /* MFMailComposeViewController+LightContent.m in Sources */,
 				8B7403DB18B5A41E009753FE /* InternalLoginViewController.m in Sources */,
 				01D5A2F31B4A810F00174F4A /* RecentViewController.m in Sources */,
 				8BAC8EF718B11B4C00F68A62 /* ContentCell.m in Sources */,

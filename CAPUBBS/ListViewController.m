@@ -284,7 +284,7 @@
         if (indexPath.row < 10) {
             titleText = [numberEmoji[indexPath.row] stringByAppendingString:[@" " stringByAppendingString:titleText]];
         }
-        if ([dict[@"pid"] integerValue] == 1) {
+        if ([dict[@"pid"] integerValue] == 0 || [dict[@"replyer"] isEqualToString:@"Array"]) {
             cell.authorText.text = [NSString stringWithFormat:@"%@", dict[@"author"]];
         }else {
             cell.authorText.text = [NSString stringWithFormat:@"%@", dict[@"replyer"]];
