@@ -160,7 +160,7 @@
         if (data.count != 0) {
             for (NSDictionary *dict in data) {
                 if (self.exactFloor.length > 0 && [dict[@"floor"] isEqualToString:self.exactFloor]) {
-                    selectedIndex = ([self.exactFloor integerValue] - 1) % 12;
+                    selectedIndex = [data indexOfObject:dict];
                     [self performSegueWithIdentifier:@"lzl" sender:nil];
                 }
                 
