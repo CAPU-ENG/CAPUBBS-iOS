@@ -261,6 +261,11 @@
         [DEFAULTS setObject:IDs forKey:@"ID"];
         [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"transportID3.3"];
     }
+    
+    if ([[DEFAULTS objectForKey:@"clearIconCache3.5"] boolValue] == NO) { // 3.5之后链接全更改为https 缓存失效
+        [MANAGER removeItemAtPath:CACHE_PATH error:nil];
+        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"clearIconCache3.5"];
+    }
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {

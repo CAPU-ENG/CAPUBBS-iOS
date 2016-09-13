@@ -144,7 +144,7 @@
 }
 
 - (void)getData:(NSString *)type{
-    NSString * HTMLString = [[NSString alloc] initWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@/bbs/%@", CHEXIE, type]] encoding:NSUTF8StringEncoding error:nil];
+    NSString * HTMLString = [[NSString alloc] initWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/%@", CHEXIE, type]] encoding:NSUTF8StringEncoding error:nil];
     if ([type isEqualToString:@"online"]) {
         [self performSelectorOnMainThread:@selector(loadOnline:) withObject:HTMLString waitUntilDone:NO];
     }else if ([type isEqualToString:@"sign"]) {
@@ -215,7 +215,7 @@
     }
     if ([segue.identifier isEqualToString:@"web"]) {
         WebViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        dest.URL = [NSString stringWithFormat:@"http://%@/bbs/online", CHEXIE];
+        dest.URL = [NSString stringWithFormat:@"https://%@/bbs/online", CHEXIE];
     }
     // Get the new view controller using [segue destinationViewController].
     // Pass the selected object to the new view controller.

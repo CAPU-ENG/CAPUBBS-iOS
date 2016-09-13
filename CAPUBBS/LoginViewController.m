@@ -372,7 +372,7 @@
     //CFShow((__bridge CFTypeRef)(infoDic));
     NSString *currentVersion = [infoDic objectForKey:@"CFBundleVersion"];
     //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
-    NSString *URL = @"http://itunes.apple.com/lookup?id=826386033";
+    NSString *URL = @"https://itunes.apple.com/lookup?id=826386033";
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
     [request setURL:[NSURL URLWithString:URL]];
     [request setHTTPMethod:@"POST"];

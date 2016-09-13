@@ -202,11 +202,11 @@
     }
     if (!([iconUrl hasPrefix:@"http://"] || [iconUrl hasPrefix:@"https://"] || [iconUrl hasPrefix:@"ftp://"])) {
         if ([iconUrl hasPrefix:@"/"]) {
-            iconUrl = [NSString stringWithFormat:@"http://%@%@", CHEXIE, iconUrl];
+            iconUrl = [NSString stringWithFormat:@"https://%@%@", CHEXIE, iconUrl];
         }else if ([iconUrl hasPrefix:@".."]) {
-            iconUrl = [NSString stringWithFormat:@"http://%@/bbs/content/%@", CHEXIE, [iconUrl substringFromIndex:@"..".length]];
+            iconUrl = [NSString stringWithFormat:@"https://%@/bbs/content/%@", CHEXIE, [iconUrl substringFromIndex:@"..".length]];
         }else {
-            iconUrl = [NSString stringWithFormat:@"http://%@/bbsimg/i/%@.gif", CHEXIE, iconUrl];
+            iconUrl = [NSString stringWithFormat:@"https://%@/bbsimg/i/%@.gif", CHEXIE, iconUrl];
         }
     }
     iconUrl = [iconUrl stringByReplacingOccurrencesOfString:@" " withString:@"%20"]; // URL中有空格的处理

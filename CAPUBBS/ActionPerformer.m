@@ -17,7 +17,7 @@
 
 - (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
     
-    NSString *postUrl = [NSString stringWithFormat:@"http://%@/api/client.php?ask=%@",CHEXIE, url];
+    NSString *postUrl = [NSString stringWithFormat:@"https://%@/api/client.php?ask=%@",CHEXIE, url];
     
     NSMutableDictionary *requestDictionary = [[NSMutableDictionary alloc] init];
     [requestDictionary setObject:@"ios" forKey:@"os"];

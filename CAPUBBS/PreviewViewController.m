@@ -39,7 +39,7 @@
     }
     self.textBody = [self transToHTML:self.textBody];
     self.textBody = [ContentViewController htmlStringWithRespondString:self.textBody];
-    [self.webView loadHTMLString:self.textBody baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@/bbs/content/index.php", CHEXIE]]];
+    [self.webView loadHTMLString:self.textBody baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];
     // Do any additional setup after loading the view.
 }
 
@@ -94,7 +94,7 @@
 }
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation{
-    [self.webView loadHTMLString:self.textBody baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@/bbs/content/index.php", CHEXIE]]];
+    [self.webView loadHTMLString:self.textBody baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];
 }
 
 
