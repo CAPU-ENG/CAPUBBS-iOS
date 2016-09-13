@@ -318,9 +318,9 @@
 }
 
 - (IBAction)action:(id)sender {
-    NSString *URL = [NSString stringWithFormat:@"http://%@/bbs/main/?p=%d&bid=%@", CHEXIE, (int)page, self.bid];
+    NSString *URL = [NSString stringWithFormat:@"https://%@/bbs/main/?p=%d&bid=%@", CHEXIE, (int)page, self.bid];
     if ([self.bid isEqualToString:@"hot"]) {
-        URL = [NSString stringWithFormat:@"http://%@/bbs/index", CHEXIE];
+        URL = [NSString stringWithFormat:@"https://%@/bbs/index", CHEXIE];
     }
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"更多操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"分享" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {

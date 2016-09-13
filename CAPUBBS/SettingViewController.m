@@ -266,9 +266,9 @@
         WebViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
         NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)sender];
         if (indexPath.row == 0) {
-            dest.URL = [NSString stringWithFormat:@"http://%@/bbs", CHEXIE];
+            dest.URL = [NSString stringWithFormat:@"https://%@/bbs", CHEXIE];
         }else if (indexPath.row == 1) {
-            dest.URL = [NSString stringWithFormat:@"http://%@", CHEXIE];
+            dest.URL = [NSString stringWithFormat:@"https://%@", CHEXIE];
         }
     }
     if ([segue.identifier isEqualToString:@"post"]) {

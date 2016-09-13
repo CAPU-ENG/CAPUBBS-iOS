@@ -79,7 +79,7 @@
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
     if (error.code != -999) { // 999:主动终止加载
         if (self.URL && !([self.URL hasPrefix:@"http://"] || [self.URL hasPrefix:@"https://"] || [self.URL hasPrefix:@"ftp://"])) { // 可能是因为链接不完整导致打开失败
-            self.URL = [@"http://" stringByAppendingString:self.URL];
+            self.URL = [@"https://" stringByAppendingString:self.URL];
             [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:self.URL]]];
         }else {
             [[[UIAlertView alloc] initWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
