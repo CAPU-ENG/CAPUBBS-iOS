@@ -10,35 +10,20 @@
 #import "YLGIFImage.h"
 #import "UIImageEffects.h"
 
-@implementation AsyncImageView
+@implementation AsyncImageView {
+    NSString * url;
+    BOOL rounded;
+}
 
-@synthesize url = _url;
+- (void)setRounded:(BOOL)isRounded {
+    rounded = isRounded;
+}
 
-- (void)setImage:(UIImage *)image {
-    if ([self.image isEqual:image]) {
-        return;
-    }
-    if ([self.image isEqual:PLACEHOLDER] && ![self isAnimating]) {
-        float animationTime = 0.3;
-        [UIView animateWithDuration:animationTime / 2 animations:^{
-            [self setAlpha:0.25];
-        }completion:^(BOOL finished) {
-            if (!finished) { // 动画被打断 一般见于cell重用
-                [self setAlpha:1.0];
-                [self loadImage];
-            }else {
-                [super setImage:image];
-                [UIView animateWithDuration:animationTime / 2 animations:^{
-                    [self setAlpha:1.0];
-                }completion:^(BOOL finished) {
-                    if (!finished) { // 动画被打断 一般见于cell重用
-                        [self loadImage];
-                    }
-                }];
-            }
-        }];
-    }else {
-        [super setImage:image];
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    if (rounded) {
+        self.layer.cornerRadius = self.frame.size.width / 2;
+        self.layer.masksToBounds = YES;
     }
 }
 
@@ -72,39 +57,38 @@
 }
 
 - (void)setUrl:(NSString *)urlToSet {
-    _url = [AsyncImageView transIconURL:urlToSet];
-    if (_url.length == 0) {
+    url = [AsyncImageView transIconURL:urlToSet];
+    if (url.length == 0) {
         NSLog(@"Fail to translate icon URL - %@", urlToSet);
         return;
     }
-    if ([self isAnimating]) {
-        [self stopAnimating];
-    }
-    if ([self.image isEqual:PLACEHOLDER]) {
-        [super setImage:nil];
-    }
+
     [self loadImage];
+}
+
+- (NSString *)getUrl {
+    return url;
 }
 
 - (void)loadImage {
     [NOTIFICATION removeObserver:self];
-    NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:_url]];
+    NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
     NSData *data = [MANAGER contentsAtPath:filePath];
     NSString *oldInfo = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     
     // 一定要在主线程上刷新图片 否则软件崩溃
     if (data.length > 0 && ![oldInfo hasPrefix:@"loading"]) { // 缓存存在的话直接加载缓存
-        dispatch_async(dispatch_get_main_queue(), ^{
+        dispatch_main_async_safe(^{
             if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == YES) {
                 [self setImage:[UIImage imageWithData:data]];
             }else {
                 [self setImage:[YLGIFImage imageWithData:data]];
             }
+            [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
         });
-        [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:_url] object:nil userInfo:@{@"data": data}];
-    }else {
+    }else if (url.length > 0) {
         [self setImage:PLACEHOLDER];
-        [NOTIFICATION addObserver:self selector:@selector(loadImage) name:[@"imageGet" stringByAppendingString:_url] object:nil];
+        [NOTIFICATION addObserver:self selector:@selector(loadImage) name:[@"imageGet" stringByAppendingString:url] object:nil];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
@@ -122,11 +106,11 @@
 }
 
 - (void)startLoadingImage {
-    NSString *imageTag = _url;
-    NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:_url]];
+    NSString *imageTag = url;
+    NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
     if (!([[DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue] && IS_CELLULAR)) {
         // NSLog(@"Load Img - %@", imageTag);
-        NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:_url]];
+        NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:url]];
         UIImage *image = [UIImage imageWithData:imageData];
         int imageType = [AsyncImageView fileType:imageData];
         if (image) {

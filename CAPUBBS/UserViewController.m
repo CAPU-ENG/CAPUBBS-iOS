@@ -28,8 +28,7 @@
         [self refreshBackgroundView:YES];
     }
     
-    [self.icon.layer setCornerRadius:self.icon.frame.size.width / 2];
-    [self.icon.layer setMasksToBounds:YES];
+    [self.icon setRounded:YES];
     if (self.noRightBarItem) {
         self.navigationItem.rightBarButtonItems = nil;
     }else {
@@ -105,7 +104,7 @@
 - (void)refresh:(NSNotification *)noti {
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
-        [self performSelectorOnMainThread:@selector(refreshBackgroundView:) withObject:nil waitUntilDone:NO];
+        [self refreshBackgroundView:NO];
     }
 }
 
@@ -219,7 +218,7 @@
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
                     content = @"<font color='grey'>暂无</font>";
                 }
-                NSString *htmlString = [ContentViewController htmlStringWithRespondString:content];
+                NSString *htmlString = [ContentViewController htmlStringWithRespondString:[NSString stringWithFormat:@"<div id=\"capu-content-wrapper\">%@</div>", content]];
                 [webData replaceObjectAtIndex:i withObject:htmlString];
                 if ([webView isLoading]) {
                     [webView stopLoading];
@@ -247,7 +246,7 @@
     if (indexPath.row == 0) {
         return 500;
     }else if (indexPath.row <= 3) {
-        return MAX([[heights objectAtIndex:indexPath.row - 1] floatValue], 14) + 16;
+        return [[heights objectAtIndex:indexPath.row - 1] floatValue] + 30;
     }else {
         return 55;
     }
@@ -283,10 +282,8 @@
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView {
     if ([[heights objectAtIndex:webView.tag] intValue] == 0) {
-        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.height"];
-        if (IOS >= 10) {
-            height = [@(webView.scrollView.contentSize.height) stringValue];
-        }
+        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight"];
+        NSLog(@"%@", height);
         [heights replaceObjectAtIndex:webView.tag withObject:height];
         [self.tableView reloadData];
     }
@@ -381,7 +378,7 @@
     if ([segue.identifier hasPrefix:@"recent"]) {
         RecentViewController *dest = [segue destinationViewController];
         dest.iconData = self.iconData;
-        dest.iconUrl = self.icon.url;
+        dest.iconUrl = [self.icon getUrl];
         if ([segue.identifier hasSuffix:@"Post"]) {
             dest.data = recentPost;
             dest.title = @"最近主题";

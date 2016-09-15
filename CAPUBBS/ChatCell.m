@@ -19,7 +19,7 @@
     [self.textSend.layer setCornerRadius:10.0];
     [self.textSend setScrollsToTop:NO];
     [self.textMessage setBackgroundColor:[UIColor clearColor]];
-    [self.imageIcon.layer setMasksToBounds:YES];
+    [self.imageIcon setRounded:YES];
     
     self.layer.shouldRasterize = YES; // 光栅化 提高流畅度
     self.layer.rasterizationScale = [UIScreen mainScreen].scale;

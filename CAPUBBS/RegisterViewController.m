@@ -34,8 +34,7 @@
         [view.layer setBorderWidth:0.5];
         [view setScrollsToTop:NO];
     }
-    [self.icon.layer setCornerRadius:self.icon.frame.size.width / 2];
-    [self.icon.layer setMasksToBounds:YES];
+    [self.icon setRounded:YES];
     if (self.isEdit == YES) {
         self.title = @"修改个人信息";
         [self.imageUidAvailable setImage:SUCCESSMARK];

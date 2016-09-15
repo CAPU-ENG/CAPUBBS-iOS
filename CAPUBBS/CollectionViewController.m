@@ -284,7 +284,6 @@
         cell.labelInfo.text = dict[@"text"];
     }
     
-    [cell.icon.layer setCornerRadius:cell.icon.frame.size.width / 2]; // 圆形
     if (sortType == SORT_BY_AUTHOR) {
         [cell.icon setUrl:dict[@"icon"]];
     }

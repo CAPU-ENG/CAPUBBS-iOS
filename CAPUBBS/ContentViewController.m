@@ -174,7 +174,7 @@
                 NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
                 html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
                 // NSLog(@"%@", html);
-                [HTMLStrings addObject:html];
+                [HTMLStrings addObject:[NSString stringWithFormat:@"<div id=\"capu-content-wrapper\">%@</div>", html]];
             }
         }
         self.exactFloor = @"";
@@ -274,7 +274,7 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    float otherViewHeight = 100;
+    float otherViewHeight = 115;
     float minHeight = otherViewHeight + 40;
     if ([[heights objectAtIndex:indexPath.row] floatValue] == 0) {
         if ([[estimatedHeights objectAtIndex:indexPath.row] floatValue] == 0) { // 粗略预判WebView内容高度
@@ -301,10 +301,7 @@
     [webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.getElementsByTagName('body')[0].style.webkitTextSizeAdjust= '%d%%'", textSize]];
     
     if ([[heights objectAtIndex:webView.tag] intValue] <= 1) {
-        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.height"];
-        if (IOS >= 10) {
-            height = [@(webView.scrollView.contentSize.height) stringValue];
-        }
+        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight"];
         [heights replaceObjectAtIndex:webView.tag withObject:height];
         ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:webView.tag inSection:0]];
         [cell.indicatorLoading stopAnimating];
@@ -385,7 +382,6 @@
     }
     
     [cell.icon setUrl:dict[@"icon"]];
-    [cell.icon.layer setCornerRadius:cell.icon.frame.size.width / 2];
     
     [cell.webView setDelegate:self];
     [cell.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];

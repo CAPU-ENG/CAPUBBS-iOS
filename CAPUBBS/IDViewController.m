@@ -60,7 +60,6 @@
             cell.userInteractionEnabled = YES;
         }
         [cell.icon setUrl:data[indexPath.row][@"icon"]];
-        [cell.icon.layer setCornerRadius:cell.icon.frame.size.width / 2];
     }else {
         cell = [tableView dequeueReusableCellWithIdentifier:@"new" forIndexPath:indexPath];
     }

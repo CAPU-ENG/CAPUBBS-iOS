@@ -147,7 +147,6 @@
         cell.textMain.text = dict[@"text"];
         NSString *url = dict[@"icon"];
         [cell.icon setUrl:url];
-        [cell.icon.layer setCornerRadius:cell.icon.frame.size.width / 2];
         cell.buttonIcon.tag = indexPath.row;
         
         if (cell.gestureRecognizers.count == 0) {

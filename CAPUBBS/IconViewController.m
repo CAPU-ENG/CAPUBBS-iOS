@@ -137,7 +137,7 @@
 // Uncomment this method to specify if the specified item should be selected
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     IconCell *cell = (IconCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:cell.icon.url, @"URL", nil]];
+    [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[cell.icon getUrl], @"URL", nil]];
     [self.navigationController popViewControllerAnimated:YES];
 }
 
@@ -164,11 +164,11 @@
     }
     
     [previewImageView setFrame:frame];
-    [previewImageView.layer setCornerRadius:frame.size.height / 2];
+    [previewImageView setRounded:YES];
     if (![cell.icon.image isEqual:PLACEHOLDER]) {
         [previewImageView setImage:cell.icon.image];
     }else {
-        [previewImageView setUrl:cell.icon.url];
+        [previewImageView setUrl:[cell.icon getUrl]];
     }
     [self.collectionView addSubview:previewImageView];
 }

@@ -23,7 +23,7 @@
 {
     [super awakeFromNib];
     // Initialization code
-    [self.icon.layer setMasksToBounds:YES];
+    [self.icon setRounded:YES];
     [self.webView.layer setCornerRadius:10.0];
     [self.webView.layer setBorderColor:GREEN_LIGHT.CGColor];
     [self.webView.layer setBorderWidth:1.0];
