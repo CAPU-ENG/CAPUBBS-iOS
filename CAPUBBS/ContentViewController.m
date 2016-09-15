@@ -301,7 +301,11 @@
     [webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.getElementsByTagName('body')[0].style.webkitTextSizeAdjust= '%d%%'", textSize]];
     
     if ([[heights objectAtIndex:webView.tag] intValue] <= 1) {
-        [heights replaceObjectAtIndex:webView.tag withObject:[webView stringByEvaluatingJavaScriptFromString:@"document.height"]];
+        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.height"];
+        if (IOS >= 10) {
+            height = [@(webView.scrollView.contentSize.height) stringValue];
+        }
+        [heights replaceObjectAtIndex:webView.tag withObject:height];
         ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:webView.tag inSection:0]];
         [cell.indicatorLoading stopAnimating];
         [self.tableView beginUpdates];
@@ -372,7 +376,7 @@
             cell.labelDate.text = [cell.labelDate.text stringByAppendingString:[NSString stringWithFormat:@"\n%@", dict[@"edittime"]]];
         }
         if ([dict[@"type"] isEqualToString:@"web"]) {
-            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:(IOS < 9.0) ? @"\n💻" : @"\n🖥"];
+            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:(IOS < 9.1) ? @"\n💻" : @"\n🖥"];
         }else if ([dict[@"type"] isEqualToString:@"android"]) {
             cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n📱"];
         }else if ([dict[@"type"] isEqualToString:@"ios"]) {

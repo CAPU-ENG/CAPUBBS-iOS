@@ -283,7 +283,11 @@
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView {
     if ([[heights objectAtIndex:webView.tag] intValue] == 0) {
-        [heights replaceObjectAtIndex:webView.tag withObject:[webView stringByEvaluatingJavaScriptFromString:@"document.height"]];
+        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.height"];
+        if (IOS >= 10) {
+            height = [@(webView.scrollView.contentSize.height) stringValue];
+        }
+        [heights replaceObjectAtIndex:webView.tag withObject:height];
         [self.tableView reloadData];
     }
 }
