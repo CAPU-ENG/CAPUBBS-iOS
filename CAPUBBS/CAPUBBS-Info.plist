@@ -21,7 +21,9 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>3501</string>
+	<string>3502</string>
+	<key>LSApplicationCategoryType</key>
+	<string></string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -29,6 +31,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>需要您的允许才能访问相机</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要您的允许才能访问照片库</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).compose</string>
