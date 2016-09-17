@@ -34,7 +34,7 @@
 - (void)refresh:(NSNotification *)noti {
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
-        [self performSelectorOnMainThread:@selector(refreshBackgroundView:) withObject:nil waitUntilDone:NO];
+        [self refreshBackgroundView:NO];
     }
 }
 

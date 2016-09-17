@@ -22,8 +22,7 @@
     [self.buttonEnter.layer setCornerRadius:10.0];
     [self.buttonRegister.layer setCornerRadius:10.0];
     [self.buttonLogin.layer setCornerRadius:10.0];
-    [self.iconUser.layer setCornerRadius:self.iconUser.frame.size.width / 2];
-    [self.iconUser.layer setMasksToBounds:YES];
+    [self.iconUser setRounded:YES];
     
     performer = [[ActionPerformer alloc] init];
     performerInfo = [[ActionPerformer alloc] init];

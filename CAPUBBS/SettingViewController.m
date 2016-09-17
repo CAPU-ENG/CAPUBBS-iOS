@@ -21,8 +21,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     self.preferredContentSize = CGSizeMake(360, 10000); // 高度填满屏幕
-    [self.iconUser.layer setCornerRadius:self.iconUser.frame.size.width / 2];
-    [self.iconUser.layer setMasksToBounds:YES];
+    [self.iconUser setRounded:YES];
     [NOTIFICATION addObserver:self selector:@selector(userChanged) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(refreshInfo) name:@"infoRefreshed" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(cacheChanged:) name:nil object:nil];

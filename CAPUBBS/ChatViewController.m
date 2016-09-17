@@ -55,7 +55,7 @@
 - (void)refresh:(NSNotification *)noti {
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
-        [self performSelectorOnMainThread:@selector(refreshBackgroundView:) withObject:nil waitUntilDone:NO];
+        [self refreshBackgroundView:NO];
     }
 }
 
@@ -241,7 +241,6 @@
         
         cell.labelTime.text = [NSString stringWithFormat:@"  %@  ", dict[@"time"]];
         cell.textMessage.text = dict[@"text"];
-        [cell.imageIcon.layer setCornerRadius:cell.imageIcon.frame.size.width / 2]; // 圆形
     }else {
         cell = [tableView dequeueReusableCellWithIdentifier:@"chatSend" forIndexPath:indexPath];
         self.textSend = cell.textSend;

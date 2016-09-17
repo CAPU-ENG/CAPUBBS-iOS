@@ -13,7 +13,7 @@
 - (void)awakeFromNib {
     [super awakeFromNib];
     // Initialization code
-    [self.icon.layer setMasksToBounds:YES];
+    [self.icon setRounded:YES];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {

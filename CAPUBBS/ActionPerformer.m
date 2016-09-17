@@ -152,6 +152,9 @@
 }
 
 + (NSString *)md5:(NSString *)str { // 字符串MD5值算法
+    if (!str || str.length == 0) {
+        return @"";
+    }
     const char* cStr=[str UTF8String];
     unsigned char digist[CC_MD5_DIGEST_LENGTH]; // CC_MD5_DIGEST_LENGTH = 16
     CC_MD5(cStr, (unsigned int)strlen(cStr), digist);

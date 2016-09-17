@@ -19,10 +19,11 @@
 
 @interface AsyncImageView : YLImageView
 
-@property (strong, nonatomic) NSString *url;
+- (void)setRounded:(BOOL)isRounded;
 - (void)setBlurredImage:(UIImage *)image animated:(BOOL)animated;
 - (void)setGif:(NSString *)imageName;
 - (void)setUrl:(NSString *)urlToSet;
+- (NSString *)getUrl;
 + (NSString *)transIconURL:(NSString *)iconUrl;
 + (int)fileType:(NSData *)imageData;
 + (void)checkPath;
