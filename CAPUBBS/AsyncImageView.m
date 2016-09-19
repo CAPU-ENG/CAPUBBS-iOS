@@ -17,13 +17,16 @@
 
 - (void)setRounded:(BOOL)isRounded {
     rounded = isRounded;
+    [self setNeedsLayout];
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    self.layer.masksToBounds = YES;
     if (rounded) {
         self.layer.cornerRadius = self.frame.size.width / 2;
-        self.layer.masksToBounds = YES;
+    } else {
+        self.layer.cornerRadius = 0.0f;
     }
 }
 
@@ -87,7 +90,9 @@
             [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
         });
     }else if (url.length > 0) {
-        [self setImage:PLACEHOLDER];
+        dispatch_main_async_safe(^{
+            [self setImage:PLACEHOLDER];
+        });
         [NOTIFICATION addObserver:self selector:@selector(loadImage) name:[@"imageGet" stringByAppendingString:url] object:nil];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];

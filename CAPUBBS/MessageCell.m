@@ -19,6 +19,12 @@
     self.layer.rasterizationScale = [UIScreen mainScreen].scale;
 }
 
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    [self.labelNum layoutIfNeeded];
+    [self.labelNum.layer setCornerRadius:self.labelNum.frame.size.height / 2]; // 圆形
+}
+
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     [super setSelected:selected animated:animated];
 

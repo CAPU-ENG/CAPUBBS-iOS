@@ -240,7 +240,6 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:(self.segmentType.selectedSegmentIndex == 0) ? @"systemmsg" : @"privatemsg" forIndexPath:indexPath];
-    [cell.labelNum.layer setCornerRadius:cell.labelNum.frame.size.height / 2]; // 圆形
     
     NSDictionary *dict = data[indexPath.row + 1];
     cell.labelUser.text = dict[@"username"];
