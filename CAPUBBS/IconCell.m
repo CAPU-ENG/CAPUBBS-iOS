@@ -18,4 +18,10 @@
     self.layer.rasterizationScale = [UIScreen mainScreen].scale;
 }
 
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    [self.icon layoutIfNeeded];
+    [self.icon.layer setCornerRadius:(self.frame.size.width - 10) / 2];
+}
+
 @end

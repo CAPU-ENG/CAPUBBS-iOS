@@ -114,7 +114,6 @@
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     IconCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"Cell" forIndexPath:indexPath];
-    [cell.icon.layer setCornerRadius:(cell.frame.size.width - 10) / 2];
     if (indexPath.section == 0) {
         if (HAS_CUSTOM_ICON && indexPath.row == 0) {
             [cell.icon setUrl:self.userIcon];

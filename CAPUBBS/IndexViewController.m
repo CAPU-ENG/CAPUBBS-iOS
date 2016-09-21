@@ -90,7 +90,6 @@
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"collectioncell" forIndexPath:indexPath];
     }
     cell.text.font = [UIFont systemFontOfSize:fontSize];
-    [cell.layer setCornerRadius:cell.frame.size.width / 15];
     
     return cell;
 }

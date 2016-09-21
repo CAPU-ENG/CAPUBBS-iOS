@@ -15,4 +15,9 @@
     self.text.backgroundColor = [UIColor colorWithWhite:1 alpha:0.6];
 }
 
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    [self.layer setCornerRadius:self.frame.size.width / 15];
+}
+
 @end
