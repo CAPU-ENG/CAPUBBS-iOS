@@ -57,7 +57,16 @@
 - (void)setGif:(NSString *)imageName {
     NSString *filePath = [[NSBundle mainBundle] pathForResource:imageName ofType:nil];
     NSData *fileData = [NSData dataWithContentsOfFile:filePath];
-    [self setAnimatedImage:[FLAnimatedImage animatedImageWithGIFData:fileData]];
+    [self _setGifWithData:fileData];
+}
+
+- (void)_setGifWithData:(NSData *)data {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        FLAnimatedImage *image = [FLAnimatedImage animatedImageWithGIFData:data];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self setAnimatedImage:image];
+        });
+    });
 }
 
 - (void)setUrl:(NSString *)urlToSet {
@@ -88,7 +97,7 @@
             }else {
                 int imageType = [AsyncImageView fileType:data];
                 if (imageType == GIF_TYPE) {
-                    [self setAnimatedImage:[FLAnimatedImage animatedImageWithGIFData:data]];
+                    [self _setGifWithData:data];
                 } else {
                     [self setImage:[UIImage imageWithData:data]];
                 }
