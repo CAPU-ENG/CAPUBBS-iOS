@@ -7,7 +7,6 @@
 //
 
 #import "AsyncImageView.h"
-#import "YLGIFImage.h"
 #import "UIImageEffects.h"
 
 @implementation AsyncImageView {
@@ -56,7 +55,9 @@
 }
 
 - (void)setGif:(NSString *)imageName {
-    [self setImage:[YLGIFImage imageNamed:imageName]];
+    NSString *filePath = [[NSBundle mainBundle] pathForResource:imageName ofType:nil];
+    NSData *fileData = [NSData dataWithContentsOfFile:filePath];
+    [self setAnimatedImage:[FLAnimatedImage animatedImageWithGIFData:fileData]];
 }
 
 - (void)setUrl:(NSString *)urlToSet {
@@ -85,7 +86,12 @@
             if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == YES) {
                 [self setImage:[UIImage imageWithData:data]];
             }else {
-                [self setImage:[YLGIFImage imageWithData:data]];
+                int imageType = [AsyncImageView fileType:data];
+                if (imageType == GIF_TYPE) {
+                    [self setAnimatedImage:[FLAnimatedImage animatedImageWithGIFData:data]];
+                } else {
+                    [self setImage:[UIImage imageWithData:data]];
+                }
             }
             [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
         });

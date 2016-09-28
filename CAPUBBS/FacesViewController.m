@@ -19,10 +19,6 @@
     self.view.backgroundColor = GRAY_PATTERN;
     
     previewImageView = [[AsyncImageView alloc] init];
-    [previewImageView.layer setShadowColor:[UIColor lightGrayColor].CGColor];
-    [previewImageView.layer setShadowOpacity:1.0];
-    [previewImageView.layer setShadowOffset:CGSizeMake(0.0, 0.0)];
-    [previewImageView.layer setShadowRadius:10.0];
     self.numberOfFaces = 0;
     // Uncomment the following line to preserve selection between presentations
     // self.clearsSelectionOnViewWillAppear = NO;
