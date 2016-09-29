@@ -238,6 +238,10 @@
 		8BAC8EF718B11B4C00F68A62 /* ContentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EF618B11B4C00F68A62 /* ContentCell.m */; };
 		8BD9862319CEFFD10006ECEC /* LzlCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BD9862219CEFFD10006ECEC /* LzlCell.m */; };
 		8BD9862619CF052D0006ECEC /* LzlViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BD9862519CF052D0006ECEC /* LzlViewController.m */; };
+		E978B9EB1D9CAB6D000BE141 /* NotificationCenter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E978B9EA1D9CAB6D000BE141 /* NotificationCenter.framework */; };
+		E978B9EF1D9CAB6D000BE141 /* TodayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */; };
+		E978B9F21D9CAB6D000BE141 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */; };
+		E978B9F61D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -248,7 +252,28 @@
 			remoteGlobalIDString = 8BAC8E9E18B0F2BE00F68A62;
 			remoteInfo = CAPUBBS;
 		};
+		E978B9F41D9CAB6D000BE141 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BAC8E9718B0F2BE00F68A62 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E978B9E81D9CAB6D000BE141;
+			remoteInfo = "CAPUBBS TodayExtension";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E978B9FA1D9CAB6D000BE141 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E978B9F61D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0100A0D01C0C562C00A1282D /* AsyncImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AsyncImageView.h; path = CAPUBBS/AsyncImageView.h; sourceTree = "<group>"; };
@@ -530,6 +555,13 @@
 		A43A7AEF2DA29044B84A814A /* Pods-CAPUBBS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS/Pods-CAPUBBS.debug.xcconfig"; sourceTree = "<group>"; };
 		DCA2A405C66F0233505B0580 /* Pods-CAPUBBS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS.release.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS/Pods-CAPUBBS.release.xcconfig"; sourceTree = "<group>"; };
 		E978B9E31D9CA5F2000BE141 /* CAPUBBS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CAPUBBS.entitlements; sourceTree = "<group>"; };
+		E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "CAPUBBS TodayExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E978B9EA1D9CAB6D000BE141 /* NotificationCenter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NotificationCenter.framework; path = System/Library/Frameworks/NotificationCenter.framework; sourceTree = SDKROOT; };
+		E978B9ED1D9CAB6D000BE141 /* TodayViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TodayViewController.h; sourceTree = "<group>"; };
+		E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TodayViewController.m; sourceTree = "<group>"; };
+		E978B9F11D9CAB6D000BE141 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
+		E978B9F31D9CAB6D000BE141 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E978B9FB1D9CAB7C000BE141 /* CAPUBBS TodayExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "CAPUBBS TodayExtension.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -557,6 +589,14 @@
 			files = (
 				8BAC8EC718B0F2BE00F68A62 /* UIKit.framework in Frameworks */,
 				8BAC8EC618B0F2BE00F68A62 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E978B9E61D9CAB6D000BE141 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E978B9EB1D9CAB6D000BE141 /* NotificationCenter.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -789,6 +829,7 @@
 				01E60CF81A9EE37A00B2504A /* 更新说明 */,
 				8BAC8EA818B0F2BE00F68A62 /* CAPUBBS */,
 				8BAC8ECA18B0F2BE00F68A62 /* CAPUBBSTests */,
+				E978B9EC1D9CAB6D000BE141 /* CAPUBBS TodayExtension */,
 				8BAC8EA118B0F2BE00F68A62 /* Frameworks */,
 				8BAC8EA018B0F2BE00F68A62 /* Products */,
 				7C97AF7194B8E730717EC79C /* Pods */,
@@ -800,6 +841,7 @@
 			children = (
 				8BAC8E9F18B0F2BE00F68A62 /* CAPUBBS.app */,
 				8BAC8EC318B0F2BE00F68A62 /* CAPUBBSTests.xctest */,
+				E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -818,6 +860,7 @@
 				8B74045B18B63DCA009753FE /* SystemConfiguration.framework */,
 				8BAC8EA618B0F2BE00F68A62 /* UIKit.framework */,
 				145FB1896B20B0EF192E7943 /* libPods-CAPUBBS.a */,
+				E978B9EA1D9CAB6D000BE141 /* NotificationCenter.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -935,6 +978,18 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		E978B9EC1D9CAB6D000BE141 /* CAPUBBS TodayExtension */ = {
+			isa = PBXGroup;
+			children = (
+				E978B9FB1D9CAB7C000BE141 /* CAPUBBS TodayExtension.entitlements */,
+				E978B9ED1D9CAB6D000BE141 /* TodayViewController.h */,
+				E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */,
+				E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */,
+				E978B9F31D9CAB6D000BE141 /* Info.plist */,
+			);
+			path = "CAPUBBS TodayExtension";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -948,10 +1003,12 @@
 				8BAC8E9D18B0F2BE00F68A62 /* Resources */,
 				E2EE5ECD043431127B6E7F05 /* 📦 Embed Pods Frameworks */,
 				EABEA66B7F62E01B4AE04B2C /* 📦 Copy Pods Resources */,
+				E978B9FA1D9CAB6D000BE141 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E978B9F51D9CAB6D000BE141 /* PBXTargetDependency */,
 			);
 			name = CAPUBBS;
 			productName = CAPUBBS;
@@ -976,6 +1033,23 @@
 			productReference = 8BAC8EC318B0F2BE00F68A62 /* CAPUBBSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		E978B9E81D9CAB6D000BE141 /* CAPUBBS TodayExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E978B9F91D9CAB6D000BE141 /* Build configuration list for PBXNativeTarget "CAPUBBS TodayExtension" */;
+			buildPhases = (
+				E978B9E51D9CAB6D000BE141 /* Sources */,
+				E978B9E61D9CAB6D000BE141 /* Frameworks */,
+				E978B9E71D9CAB6D000BE141 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CAPUBBS TodayExtension";
+			productName = "CAPUBBS TodayExtension";
+			productReference = E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -999,6 +1073,16 @@
 					8BAC8EC218B0F2BE00F68A62 = {
 						TestTargetID = 8BAC8E9E18B0F2BE00F68A62;
 					};
+					E978B9E81D9CAB6D000BE141 = {
+						CreatedOnToolsVersion = 8.0;
+						DevelopmentTeam = 674549EE7Z;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
 				};
 			};
 			buildConfigurationList = 8BAC8E9A18B0F2BE00F68A62 /* Build configuration list for PBXProject "CAPUBBS" */;
@@ -1016,6 +1100,7 @@
 			projectRoot = "";
 			targets = (
 				8BAC8E9E18B0F2BE00F68A62 /* CAPUBBS */,
+				E978B9E81D9CAB6D000BE141 /* CAPUBBS TodayExtension */,
 				8BAC8EC218B0F2BE00F68A62 /* CAPUBBSTests */,
 			);
 		};
@@ -1212,6 +1297,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E978B9E71D9CAB6D000BE141 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E978B9F21D9CAB6D000BE141 /* MainInterface.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -1319,6 +1412,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E978B9E51D9CAB6D000BE141 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E978B9EF1D9CAB6D000BE141 /* TodayViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1326,6 +1427,11 @@
 			isa = PBXTargetDependency;
 			target = 8BAC8E9E18B0F2BE00F68A62 /* CAPUBBS */;
 			targetProxy = 8BAC8EC818B0F2BE00F68A62 /* PBXContainerItemProxy */;
+		};
+		E978B9F51D9CAB6D000BE141 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E978B9E81D9CAB6D000BE141 /* CAPUBBS TodayExtension */;
+			targetProxy = E978B9F41D9CAB6D000BE141 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1354,6 +1460,14 @@
 				8BA16F1718B766B600B944DF /* zh-Hans */,
 			);
 			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E978B9F11D9CAB6D000BE141 /* Base */,
+			);
+			name = MainInterface.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -1545,6 +1659,49 @@
 			};
 			name = Release;
 		};
+		E978B9F71D9CAB6D000BE141 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CODE_SIGN_ENTITLEMENTS = "CAPUBBS TodayExtension/CAPUBBS TodayExtension.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 674549EE7Z;
+				INFOPLIST_FILE = "CAPUBBS TodayExtension/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.CAPUBBS.CAPUBBS-TodayExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		E978B9F81D9CAB6D000BE141 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CODE_SIGN_ENTITLEMENTS = "CAPUBBS TodayExtension/CAPUBBS TodayExtension.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 674549EE7Z;
+				INFOPLIST_FILE = "CAPUBBS TodayExtension/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.CAPUBBS.CAPUBBS-TodayExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1574,6 +1731,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		E978B9F91D9CAB6D000BE141 /* Build configuration list for PBXNativeTarget "CAPUBBS TodayExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E978B9F71D9CAB6D000BE141 /* Debug */,
+				E978B9F81D9CAB6D000BE141 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
