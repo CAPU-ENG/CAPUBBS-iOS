@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "ActionPerformer.h"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate> {
     ActionPerformer *performer;

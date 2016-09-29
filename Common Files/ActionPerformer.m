@@ -10,6 +10,7 @@
 #import "AFNetworking.h"
 #import <CommonCrypto/CommonCrypto.h> // MD5
 #import "sys/utsname.h" // 设备型号
+#import "CommonDefinitions.h"
 
 @implementation ActionPerformer
 
@@ -38,7 +39,7 @@
         if (![responseObject parse]) {
             block(nil, [responseObject parserError]);
             NSLog(@"%@", [responseObject parserError]);
-            [[[UIAlertView alloc] initWithTitle:@"加载失败" message:@"内容解析出现异常\n请使用网页版查看" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert" object:nil userInfo:@{@"title": @"加载失败", @"message": @"内容解析出现异常\n请使用网页版查看"}];
         }else {
             block([NSArray arrayWithArray:finalData], nil);
         }
@@ -92,7 +93,7 @@
 + (BOOL)checkLogin:(BOOL)showAlert {
     if ([TOKEN length] == 0) { // 判断是否登录的方法为判断token是否为空
         if (showAlert) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"尚未登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert" object:nil userInfo:@{@"title": @"错误", @"message": @"尚未登录"}];
         }
         return NO;
     }else {
@@ -116,7 +117,7 @@
         NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkPass"]];
         NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
         if ((int)time > 3600 * 24) { // 每天提醒一次
-            [[[UIAlertView alloc] initWithTitle:@"提醒" message:@"您的密码过于简单！\n建议在个人信息中修改密码" delegate:nil cancelButtonTitle:@"今日不再提醒" otherButtonTitles: nil] show];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert" object:nil userInfo:@{@"title": @"提醒", @"message": @"您的密码过于简单！\n建议在个人信息中修改密码", @"cancelTitle": @"今日不再提醒"}];
             [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkPass"];
         }
     }

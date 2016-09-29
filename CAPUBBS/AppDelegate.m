@@ -63,12 +63,18 @@
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
     [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [self performSelectorInBackground:@selector(transport) withObject:nil];
     performer = [[ActionPerformer alloc] init];
     if (IOS >= 9.0) {
         [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     }
     return YES;
+}
+
+- (void)showAlert:(NSNotification *)noti {
+    NSDictionary *dict = noti.userInfo;
+    [[[UIAlertView alloc] initWithTitle:dict[@"title"] message:dict[@"message"] delegate:nil cancelButtonTitle:(dict[@"cancelTitle"] ? : @"好") otherButtonTitles:nil, nil] show];
 }
 
 - (BOOL)application:(nonnull UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray * __nullable))restorationHandler {

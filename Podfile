@@ -5,3 +5,8 @@ target 'CAPUBBS' do
     pod 'MBProgressHUD', '~> 0.9.2'
     pod 'FLAnimatedImage'
 end
+
+target 'CAPUBBS TodayExtension' do
+    pod 'AFNetworking'
+    pod 'FLAnimatedImage'
+end
