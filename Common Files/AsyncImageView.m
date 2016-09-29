@@ -63,7 +63,7 @@
 }
 
 - (void)_setGifWithData:(NSData *)data {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_global_default_async(^{
         FLAnimatedImage *image = [FLAnimatedImage animatedImageWithGIFData:data];
         dispatch_async(dispatch_get_main_queue(), ^{
             [self setAnimatedImage:image];

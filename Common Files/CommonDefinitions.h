@@ -62,4 +62,7 @@ block();\
 dispatch_async(dispatch_get_main_queue(), block);\
 }
 
+#define dispatch_global_default_async(block)\
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+
 #endif /* CommonDefinitions_h */

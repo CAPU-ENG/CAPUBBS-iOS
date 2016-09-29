@@ -20,7 +20,6 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
-    [self transferDefaults];
     
     [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
     [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
@@ -53,10 +52,6 @@
                           @(MAX_HOT_NUM / 2), @"hotNum",
                           @"2016-01-01", @"checkUpdate",
                           @"2016-01-01", @"checkPass",
-                          @"www.chexie.net", @"URL",
-                          @"", @"token",
-                          @"", @"userInfo",
-                          @(NO), @"iconOnlyInWifi",
                           nil];
     NSDictionary *group = [NSDictionary dictionaryWithObjectsAndKeys:
                            @"www.chexie.net", @"URL",
@@ -66,11 +61,12 @@
                            @(NO), @"simpleView",
                            nil];
     [DEFAULTS registerDefaults:dict];
-    [DEFAULTS removeObjectForKey:@"token"]; // 打开软件后清空登录状态
     [DEFAULTS removeObjectForKey:@"enterLogin"];
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
     [GROUP_DEFAULTS registerDefaults:group];
-    
+    [GROUP_DEFAULTS removeObjectForKey:@"token"]; // 打开软件后清空登录状态
+    [self transferDefaults];
+
     [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
@@ -90,7 +86,7 @@
             id obj = [standard objectForKey:key];
             if (obj) {
                 [appGroup setObject:obj forKey:key];
-                // [standard removeObjectForKey:key];
+                [standard removeObjectForKey:key];
             }
         }
         [appGroup setObject:@(YES) forKey:@"activated"];
@@ -174,36 +170,71 @@
 }
 
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
-    UIViewController *view = self.window.rootViewController;
-    while ([view presentedViewController] != nil) {
-        view = [view presentedViewController];
-    }
     UINavigationController *navi;
     if ([shortcutItem.type isEqualToString:@"Hot"]) {
-        ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
-        dest.bid = @"hot";
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        [navi setToolbarHidden:NO];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
     }else if ([shortcutItem.type isEqualToString:@"Collection"]) {
-        CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        [self _handleUrlRequestWithDictionary:@{@"open": @"collection"}];
     }else if ([shortcutItem.type isEqualToString:@"Message"]) {
-        MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        [navi setToolbarHidden:NO];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        [self _handleUrlRequestWithDictionary:@{@"open": @"message"}];
     }else if ([shortcutItem.type isEqualToString:@"Compose"]) {
-        ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        navi.modalPresentationStyle = UIModalPresentationFormSheet;
+        [self _handleUrlRequestWithDictionary:@{@"open": @"compose"}];
     }
-    [view presentViewController:navi animated:YES completion:nil];
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+    NSString *urlString = [url absoluteString];
+    urlString = [urlString substringFromIndex:[@"capubbs://" length]];
+    NSArray *paramsArray = [urlString componentsSeparatedByString:@"&"];
+    NSMutableDictionary *params = [NSMutableDictionary dictionary];
+    for (NSString *param in paramsArray) {
+        NSArray *tempArray = [param componentsSeparatedByString:@"="];
+        if (tempArray.count != 2) {
+            NSLog(@"Handle Url error - wrong parameter");
+            return NO;
+        }
+        [params addEntriesFromDictionary:@{tempArray[0] : tempArray[1]}];
+    }
+    if (params.allKeys.count > 0) {
+        [self _handleUrlRequestWithDictionary:params];
+    }
+    return YES;
+}
+
+- (void)_handleUrlRequestWithDictionary:(NSDictionary *)dict {
+    NSString *open = dict[@"open"];
+    if (open) {
+        UIViewController *view = self.window.rootViewController;
+        while ([view presentedViewController] != nil) {
+            view = [view presentedViewController];
+        }
+        UINavigationController *navi;
+        if ([open isEqualToString:@"message"]) {
+            MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
+            
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            [navi setToolbarHidden:NO];
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        } else if ([open isEqualToString:@"hot"]) {
+            ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
+            dest.bid = @"hot";
+            
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            [navi setToolbarHidden:NO];
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        } else if ([open isEqualToString:@"collection"]) {
+            CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
+            
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        } else if ([open isEqualToString:@"compose"]) {
+            ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
+            
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFormSheet;
+        }
+        [view presentViewController:navi animated:YES completion:nil];
+    }
 }
 
 - (void)back {
@@ -215,7 +246,9 @@
 }
 
 - (void)collectionChanged { // 后台更新系统搜索内容
-    [self performSelectorInBackground:@selector(updateCollection) withObject:nil];
+    dispatch_global_default_async(^{
+        [self updateCollection];
+    });
 }
 
 - (void)updateCollection {

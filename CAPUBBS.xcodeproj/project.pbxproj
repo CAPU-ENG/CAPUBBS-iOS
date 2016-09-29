@@ -209,6 +209,7 @@
 		01F38EB71AE1516C007F25D0 /* ChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01F38EB61AE1516C007F25D0 /* ChatViewController.m */; };
 		01F38EBA1AE1533C007F25D0 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01F38EB91AE1533C007F25D0 /* MessageCell.m */; };
 		01F38EBD1AE1537F007F25D0 /* ChatCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01F38EBC1AE1537F007F25D0 /* ChatCell.m */; };
+		01F471491D9CFE06009221F6 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 01F471481D9CFE06009221F6 /* Images.xcassets */; };
 		01F79C891D9CAD44000594F1 /* ActionPerformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EE418B100B100F68A62 /* ActionPerformer.m */; };
 		01F79C8A1D9CAD47000594F1 /* AsyncImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0100A0D11C0C562C00A1282D /* AsyncImageView.m */; };
 		01F79C8B1D9CAD49000594F1 /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 014C43081BFD6AF000A6E352 /* Reachability.m */; };
@@ -509,6 +510,7 @@
 		01F38EB91AE1533C007F25D0 /* MessageCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MessageCell.m; sourceTree = "<group>"; };
 		01F38EBB1AE1537F007F25D0 /* ChatCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChatCell.h; sourceTree = "<group>"; };
 		01F38EBC1AE1537F007F25D0 /* ChatCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChatCell.m; sourceTree = "<group>"; };
+		01F471481D9CFE06009221F6 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		01F79C8D1D9CAEAC000594F1 /* CommonDefinitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommonDefinitions.h; sourceTree = "<group>"; };
 		145FB1896B20B0EF192E7943 /* libPods-CAPUBBS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CAPUBBS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1B0C63EAD0154D70BC57855F /* libPods-CAPUBBS TodayExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CAPUBBS TodayExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1008,6 +1010,7 @@
 				E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */,
 				E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */,
 				E978B9F31D9CAB6D000BE141 /* Info.plist */,
+				01F471481D9CFE06009221F6 /* Images.xcassets */,
 			);
 			path = "CAPUBBS TodayExtension";
 			sourceTree = "<group>";
@@ -1327,6 +1330,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E978B9F21D9CAB6D000BE141 /* MainInterface.storyboard in Resources */,
+				01F471491D9CFE06009221F6 /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1746,7 +1750,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 674549EE7Z;
 				INFOPLIST_FILE = "CAPUBBS TodayExtension/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.CAPUBBS.CAPUBBS-TodayExtension";
@@ -1769,7 +1773,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 674549EE7Z;
 				INFOPLIST_FILE = "CAPUBBS TodayExtension/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.CAPUBBS.CAPUBBS-TodayExtension";
