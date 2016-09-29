@@ -167,43 +167,49 @@
 }
 
 - (void)userChanged {
-    NSLog(@"Refresh User State");
-    NSString *username = UID;
-    if (username.length == 0) {
-        [self.iconUser setImage:PLACEHOLDER];
-        [self.buttonAddNews setHidden:YES];
-    }else {
-        if (userInfoRefreshing == NO) {
-            userInfoRefreshing = YES;
-            [performerUser performActionWithDictionary:@{@"uid": UID} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
-                if (!err && result.count > 0) {
-                    [DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:result[0]] forKey:@"userInfo"];
-                    NSMutableArray *data = [NSMutableArray arrayWithArray:[DEFAULTS objectForKey:@"ID"]];
-                    for (int i = 0; i < data.count; i++) {
-                        NSMutableDictionary *dict = [data[i] mutableCopy];
-                        if ([dict[@"id"] isEqualToString:result[0][@"username"]]) {
-                            [dict setObject:result[0][@"icon"] forKey:@"icon"];
-                            [data replaceObjectAtIndex:i withObject:dict];
-                            [DEFAULTS setObject:data forKey:@"ID"];
-                            break;
+    dispatch_main_async_safe(^{
+        NSLog(@"Refresh User State");
+        NSString *username = UID;
+        if (username.length == 0) {
+            [self.iconUser setImage:PLACEHOLDER];
+            [self.buttonAddNews setHidden:YES];
+        }else {
+            if (userInfoRefreshing == NO) {
+                userInfoRefreshing = YES;
+                [performerUser performActionWithDictionary:@{@"uid": UID} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+                    if (!err && result.count > 0) {
+                        [GROUP_DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:result[0]] forKey:@"userInfo"];
+                        NSMutableArray *data = [NSMutableArray arrayWithArray:[DEFAULTS objectForKey:@"ID"]];
+                        for (int i = 0; i < data.count; i++) {
+                            NSMutableDictionary *dict = [data[i] mutableCopy];
+                            if ([dict[@"id"] isEqualToString:result[0][@"username"]]) {
+                                [dict setObject:result[0][@"icon"] forKey:@"icon"];
+                                [data replaceObjectAtIndex:i withObject:dict];
+                                [DEFAULTS setObject:data forKey:@"ID"];
+                                break;
+                            }
                         }
+                        dispatch_main_async_safe(^{
+                            [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
+                        });
                     }
-                    [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
-                }
-                [self.buttonAddNews setHidden:([ActionPerformer checkRight] < 1)];
-                userInfoRefreshing = NO;
-            }];
+                    [self.buttonAddNews setHidden:([ActionPerformer checkRight] < 1)];
+                    userInfoRefreshing = NO;
+                }];
+            }
         }
-    }
-    [self setLoginView];
+        [self setLoginView];
+    });
 }
 
 - (void)refreshIcon {
-    if (![USERINFO isEqual:@""]) {
-        [self.iconUser setUrl:[USERINFO objectForKey:@"icon"]];
-    }else {
-        [self.iconUser setImage:PLACEHOLDER];
-    }
+    dispatch_main_async_safe(^{
+        if (![USERINFO isEqual:@""]) {
+            [self.iconUser setUrl:[USERINFO objectForKey:@"icon"]];
+        }else {
+            [self.iconUser setImage:PLACEHOLDER];
+        }
+    });
 }
 
 - (void)setLoginView {
@@ -293,12 +299,14 @@
             [self getInformation];
             return ;
         }else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-            [DEFAULTS setObject:uid forKey:@"uid"];
-            [DEFAULTS setObject:pass forKey:@"pass"];
-            [DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+            [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
+            [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
+            [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
             [LoginViewController updateIDSaves];
             NSLog(@"Login - %@", uid);
-            [NOTIFICATION postNotificationName:@"userChanged" object:nil];
+            dispatch_main_async_safe(^{
+                [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+            });
             [ActionPerformer checkPasswordLength];
         }else {
             [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];

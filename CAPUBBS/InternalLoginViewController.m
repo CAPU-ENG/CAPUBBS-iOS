@@ -103,12 +103,14 @@
                 [performerLogout performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
                 NSLog(@"Logout - %@", UID);
             }
-            [DEFAULTS setObject:uid forKey:@"uid"];
-            [DEFAULTS setObject:pass forKey:@"pass"];
-            [DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+            [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
+            [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
+            [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
             [LoginViewController updateIDSaves];
             NSLog(@"Login - %@", uid);
-            [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+            dispatch_main_async_safe(^{
+                [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+            });
             [ActionPerformer checkPasswordLength];
             shouldPop = YES;
             [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:[NSNumber numberWithBool:YES] afterDelay:0.5];

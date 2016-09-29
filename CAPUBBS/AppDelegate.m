@@ -20,6 +20,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    [self transferDefaults];
+    
     [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
     [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
     [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
@@ -35,32 +37,40 @@
     [[UITableViewCell appearance] setBackgroundColor:[UIColor clearColor]];
 
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-//                          [NSNumber numberWithInt:2], @"proxy",
+//                          @(2), @"proxy",
 //                          @"school", @"proxyPosition",
-                          [NSNumber numberWithBool:YES], @"autoLogin",
-                          [NSNumber numberWithBool:YES], @"enterLogin",
-                          [NSNumber numberWithBool:NO], @"wakeLogin",
-                          [NSNumber numberWithBool:YES], @"vibrate",
-                          [NSNumber numberWithBool:NO], @"picOnlyInWifi",
-                          [NSNumber numberWithBool:NO], @"iconOnlyInWifi",
-                          [NSNumber numberWithBool:YES], @"autoSave",
-                          [NSNumber numberWithBool:YES], @"oppositeSwipe",
-                          [NSNumber numberWithBool:NO], @"simpleView",
-                          [NSNumber numberWithInt:1], @"toolbarEditor",
-                          [NSNumber numberWithInt:1], @"viewCollectionType",
-                          [NSNumber numberWithInt:100], @"textSize",
-                          [NSNumber numberWithInt:MAX_ID_NUM / 2], @"IDNum",
-                          [NSNumber numberWithInt:MAX_HOT_NUM / 2], @"hotNum",
+                          @(YES), @"autoLogin",
+                          @(YES), @"enterLogin",
+                          @(NO), @"wakeLogin",
+                          @(YES), @"vibrate",
+                          @(NO), @"picOnlyInWifi",
+                          @(YES), @"autoSave",
+                          @(YES), @"oppositeSwipe",
+                          @(1), @"toolbarEditor",
+                          @(1), @"viewCollectionType",
+                          @(100), @"textSize",
+                          @(MAX_ID_NUM / 2), @"IDNum",
+                          @(MAX_HOT_NUM / 2), @"hotNum",
                           @"2016-01-01", @"checkUpdate",
                           @"2016-01-01", @"checkPass",
                           @"www.chexie.net", @"URL",
                           @"", @"token",
                           @"", @"userInfo",
+                          @(NO), @"iconOnlyInWifi",
                           nil];
+    NSDictionary *group = [NSDictionary dictionaryWithObjectsAndKeys:
+                           @"www.chexie.net", @"URL",
+                           @"", @"token",
+                           @"", @"userInfo",
+                           @(NO), @"iconOnlyInWifi",
+                           @(NO), @"simpleView",
+                           nil];
     [DEFAULTS registerDefaults:dict];
     [DEFAULTS removeObjectForKey:@"token"]; // 打开软件后清空登录状态
     [DEFAULTS removeObjectForKey:@"enterLogin"];
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
+    [GROUP_DEFAULTS registerDefaults:group];
+    
     [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
@@ -70,6 +80,22 @@
         [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     }
     return YES;
+}
+
+- (void)transferDefaults {
+    NSUserDefaults *appGroup = [[NSUserDefaults alloc] initWithSuiteName:APP_GROUP_IDENTIFIER];
+    if ([[appGroup objectForKey:@"activated"] boolValue] == NO) {
+        NSUserDefaults *standard = [NSUserDefaults standardUserDefaults];
+        for (NSString *key in @[@"URL", @"uid", @"pass", @"token", @"userInfo", @"iconOnlyInWifi", @"simpleView"]) {
+            id obj = [standard objectForKey:key];
+            if (obj) {
+                [appGroup setObject:obj forKey:key];
+                // [standard removeObjectForKey:key];
+            }
+        }
+        [appGroup setObject:@(YES) forKey:@"activated"];
+        [appGroup synchronize];
+    }
 }
 
 - (void)showAlert:(NSNotification *)noti {
@@ -299,13 +325,15 @@
             [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
                 [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
                 if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-                    [DEFAULTS removeObjectForKey:@"token"];
+                    [GROUP_DEFAULTS removeObjectForKey:@"token"];
                     [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
                 }else {
-                    [DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+                    [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                     NSLog(@"AutoLog Completed - %@", uid);
                 }
-                [NOTIFICATION postNotificationName:@"userChanged" object:nil];
+                dispatch_main_async_safe(^{
+                    [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+                });
             }];
         }
     }

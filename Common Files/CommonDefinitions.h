@@ -9,7 +9,9 @@
 #ifndef CommonDefinitions_h
 #define CommonDefinitions_h
 
-#define REPORT_EMAIL @[@"fa_pku@sina.com", @"beidachexie@163.com"]
+#define APP_GROUP_IDENTIFIER @"group.net.chexie.capubbs"
+
+#define REPORT_EMAIL @[@"beidachexie@163.com"]
 #define FEEDBACK_EMAIL @[@"goodman.capu@qq.com", @"beidachexie@163.com"]
 #define COPYRIGHT @"Copyright®  2001 - 2016\nPowered by：CAPU ver 3.0"
 #define EULA @"本论坛作为北京大学自行车协会内部以及自行车爱好者之间交流平台，不欢迎任何商业广告和无关话题。发言者对自己发表的任何言论、信息负责。"
@@ -17,13 +19,17 @@
 #define NUMBERS @[@"1", @"2", @"3", @"4", @"5", @"6", @"7", @"9", @"28"]
 
 #define NOTIFICATION [NSNotificationCenter defaultCenter]
-#define DEFAULTS [NSUserDefaults standardUserDefaults]
 #define MANAGER [NSFileManager defaultManager]
-#define CHEXIE [DEFAULTS objectForKey:@"URL"]
-#define UID [DEFAULTS objectForKey:@"uid"]
-#define PASS [DEFAULTS objectForKey:@"pass"]
-#define TOKEN [DEFAULTS objectForKey:@"token"]
-#define USERINFO [DEFAULTS objectForKey:@"userInfo"]
+
+#define DEFAULTS [NSUserDefaults standardUserDefaults]
+#define GROUP_DEFAULTS [[NSUserDefaults alloc] initWithSuiteName:APP_GROUP_IDENTIFIER]
+#define CHEXIE [GROUP_DEFAULTS objectForKey:@"URL"]
+#define UID [GROUP_DEFAULTS objectForKey:@"uid"]
+#define PASS [GROUP_DEFAULTS objectForKey:@"pass"]
+#define TOKEN [GROUP_DEFAULTS objectForKey:@"token"]
+#define USERINFO [GROUP_DEFAULTS objectForKey:@"userInfo"]
+#define SIMPLE_VIEW [[GROUP_DEFAULTS objectForKey:@"simpleView"] boolValue]
+
 #define BLUE [UIColor colorWithRed:45.0/255 green:144.0/255 blue:220.0/255 alpha:1.0]
 #define GREEN_DARK [UIColor colorWithRed:115.0/255 green:170.0/255 blue:135.0/255 alpha:1.0]
 #define GREEN_LIGHT [UIColor colorWithRed:154.0/255 green:191.0/255 blue:165.0/255 alpha:1.0]

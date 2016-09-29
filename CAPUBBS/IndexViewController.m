@@ -58,16 +58,18 @@
 }
 
 - (void)changeNoti {
-    if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""] && [[USERINFO objectForKey:@"newmsg"] integerValue] > 0) {
-        self.buttonUser.image = [UIImage imageNamed:@"user-noti"];
-        if (shouldVibrate && [[DEFAULTS objectForKey:@"vibrate"] boolValue] == YES) {
-            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
-            NSLog(@"Vibreate");
+    dispatch_main_async_safe(^{
+        if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""] && [[USERINFO objectForKey:@"newmsg"] integerValue] > 0) {
+            self.buttonUser.image = [UIImage imageNamed:@"user-noti"];
+            if (shouldVibrate && [[DEFAULTS objectForKey:@"vibrate"] boolValue] == YES) {
+                AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+                NSLog(@"Vibreate");
+            }
+            shouldVibrate = NO;
+        }else {
+            self.buttonUser.image = [UIImage imageNamed:@"user"];
         }
-        shouldVibrate = NO;
-    }else {
-        self.buttonUser.image = [UIImage imageNamed:@"user"];
-    }
+    });
 }
 
 // In a storyboard-based application, you will often want to do a little preparation before navigation
@@ -147,7 +149,7 @@
 }
 
 - (IBAction)smart:(id)sender {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"快速访问" message:[NSString stringWithFormat: @"输入带有帖子链接的文本进行快速访问\n\n高级功能\n输入要连接的论坛地址\n目前地址：%@\n链接会被自动判别", [DEFAULTS objectForKey:@"URL"]] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"快速访问" message:[NSString stringWithFormat: @"输入带有帖子链接的文本进行快速访问\n\n高级功能\n输入要连接的论坛地址\n目前地址：%@\n链接会被自动判别", CHEXIE] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
     alert.alertViewStyle = UIAlertViewStylePlainTextInput;
     [alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeURL;
     [alert textFieldAtIndex:0].text = @"www.chexie.net";
@@ -164,7 +166,7 @@
         return;
     }
     if ([alertView.title isEqualToString:@"快速访问"]) {
-        NSString *oriURL = [DEFAULTS objectForKey:@"URL"];
+        NSString *oriURL = CHEXIE;
         NSString *text = [alertView textFieldAtIndex:0].text;
         
         if ([text containsString:@"filesize"]) {
@@ -211,10 +213,12 @@
             }else {
                 hud.labelText = @"设置成功";
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                [DEFAULTS setObject:text forKey:@"URL"];
+                [GROUP_DEFAULTS setObject:text forKey:@"URL"];
                 if (![text isEqualToString:oriURL]) {
-                    [DEFAULTS removeObjectForKey:@"token"];
-                    [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+                    [GROUP_DEFAULTS removeObjectForKey:@"token"];
+                    dispatch_main_async_safe(^{
+                        [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+                    });
                 }
             }
             [hud hide:YES afterDelay:0.5];

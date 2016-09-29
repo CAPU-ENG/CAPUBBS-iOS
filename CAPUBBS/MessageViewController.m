@@ -199,7 +199,9 @@
         [dict setObject:msgNum forKey:@"newmsg"];
         [DEFAULTS setObject:dict forKey:@"userInfo"];
     }
-    [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
+    dispatch_main_async_safe(^{
+        [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
+    });
 }
 
 - (IBAction)previous:(id)sender {

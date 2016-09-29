@@ -94,7 +94,7 @@
     // 一定要在主线程上刷新图片 否则软件崩溃
     if (data.length > 0 && ![oldInfo hasPrefix:@"loading"]) { // 缓存存在的话直接加载缓存
         dispatch_main_async_safe(^{
-            if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == YES) {
+            if (SIMPLE_VIEW == YES) {
                 [self setImage:[UIImage imageWithData:data]];
             }else {
                 int imageType = [AsyncImageView fileType:data];
@@ -130,7 +130,7 @@
 - (void)startLoadingImage {
     NSString *imageTag = url;
     NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
-    if (!([[DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue] && IS_CELLULAR)) {
+    if (!([[GROUP_DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue] && IS_CELLULAR)) {
         // NSLog(@"Load Img - %@", imageTag);
         NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:url]];
         UIImage *image = [UIImage imageWithData:imageData];

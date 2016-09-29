@@ -29,7 +29,7 @@
     }else {
         self.navigationItem.rightBarButtonItems = @[self.buttonSearch];
         
-        if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO) {
+        if (SIMPLE_VIEW == NO) {
             AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
             [backgroundView setBlurredImage:[UIImage imageNamed:[@"b" stringByAppendingString:self.bid]] animated:NO];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
