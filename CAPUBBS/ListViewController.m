@@ -521,7 +521,6 @@
         dest.tid = [one objectForKey:@"tid"];
         dest.bid = [one objectForKey:@"bid"];
         if ([self.bid isEqualToString: @"hot"]) {
-            dest.bid = [one objectForKey:@"bid"];
             dest.floor = [one objectForKey:@"pid"];
             dest.willScroll = YES;
         }

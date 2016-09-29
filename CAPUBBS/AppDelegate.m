@@ -102,8 +102,6 @@
 - (BOOL)application:(nonnull UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray * __nullable))restorationHandler {
     NSString *identifier = userActivity.userInfo[@"kCSSearchableItemActivityIdentifier"];
     NSArray *info = [identifier componentsSeparatedByString:@"\n"];
-    UIViewController *view;
-    UINavigationController *navi;
     NSDictionary *dict;
     if (userActivity.webpageURL.absoluteString.length > 0) {
         dict = [ContentViewController getLink:userActivity.webpageURL.absoluteString];
@@ -112,58 +110,31 @@
     BOOL continueFronCollectionSearch = ([info[0] isEqualToString:@"collection"]);
     BOOL continueFromHandoff = (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]);
     if (continueFronCollectionSearch || continueFromHandoff) {
-        view = self.window.rootViewController;
-        while ([view presentedViewController] != nil) {
-            view = [view presentedViewController];
-        }
-        
-        ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
+        NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"post"}];
         if (continueFronCollectionSearch) {
-            dest.bid = info[1];
-            dest.tid = info[2];
-            dest.title = info[3];
-        }else if (continueFromHandoff) {
-            dest.bid = dict[@"bid"];
-            dest.tid = dict[@"tid"];
-            dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
-            dest.exactFloor = dict[@"floor"];
-            dest.title = userActivity.title;
+            naviDict[@"bid"] = info[1];
+            naviDict[@"tid"] = info[2];
+            naviDict[@"naviTitle"] = info[3];
+        } else if (continueFromHandoff) {
+            naviDict[@"bid"] = dict[@"bid"];
+            naviDict[@"tid"] = dict[@"tid"];
+            naviDict[@"page"] = dict[@"p"];
+            naviDict[@"floor"] = dict[@"floor"];
+            naviDict[@"naviTitle"] = userActivity.title;
         }
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-        [view presentViewController:navi animated:YES completion:nil];
+        [self _handleUrlRequestWithDictionary:naviDict];
     }
     
     dict = userActivity.userInfo;
     if ([dict[@"type"] isEqualToString:@"compose"]) {
-        view = self.window.rootViewController;
-        while ([view presentedViewController] != nil) {
-            view = [view presentedViewController];
-        }
-        
         if (userActivity.webpageURL.absoluteString.length == 0 && [dict[@"bid"] length] > 0) {
-            ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
-            dest.bid = dict[@"bid"];
-            
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
-            [navi setToolbarHidden:NO];
-            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            [view presentViewController:navi animated:YES completion:nil];
-            view = [view presentedViewController];
+            [self _handleUrlRequestWithDictionary:@{@"open": @"list", @"bid": dict[@"bid"]}];
         }
         
-        ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
-        dest.bid = dict[@"bid"];
-        dest.tid = dict[@"tid"];
-        dest.floor = dict[@"floor"];
-        dest.defaultTitle = dict[@"title"];
-        dest.defaultContent = dict[@"content"];
-        dest.title = userActivity.title;
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        navi.modalPresentationStyle = UIModalPresentationFormSheet;
-        [view presentViewController:navi animated:YES completion:nil];
+        NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
+        [naviDict addEntriesFromDictionary:dict];
+        naviDict[@"naviTitle"] = userActivity.title;
+        [self _handleUrlRequestWithDictionary:naviDict];
     }
     
     return YES;
@@ -211,26 +182,61 @@
         if ([open isEqualToString:@"message"]) {
             MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
             
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
             navi = [[UINavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
-            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
         } else if ([open isEqualToString:@"hot"]) {
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = @"hot";
             
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
             navi = [[UINavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
-            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
         } else if ([open isEqualToString:@"collection"]) {
             CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
             
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
         } else if ([open isEqualToString:@"compose"]) {
             ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
             
+            if (dict[@"bid"] && dict[@"pid"]) {
+                dest.bid = dict[@"bid"];
+                dest.tid = dict[@"tid"];
+                dest.floor = dict[@"floor"];
+                dest.defaultTitle = dict[@"title"];
+                dest.defaultContent = dict[@"content"];
+                dest.title = dict[@"naviTitle"];
+            }
+            
             navi = [[UINavigationController alloc] initWithRootViewController:dest];
             navi.modalPresentationStyle = UIModalPresentationFormSheet;
+        } else if ([open isEqualToString:@"list"]) {
+            ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
+            dest.bid = dict[@"bid"];
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            [navi setToolbarHidden:NO];
+        } else if ([open isEqualToString:@"post"]) {
+            ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
+            
+            dest.bid = dict[@"bid"];
+            dest.tid = dict[@"tid"];
+            if (dict[@"page"]) {
+                dest.floor = [NSString stringWithFormat:@"%d", [dict[@"page"] intValue] * 12];
+            }
+            if (dict[@"floor"]) {
+                dest.exactFloor = dict[@"floor"];
+            }
+            if (dict[@"naviTitle"]) {
+                dest.title = dict[@"naviTitle"];
+            } else {
+                dest.title = @"加载中";
+            }
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
         }
         [view presentViewController:navi animated:YES completion:nil];
     }

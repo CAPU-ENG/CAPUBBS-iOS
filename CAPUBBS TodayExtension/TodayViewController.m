@@ -236,7 +236,9 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    [[self extensionContext] openURL:[NSURL URLWithString:@"capubbs://open=hot"] completionHandler:nil];
+    NSDictionary *dict = hotPosts[indexPath.row];
+    NSString *urlString = [NSString stringWithFormat:@"capubbs://open=post&bid=%@&tid=%@&page=%d", dict[@"bid"], dict[@"tid"], [dict[@"pid"] intValue] / 12];
+    [[self extensionContext] openURL:[NSURL URLWithString:urlString] completionHandler:nil];
 }
 
 @end
