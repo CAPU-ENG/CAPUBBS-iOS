@@ -529,6 +529,7 @@
 		8BD9862519CF052D0006ECEC /* LzlViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = LzlViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		A43A7AEF2DA29044B84A814A /* Pods-CAPUBBS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS/Pods-CAPUBBS.debug.xcconfig"; sourceTree = "<group>"; };
 		DCA2A405C66F0233505B0580 /* Pods-CAPUBBS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS.release.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS/Pods-CAPUBBS.release.xcconfig"; sourceTree = "<group>"; };
+		E978B9E31D9CA5F2000BE141 /* CAPUBBS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CAPUBBS.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -824,6 +825,7 @@
 		8BAC8EA818B0F2BE00F68A62 /* CAPUBBS */ = {
 			isa = PBXGroup;
 			children = (
+				E978B9E31D9CA5F2000BE141 /* CAPUBBS.entitlements */,
 				8BAC8EB718B0F2BE00F68A62 /* Main.storyboard */,
 				017FE5F11A9DC2E5001BDD15 /* Launch Screen.xib */,
 				8BAC8EB118B0F2BE00F68A62 /* AppDelegate.h */,
@@ -984,8 +986,11 @@
 				ORGANIZATIONNAME = "熊典";
 				TargetAttributes = {
 					8BAC8E9E18B0F2BE00F68A62 = {
-						DevelopmentTeam = 2ZC6KG8JJ9;
+						DevelopmentTeam = 674549EE7Z;
 						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
 							com.apple.InAppPurchase = {
 								enabled = 0;
 							};
@@ -1458,8 +1463,10 @@
 			baseConfigurationReference = A43A7AEF2DA29044B84A814A /* Pods-CAPUBBS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CAPUBBS/CAPUBBS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CAPUBBS/CAPUBBS-Prefix.pch";
 				INFOPLIST_FILE = "CAPUBBS/CAPUBBS-Info.plist";
@@ -1479,8 +1486,10 @@
 			baseConfigurationReference = DCA2A405C66F0233505B0580 /* Pods-CAPUBBS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CAPUBBS/CAPUBBS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CAPUBBS/CAPUBBS-Prefix.pch";
 				INFOPLIST_FILE = "CAPUBBS/CAPUBBS-Info.plist";
