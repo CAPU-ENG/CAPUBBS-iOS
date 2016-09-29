@@ -218,7 +218,7 @@
 
 - (IBAction)sizeChanged:(UIStepper *)sender {
     [DEFAULTS setObject:[NSNumber numberWithInt:(int)self.stepperSize.value] forKey:@"textSize"];
-    self.defaultSize.text = [NSString stringWithFormat:@"默认字体大小-%d%%", (int)self.stepperSize.value];
+    self.defaultSize.text = [NSString stringWithFormat:@"默认字体大小 - %d%%", (int)self.stepperSize.value];
 }
 
 - (IBAction)simpleViewChanged:(id)sender {
