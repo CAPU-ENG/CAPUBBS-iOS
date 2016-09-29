@@ -11,16 +11,19 @@
 #import "CommonDefinitions.h"
 #import "ActionPerformer.h"
 #import "AsyncImageView.h"
+#import "TodayTableViewCell.h"
 
-#define IOS_9_SMALL_SIZE 120
-#define IOS_9_LARGE_SIZE 250
-#define IOS_10_LARGE_SIZE 250
+#define SMALL_SIZE 110
+#define LARGE_SIZE 209
+#define TEXT_INFO_COLOR [UIColor colorWithWhite:1.0 alpha:1.0]
+#define TEXT_HINT_COLOR [UIColor colorWithWhite:1.0 alpha:0.75]
 
-@interface TodayViewController () <NCWidgetProviding> {
+@interface TodayViewController () <NCWidgetProviding, UITableViewDelegate, UITableViewDataSource> {
     float iOS;
     float height;
     ActionPerformer *performer;
     NSDictionary *userInfo;
+    NSArray *hotPosts;
 }
 
 @property (strong, nonatomic) IBOutlet AsyncImageView *imageIcon;
@@ -30,10 +33,15 @@
 @property (strong, nonatomic) IBOutlet UIButton *buttonMore;
 @property (strong, nonatomic) IBOutlet NSLayoutConstraint *constraintIndicatorWidth;
 @property (strong, nonatomic) IBOutlet NSLayoutConstraint *constraintMoreButtonWidth;
+@property (strong, nonatomic) IBOutlet UITableView *tableView;
 
 @end
 
 @implementation TodayViewController
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -42,8 +50,14 @@
     performer = [ActionPerformer new];
     
     if (iOS < 10.0) {
-        height = IOS_9_SMALL_SIZE;
+        height = [[DEFAULTS objectForKey:@"size"] floatValue];
+        if (height == 0) {
+            height = SMALL_SIZE;
+        }
+        [self _refreshShowMoreButtonTitle];
         [self setPreferredContentSize:CGSizeMake(0, height)];
+        [_labelName setTextColor:TEXT_INFO_COLOR];
+        [_buttonMessages setTitleColor:TEXT_HINT_COLOR forState:UIControlStateNormal];
     } else {
         _constraintMoreButtonWidth.constant = 0;
         [self.extensionContext setWidgetLargestAvailableDisplayMode:NCWidgetDisplayModeExpanded];
@@ -61,7 +75,7 @@
     if (activeDisplayMode == NCWidgetDisplayModeCompact) {
         [self setPreferredContentSize:maxSize];
     } else {
-        [self setPreferredContentSize:CGSizeMake(0, IOS_10_LARGE_SIZE)];
+        [self setPreferredContentSize:CGSizeMake(0, LARGE_SIZE)];
     }
 }
 
@@ -107,12 +121,12 @@
 - (void)refreshUserInfoWithBlock:(void (^)())block {
     void(^failBlock)() = ^() {
         [_imageIcon setImage:PLACEHOLDER];
-        [_labelName setText:@"请在app内登录"];
+        [_labelName setText:@"未登录"];
         [_buttonMessages setTitle:@"点击打开app" forState:UIControlStateNormal];
         userInfo = nil;
     };
     void(^updateInfoBlock)() = ^() {
-        [_imageIcon setUrl:userInfo[@"icon"]];
+        [_imageIcon setUrl:userInfo[@"icon"] withPlaceholder:NO];
         [_labelName setText:userInfo[@"username"]];
         int newMessageNum = [userInfo[@"newmsg"] intValue];
         if (newMessageNum > 0) {
@@ -148,9 +162,25 @@
 }
 
 - (void)refreshHotPostWithBlock:(void (^)())block {
-    dispatch_global_default_async(^{
+    hotPosts = HOTPOSTS;
+    if (hotPosts.count > 0) {
+        [_tableView reloadData];
+    }
+    [performer performActionWithDictionary:@{@"hotnum": @"5"} toURL:@"hot" withBlock:^(NSArray *result, NSError *err) {
+        if (err || result.count == 0) {
+            if (!hotPosts) {
+                dispatch_main_async_safe(^{
+                    TodayTableViewCell *cell = [_tableView cellForRowAtIndexPath:[NSIndexPath indexPathWithIndex:0]];
+                    [cell.labelAuthor setText:@"网络异常"];
+                });
+            }
+        } else {
+            hotPosts = [NSMutableArray arrayWithArray:result];
+            [GROUP_DEFAULTS setObject:hotPosts forKey:@"hotPosts"];
+            [self.tableView reloadData];
+        }
         block();
-    });
+    }];
 }
 
 - (IBAction)showMessage:(id)sender {
@@ -162,14 +192,51 @@
 }
 
 - (IBAction)showMore:(id)sender {
-    if (height == IOS_9_SMALL_SIZE) {
-        height = IOS_9_LARGE_SIZE;
-        [_buttonMore setTitle:@"精简" forState:UIControlStateNormal];
-    } else {
-        height = IOS_9_SMALL_SIZE;
-        [_buttonMore setTitle:@"更多" forState:UIControlStateNormal];
-    }
+    height = (height == SMALL_SIZE ? LARGE_SIZE : SMALL_SIZE);
+    [DEFAULTS setObject:@(height) forKey:@"size"];
+    [self _refreshShowMoreButtonTitle];
     [self setPreferredContentSize:CGSizeMake(0, height)];
+}
+
+- (void)_refreshShowMoreButtonTitle {
+    [_buttonMore setImage:[UIImage imageNamed:(height == SMALL_SIZE ? @"down": @"up")] forState:UIControlStateNormal];
+}
+
+#pragma mark Table View delegate & Data Source
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 5;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    TodayTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"hot"];
+    if (iOS < 10.0) {
+        [cell.labelTitle setTextColor:TEXT_INFO_COLOR];
+        [cell.labelAuthor setTextColor:TEXT_HINT_COLOR];
+    }
+    if (!hotPosts || ! hotPosts[indexPath.row]) {
+        [cell.labelTitle setText:(indexPath.row == 0 ? @"加载中..." : @"")];
+        [cell.labelAuthor setText:@""];
+    } else {
+        NSDictionary *dict = hotPosts[indexPath.row];
+        
+        NSString *title = [NSString stringWithFormat:@"%ld. %@", indexPath.row + 1, [ActionPerformer removeRe:dict[@"text"]]];
+        [cell.labelTitle setText:title];
+        
+        NSString *detailText;
+        if ([dict[@"pid"] integerValue] == 0 || [dict[@"replyer"] isEqualToString:@"Array"]) {
+            detailText = dict[@"author"];
+        }else {
+            detailText = dict[@"replyer"];
+        }
+        [cell.labelAuthor setText:detailText];
+    }
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    [[self extensionContext] openURL:[NSURL URLWithString:@"capubbs://open=hot"] completionHandler:nil];
 }
 
 @end

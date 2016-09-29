@@ -28,6 +28,7 @@
 #define PASS [GROUP_DEFAULTS objectForKey:@"pass"]
 #define TOKEN [GROUP_DEFAULTS objectForKey:@"token"]
 #define USERINFO [GROUP_DEFAULTS objectForKey:@"userInfo"]
+#define HOTPOSTS [GROUP_DEFAULTS objectForKey:@"hotPosts"]
 #define SIMPLE_VIEW [[GROUP_DEFAULTS objectForKey:@"simpleView"] boolValue]
 
 #define BLUE [UIColor colorWithRed:45.0/255 green:144.0/255 blue:220.0/255 alpha:1.0]

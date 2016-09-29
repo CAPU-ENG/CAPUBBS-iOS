@@ -201,6 +201,7 @@
 		01D80F431B4C2E56006F8957 /* 31_0.gif in Resources */ = {isa = PBXBuildFile; fileRef = 01D80F221B4C2E56006F8957 /* 31_0.gif */; };
 		01D80F441B4C2E56006F8957 /* 32_0.gif in Resources */ = {isa = PBXBuildFile; fileRef = 01D80F231B4C2E56006F8957 /* 32_0.gif */; };
 		01D80F451B4C2E56006F8957 /* 33_0.gif in Resources */ = {isa = PBXBuildFile; fileRef = 01D80F241B4C2E56006F8957 /* 33_0.gif */; };
+		01DCE2691D9D6D9000D93694 /* TodayTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01DCE2681D9D6D9000D93694 /* TodayTableViewCell.m */; };
 		01E15A3C1B27D68400946A0C /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01E15A3B1B27D68400946A0C /* AVFoundation.framework */; };
 		01E1B15B1C28061500EC680D /* UIImageEffects.m in Sources */ = {isa = PBXBuildFile; fileRef = 01E1B15A1C28061500EC680D /* UIImageEffects.m */; };
 		01E4CC2F1BF260F700C88FFC /* CollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01E4CC2E1BF260F700C88FFC /* CollectionViewCell.m */; };
@@ -496,6 +497,8 @@
 		01D80F221B4C2E56006F8957 /* 31_0.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = 31_0.gif; sourceTree = "<group>"; };
 		01D80F231B4C2E56006F8957 /* 32_0.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = 32_0.gif; sourceTree = "<group>"; };
 		01D80F241B4C2E56006F8957 /* 33_0.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = 33_0.gif; sourceTree = "<group>"; };
+		01DCE2671D9D6D9000D93694 /* TodayTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TodayTableViewCell.h; sourceTree = "<group>"; };
+		01DCE2681D9D6D9000D93694 /* TodayTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TodayTableViewCell.m; sourceTree = "<group>"; };
 		01E15A3B1B27D68400946A0C /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		01E1B1591C28061500EC680D /* UIImageEffects.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIImageEffects.h; sourceTree = "<group>"; };
 		01E1B15A1C28061500EC680D /* UIImageEffects.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIImageEffects.m; sourceTree = "<group>"; };
@@ -1008,6 +1011,8 @@
 				E978B9FB1D9CAB7C000BE141 /* CAPUBBS TodayExtension.entitlements */,
 				E978B9ED1D9CAB6D000BE141 /* TodayViewController.h */,
 				E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */,
+				01DCE2671D9D6D9000D93694 /* TodayTableViewCell.h */,
+				01DCE2681D9D6D9000D93694 /* TodayTableViewCell.m */,
 				E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */,
 				E978B9F31D9CAB6D000BE141 /* Info.plist */,
 				01F471481D9CFE06009221F6 /* Images.xcassets */,
@@ -1493,6 +1498,7 @@
 				01F79C891D9CAD44000594F1 /* ActionPerformer.m in Sources */,
 				01F79C8A1D9CAD47000594F1 /* AsyncImageView.m in Sources */,
 				01F79C8B1D9CAD49000594F1 /* Reachability.m in Sources */,
+				01DCE2691D9D6D9000D93694 /* TodayTableViewCell.m in Sources */,
 				01F79C8E1D9CB07A000594F1 /* UIImageEffects.m in Sources */,
 				E978B9EF1D9CAB6D000BE141 /* TodayViewController.m in Sources */,
 			);

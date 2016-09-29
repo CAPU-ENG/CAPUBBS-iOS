@@ -170,7 +170,6 @@
 }
 
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
-    UINavigationController *navi;
     if ([shortcutItem.type isEqualToString:@"Hot"]) {
         [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
     }else if ([shortcutItem.type isEqualToString:@"Collection"]) {

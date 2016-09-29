@@ -72,20 +72,24 @@
 }
 
 - (void)setUrl:(NSString *)urlToSet {
+    [self setUrl:urlToSet withPlaceholder:YES];
+}
+
+- (void)setUrl:(NSString *)urlToSet withPlaceholder:(BOOL)showPlaceholder {
     url = [AsyncImageView transIconURL:urlToSet];
     if (url.length == 0) {
         NSLog(@"Fail to translate icon URL - %@", urlToSet);
         return;
     }
-
-    [self loadImage];
+    
+    [self loadImageWithPlaceholder:showPlaceholder];
 }
 
 - (NSString *)getUrl {
     return url;
 }
 
-- (void)loadImage {
+- (void)loadImageWithPlaceholder:(BOOL)showPlaceholder {
     [NOTIFICATION removeObserver:self];
     NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
     NSData *data = [MANAGER contentsAtPath:filePath];
@@ -107,10 +111,10 @@
             [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
         });
     }else if (url.length > 0) {
-        dispatch_main_async_safe(^{
+        if (showPlaceholder) {
             [self setImage:PLACEHOLDER];
-        });
-        [NOTIFICATION addObserver:self selector:@selector(loadImage) name:[@"imageGet" stringByAppendingString:url] object:nil];
+        }
+        [NOTIFICATION addObserver:self selector:@selector(loadImageWithPlaceholder:) name:[@"imageGet" stringByAppendingString:url] object:nil];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
@@ -123,11 +127,16 @@
         NSString *newInfo = [@"loading" stringByAppendingString:[formatter stringFromDate:[NSDate date]]];
         [AsyncImageView checkPath];
         [MANAGER createFileAtPath:filePath contents:[newInfo dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
-        [self performSelectorInBackground:@selector(startLoadingImage) withObject:nil];
+        dispatch_global_default_async(^{
+            [self startLoadingImage:showPlaceholder];
+        });
+        dispatch_global_default_async(^{
+            [self startLoadingImage:showPlaceholder];
+        });
     }
 }
 
-- (void)startLoadingImage {
+- (void)startLoadingImage:(BOOL)hasPlaceholder {
     NSString *imageTag = url;
     NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
     if (!([[GROUP_DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue] && IS_CELLULAR)) {
@@ -147,6 +156,11 @@
         }
     }
     [MANAGER removeItemAtPath:filePath error:nil];
+    if (!hasPlaceholder) {
+        dispatch_main_async_safe(^{
+            [self setImage:PLACEHOLDER];
+        });
+    }
     NSLog(@"Icon Load Failed - %@", imageTag);
 }
 

@@ -164,6 +164,7 @@
                 [hud hide:YES afterDelay:0.5];
                 
                 data = [NSMutableArray arrayWithArray:result];
+                [GROUP_DEFAULTS setObject:data forKey:@"hotPosts"];
                 [hud hide:YES afterDelay:0.5];
                 if (isFirstTime) {
                     [self.tableView reloadData];

@@ -23,6 +23,7 @@
 - (void)setBlurredImage:(UIImage *)image animated:(BOOL)animated;
 - (void)setGif:(NSString *)imageName;
 - (void)setUrl:(NSString *)urlToSet;
+- (void)setUrl:(NSString *)urlToSet withPlaceholder:(BOOL)showPlaceholder;
 - (NSString *)getUrl;
 + (NSString *)transIconURL:(NSString *)iconUrl;
 + (int)fileType:(NSData *)imageData;
