@@ -64,7 +64,6 @@
     [DEFAULTS removeObjectForKey:@"enterLogin"];
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
     [GROUP_DEFAULTS registerDefaults:group];
-    [GROUP_DEFAULTS removeObjectForKey:@"token"]; // 打开软件后清空登录状态
     [self transferDefaults];
 
     [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
