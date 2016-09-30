@@ -16,7 +16,7 @@
 #define SMALL_SIZE 110
 #define LARGE_SIZE 209
 #define TEXT_INFO_COLOR [UIColor colorWithWhite:1.0 alpha:1.0]
-#define TEXT_HINT_COLOR [UIColor colorWithWhite:1.0 alpha:0.75]
+#define TEXT_HINT_COLOR [UIColor colorWithWhite:0.75 alpha:1.0]
 
 @interface TodayViewController () <NCWidgetProviding, UITableViewDelegate, UITableViewDataSource> {
     float iOS;
@@ -58,6 +58,7 @@
         [self setPreferredContentSize:CGSizeMake(0, height)];
         [_labelName setTextColor:TEXT_INFO_COLOR];
         [_buttonMessages setTitleColor:TEXT_HINT_COLOR forState:UIControlStateNormal];
+        [_buttonMore setTintColor:TEXT_HINT_COLOR];
     } else {
         _constraintMoreButtonWidth.constant = 0;
         [self.extensionContext setWidgetLargestAvailableDisplayMode:NCWidgetDisplayModeExpanded];
