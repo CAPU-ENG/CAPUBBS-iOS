@@ -108,7 +108,9 @@
 
 - (void)setUserIcon:(NSNotification *)notification{
     iconURL = [notification.userInfo objectForKey:@"URL"];
-    [self.icon setUrl:iconURL];
+    dispatch_main_async_safe(^{
+        [self.icon setUrl:iconURL];
+    });
 }
 
 - (IBAction)done:(id)sender {
@@ -217,9 +219,9 @@
             [hud hide:YES afterDelay:0.5];
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
-                    [DEFAULTS setObject:uid forKey:@"uid"];
-                    [DEFAULTS setObject:pass forKey:@"pass"];
-                    [DEFAULTS setObject:[result.firstObject objectForKey:@"token"] forKey:@"token"];
+                    [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
+                    [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
+                    [GROUP_DEFAULTS setObject:[result.firstObject objectForKey:@"token"] forKey:@"token"];
                     [self performSelector:@selector(dismiss) withObject:nil afterDelay:0.5];
                     break;
                 }
@@ -293,7 +295,9 @@
 }
 
 - (void)dismiss {
-    [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+    dispatch_main_async_safe(^{
+        [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+    });
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -342,8 +346,8 @@
             
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
-                    [DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
-                    [DEFAULTS setObject:[[result firstObject] objectForKey:@"msg"] forKey:@"token"];
+                    [GROUP_DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
+                    [GROUP_DEFAULTS setObject:[[result firstObject] objectForKey:@"msg"] forKey:@"token"];
                     [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
                     break;
                 }

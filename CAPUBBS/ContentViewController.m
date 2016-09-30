@@ -128,12 +128,18 @@
         }
         
         // NSLog(@"%@", result);
+        int code = [[result.firstObject objectForKey:@"code"] intValue];
         data = [NSMutableArray arrayWithArray:result];
-        if ([[result.firstObject objectForKey:@"code"] intValue] != -1 && [[result.firstObject objectForKey:@"code"] intValue] != 0) {
-            [[[UIAlertView alloc] initWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"加载失败";
-            hud.mode = MBProgressHUDModeCustomView;
+        if ([[result.firstObject objectForKey:@"code"] intValue] != -1 && code != 0) {
+            if (code == 1 && page > 1) {
+                [self jumpTo:page - 1];
+                return;
+            } else {
+                [[[UIAlertView alloc] initWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
+                hud.labelText = @"加载失败";
+                hud.mode = MBProgressHUDModeCustomView;
+            }
             [hud hide:YES afterDelay:0.5];
             return ;
         }
@@ -312,7 +318,7 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     NSString *header = @"";
-    if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO && data.count > 0) {
+    if (SIMPLE_VIEW == NO && data.count > 0) {
         header = [NSString stringWithFormat:@"%@ 第%ld/%@页", [ActionPerformer getBoardTitle:self.bid], (long)page, [[data lastObject] objectForKey:@"pages"]];
         if ([[data[0] objectForKey:@"click"] length] > 0) {
             header = [NSString stringWithFormat:@"%@ 查看：%@ 回复：%@%@", header, [data[0] objectForKey:@"click"], [data[0] objectForKey:@"reply"], self.isCollection ? @" 已收藏": @""];
@@ -368,7 +374,7 @@
         [cell.buttonLzl setTitleColor:BLUE forState:UIControlStateNormal];
     }
     
-    if ([[DEFAULTS objectForKey:@"simpleView"] boolValue]== NO) {
+    if (SIMPLE_VIEW== NO) {
         if (dict[@"edittime"] && ![dict[@"edittime"] isEqualToString:dict[@"time"]]) {
             cell.labelDate.text = [cell.labelDate.text stringByAppendingString:[NSString stringWithFormat:@"\n%@", dict[@"edittime"]]];
         }
@@ -771,7 +777,7 @@
 
 - (void)refreshLzl:(NSNotification *)notification {
     if (selectedIndex >= 0 && selectedIndex < data.count && notification && [[notification.userInfo objectForKey:@"fid"] isEqualToString:[data[selectedIndex] objectForKey:@"fid"]]) {
-        NSString *num = [notification.userInfo objectForKey:@"num"];
+        __block NSString *num = [notification.userInfo objectForKey:@"num"];
         [data[selectedIndex] setObject:num forKey:@"lzl"];
         ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:selectedIndex inSection:0]];
         [cell.buttonLzl setTitle:[NSString stringWithFormat:@"评论 (%@)", num] forState:UIControlStateNormal];

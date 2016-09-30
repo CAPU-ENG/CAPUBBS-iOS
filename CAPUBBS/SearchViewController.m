@@ -37,7 +37,7 @@
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {
-    if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO) {
+    if (SIMPLE_VIEW == NO) {
         if (!backgroundView) {
             backgroundView = [[AsyncImageView alloc] init];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];

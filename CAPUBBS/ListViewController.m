@@ -29,7 +29,7 @@
     }else {
         self.navigationItem.rightBarButtonItems = @[self.buttonSearch];
         
-        if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO) {
+        if (SIMPLE_VIEW == NO) {
             AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
             [backgroundView setBlurredImage:[UIImage imageNamed:[@"b" stringByAppendingString:self.bid]] animated:NO];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
@@ -164,6 +164,7 @@
                 [hud hide:YES afterDelay:0.5];
                 
                 data = [NSMutableArray arrayWithArray:result];
+                [GROUP_DEFAULTS setObject:data forKey:@"hotPosts"];
                 [hud hide:YES afterDelay:0.5];
                 if (isFirstTime) {
                     [self.tableView reloadData];
@@ -520,7 +521,6 @@
         dest.tid = [one objectForKey:@"tid"];
         dest.bid = [one objectForKey:@"bid"];
         if ([self.bid isEqualToString: @"hot"]) {
-            dest.bid = [one objectForKey:@"bid"];
             dest.floor = [one objectForKey:@"pid"];
             dest.willScroll = YES;
         }

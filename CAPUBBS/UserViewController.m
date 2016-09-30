@@ -104,12 +104,14 @@
 - (void)refresh:(NSNotification *)noti {
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
-        [self refreshBackgroundView:NO];
+        dispatch_main_async_safe(^{
+            [self refreshBackgroundView:NO];
+        });
     }
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {
-    if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO) {
+    if (SIMPLE_VIEW == NO) {
         if (!backgroundView) {
             backgroundView = [[AsyncImageView alloc] init];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
@@ -179,9 +181,11 @@
             self.navigationItem.rightBarButtonItem.enabled = NO;
         }else {
             if ([dict[@"username"] isEqualToString:UID]) {
-                [DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:dict] forKey:@"userInfo"];
+                [GROUP_DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:dict] forKey:@"userInfo"];
                 NSLog(@"User Info Refreshed");
-                [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
+                dispatch_main_async_safe(^{
+                    [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
+                });
             }
             if ([dict[@"sex"] isEqualToString:@"男"]) {
                 self.username.text = [dict[@"username"] stringByAppendingString:@" 🚹"];
@@ -283,7 +287,7 @@
 - (void)webViewDidFinishLoad:(UIWebView *)webView {
     if ([[heights objectAtIndex:webView.tag] intValue] == 0) {
         NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight"];
-        NSLog(@"%@", height);
+//        NSLog(@"%@", height);
         [heights replaceObjectAtIndex:webView.tag withObject:height];
         [self.tableView reloadData];
     }

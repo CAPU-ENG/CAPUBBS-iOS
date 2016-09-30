@@ -132,11 +132,13 @@
     }else if ([alertView.title isEqualToString:@"警告"]) {
         [performer performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
         NSLog(@"Logout - %@", UID);
-        [DEFAULTS removeObjectForKey:@"uid"];
-        [DEFAULTS removeObjectForKey:@"pass"];
-        [DEFAULTS removeObjectForKey:@"token"];
-        [DEFAULTS removeObjectForKey:@"userInfo"];
-        [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+        [GROUP_DEFAULTS removeObjectForKey:@"uid"];
+        [GROUP_DEFAULTS removeObjectForKey:@"pass"];
+        [GROUP_DEFAULTS removeObjectForKey:@"token"];
+        [GROUP_DEFAULTS removeObjectForKey:@"userInfo"];
+        dispatch_main_async_safe(^{
+            [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+        });
     }
 }
 
@@ -146,9 +148,11 @@
 
 - (void)userChanged:(NSNotification*)noti {
     data = [[DEFAULTS objectForKey:@"ID"] mutableCopy];
-    self.buttonLogout.enabled = ([UID length] > 0);
     isDelete = NO;
-    [self.tableView reloadData];
+    dispatch_main_async_safe(^{
+        self.buttonLogout.enabled = ([UID length] > 0);
+        [self.tableView reloadData];
+    });
 }
 
 #pragma mark - Navigation

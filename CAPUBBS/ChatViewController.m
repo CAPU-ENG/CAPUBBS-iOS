@@ -55,12 +55,14 @@
 - (void)refresh:(NSNotification *)noti {
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
-        [self refreshBackgroundView:NO];
+        dispatch_main_async_safe(^{
+            [self refreshBackgroundView:NO];
+        });
     }
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {
-    if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO) {
+    if (SIMPLE_VIEW == NO) {
         if (!backgroundView) {
             backgroundView = [[AsyncImageView alloc] init];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];

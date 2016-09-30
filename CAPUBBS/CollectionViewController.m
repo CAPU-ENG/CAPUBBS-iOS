@@ -23,7 +23,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
-    if ([[DEFAULTS objectForKey:@"simpleView"] boolValue] == NO) {
+    if (SIMPLE_VIEW == NO) {
         AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
         [backgroundView setBlurredImage:[UIImage imageNamed:@"bcollection"] animated:NO];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
@@ -110,7 +110,9 @@
     if (self.searchController.isActive) {
         [self updateSearchResultsForSearchController:self.searchController];
     }else {
-        [self.tableView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:NO];
+        dispatch_main_async_safe(^{
+            [self.tableView reloadData];
+        });
     }
 }
 
@@ -352,7 +354,9 @@
             }
         }
     }
-    [self.tableView reloadData];
+    dispatch_main_async_safe(^{
+        [self.tableView reloadData];
+    });
 }
 
 - (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {

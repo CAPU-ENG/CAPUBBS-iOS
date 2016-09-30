@@ -40,9 +40,9 @@
     [self.segmentDirection setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]];
     [self.segmentEditTool setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"toolbarEditor"] intValue]];
     [self.switchPic setOn:[[DEFAULTS objectForKey:@"picOnlyInWifi"] boolValue]];
-    [self.switchIcon setOn:[[DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue]];
+    [self.switchIcon setOn:[[GROUP_DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue]];
     [self.autoSave setOn:[[DEFAULTS objectForKey:@"autoSave"] boolValue]];
-    [self.switchSimpleView setOn:[[DEFAULTS objectForKey:@"simpleView"] boolValue]];
+    [self.switchSimpleView setOn:SIMPLE_VIEW];
     [self.stepperSize setValue:[[DEFAULTS objectForKey:@"textSize"] intValue]];
     [self.defaultSize setText:[NSString stringWithFormat:@"默认字体大小 - %d%%", (int)self.stepperSize.value]];
     [self userChanged];
@@ -51,18 +51,20 @@
 }
 
 - (void)userChanged {
-    if ([ActionPerformer checkLogin:NO]) {
-        self.textUid.text = UID;
-        self.textUidInfo.text = @"加载中...";
-        self.cellUser.accessoryType = UITableViewCellAccessoryDetailButton;
-        self.cellUser.userInteractionEnabled = YES;
-    }else {
-        [self.iconUser performSelectorOnMainThread:@selector(setImage:) withObject:PLACEHOLDER waitUntilDone:NO];
-        self.textUid.text = @"未登录";
-        self.textUidInfo.text = @"请在账号管理中登录";
-        self.cellUser.accessoryType = UITableViewCellAccessoryNone;
-        self.cellUser.userInteractionEnabled = NO;
-    }
+    dispatch_main_async_safe(^{
+        if ([ActionPerformer checkLogin:NO]) {
+            self.textUid.text = UID;
+            self.textUidInfo.text = @"加载中...";
+            self.cellUser.accessoryType = UITableViewCellAccessoryDetailButton;
+            self.cellUser.userInteractionEnabled = YES;
+        }else {
+            [self.iconUser performSelectorOnMainThread:@selector(setImage:) withObject:PLACEHOLDER waitUntilDone:NO];
+            self.textUid.text = @"未登录";
+            self.textUidInfo.text = @"请在账号管理中登录";
+            self.cellUser.accessoryType = UITableViewCellAccessoryNone;
+            self.cellUser.userInteractionEnabled = NO;
+        }
+    });
 }
 
 - (void)refreshInfo {
@@ -80,7 +82,7 @@
 
 - (void)cacheChanged:(NSNotification *)noti {
     if (noti == nil || [noti.name hasPrefix:@"imageGet"]) {
-        long long cacheSize = 0;
+        __block long long cacheSize = 0;
         NSString *dir = NSTemporaryDirectory(); // tmp目录
         cacheSize += [SettingViewController folderSizeAtPath:dir];
         dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]; // Caches目录
@@ -206,7 +208,7 @@
 }
 
 - (IBAction)iconChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithBool:self.switchIcon.isOn] forKey:@"iconOnlyInWifi"];
+    [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchIcon.isOn] forKey:@"iconOnlyInWifi"];
     if (self.switchIcon.isOn) {
         [[[UIAlertView alloc] initWithTitle:@"头像显示已关闭" message:@"使用流量时\n未缓存过的头像将以会标代替\n已缓存过的头像将会正常加载" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
     }
@@ -218,11 +220,11 @@
 
 - (IBAction)sizeChanged:(UIStepper *)sender {
     [DEFAULTS setObject:[NSNumber numberWithInt:(int)self.stepperSize.value] forKey:@"textSize"];
-    self.defaultSize.text = [NSString stringWithFormat:@"默认字体大小-%d%%", (int)self.stepperSize.value];
+    self.defaultSize.text = [NSString stringWithFormat:@"默认字体大小 - %d%%", (int)self.stepperSize.value];
 }
 
 - (IBAction)simpleViewChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithBool:self.switchSimpleView.isOn] forKey:@"simpleView"];
+    [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchSimpleView.isOn] forKey:@"simpleView"];
     if (self.switchSimpleView.isOn) {
         [[[UIAlertView alloc] initWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n动图头像将静态显示\n模糊效果将禁用" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
     }

@@ -20,6 +20,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
     [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
     [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
     [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
@@ -35,34 +36,39 @@
     [[UITableViewCell appearance] setBackgroundColor:[UIColor clearColor]];
 
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-//                          [NSNumber numberWithInt:2], @"proxy",
+//                          @(2), @"proxy",
 //                          @"school", @"proxyPosition",
-                          [NSNumber numberWithBool:YES], @"autoLogin",
-                          [NSNumber numberWithBool:YES], @"enterLogin",
-                          [NSNumber numberWithBool:NO], @"wakeLogin",
-                          [NSNumber numberWithBool:YES], @"vibrate",
-                          [NSNumber numberWithBool:NO], @"picOnlyInWifi",
-                          [NSNumber numberWithBool:NO], @"iconOnlyInWifi",
-                          [NSNumber numberWithBool:YES], @"autoSave",
-                          [NSNumber numberWithBool:YES], @"oppositeSwipe",
-                          [NSNumber numberWithBool:NO], @"simpleView",
-                          [NSNumber numberWithInt:1], @"toolbarEditor",
-                          [NSNumber numberWithInt:1], @"viewCollectionType",
-                          [NSNumber numberWithInt:100], @"textSize",
-                          [NSNumber numberWithInt:MAX_ID_NUM / 2], @"IDNum",
-                          [NSNumber numberWithInt:MAX_HOT_NUM / 2], @"hotNum",
+                          @(YES), @"autoLogin",
+                          @(YES), @"enterLogin",
+                          @(NO), @"wakeLogin",
+                          @(YES), @"vibrate",
+                          @(NO), @"picOnlyInWifi",
+                          @(YES), @"autoSave",
+                          @(YES), @"oppositeSwipe",
+                          @(1), @"toolbarEditor",
+                          @(1), @"viewCollectionType",
+                          @(100), @"textSize",
+                          @(MAX_ID_NUM / 2), @"IDNum",
+                          @(MAX_HOT_NUM / 2), @"hotNum",
                           @"2016-01-01", @"checkUpdate",
                           @"2016-01-01", @"checkPass",
-                          @"www.chexie.net", @"URL",
-                          @"", @"token",
-                          @"", @"userInfo",
                           nil];
+    NSDictionary *group = [NSDictionary dictionaryWithObjectsAndKeys:
+                           @"www.chexie.net", @"URL",
+                           @"", @"token",
+                           @"", @"userInfo",
+                           @(NO), @"iconOnlyInWifi",
+                           @(NO), @"simpleView",
+                           nil];
     [DEFAULTS registerDefaults:dict];
-    [DEFAULTS removeObjectForKey:@"token"]; // 打开软件后清空登录状态
     [DEFAULTS removeObjectForKey:@"enterLogin"];
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
+    [GROUP_DEFAULTS registerDefaults:group];
+    [self transferDefaults];
+
     [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [self performSelectorInBackground:@selector(transport) withObject:nil];
     performer = [[ActionPerformer alloc] init];
     if (IOS >= 9.0) {
@@ -71,11 +77,30 @@
     return YES;
 }
 
+- (void)transferDefaults {
+    NSUserDefaults *appGroup = [[NSUserDefaults alloc] initWithSuiteName:APP_GROUP_IDENTIFIER];
+    if ([[appGroup objectForKey:@"activated"] boolValue] == NO) {
+        NSUserDefaults *standard = [NSUserDefaults standardUserDefaults];
+        for (NSString *key in @[@"URL", @"uid", @"pass", @"token", @"userInfo", @"iconOnlyInWifi", @"simpleView"]) {
+            id obj = [standard objectForKey:key];
+            if (obj) {
+                [appGroup setObject:obj forKey:key];
+                [standard removeObjectForKey:key];
+            }
+        }
+        [appGroup setObject:@(YES) forKey:@"activated"];
+        [appGroup synchronize];
+    }
+}
+
+- (void)showAlert:(NSNotification *)noti {
+    NSDictionary *dict = noti.userInfo;
+    [[[UIAlertView alloc] initWithTitle:dict[@"title"] message:dict[@"message"] delegate:nil cancelButtonTitle:(dict[@"cancelTitle"] ? : @"好") otherButtonTitles:nil, nil] show];
+}
+
 - (BOOL)application:(nonnull UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray * __nullable))restorationHandler {
     NSString *identifier = userActivity.userInfo[@"kCSSearchableItemActivityIdentifier"];
     NSArray *info = [identifier componentsSeparatedByString:@"\n"];
-    UIViewController *view;
-    UINavigationController *navi;
     NSDictionary *dict;
     if (userActivity.webpageURL.absoluteString.length > 0) {
         dict = [ContentViewController getLink:userActivity.webpageURL.absoluteString];
@@ -84,94 +109,136 @@
     BOOL continueFronCollectionSearch = ([info[0] isEqualToString:@"collection"]);
     BOOL continueFromHandoff = (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]);
     if (continueFronCollectionSearch || continueFromHandoff) {
-        view = self.window.rootViewController;
-        while ([view presentedViewController] != nil) {
-            view = [view presentedViewController];
-        }
-        
-        ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
+        NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"post"}];
         if (continueFronCollectionSearch) {
-            dest.bid = info[1];
-            dest.tid = info[2];
-            dest.title = info[3];
-        }else if (continueFromHandoff) {
-            dest.bid = dict[@"bid"];
-            dest.tid = dict[@"tid"];
-            dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
-            dest.exactFloor = dict[@"floor"];
-            dest.title = userActivity.title;
+            naviDict[@"bid"] = info[1];
+            naviDict[@"tid"] = info[2];
+            naviDict[@"naviTitle"] = info[3];
+        } else if (continueFromHandoff) {
+            naviDict[@"bid"] = dict[@"bid"];
+            naviDict[@"tid"] = dict[@"tid"];
+            naviDict[@"page"] = dict[@"p"];
+            naviDict[@"floor"] = dict[@"floor"];
+            naviDict[@"naviTitle"] = userActivity.title;
         }
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-        [view presentViewController:navi animated:YES completion:nil];
+        [self _handleUrlRequestWithDictionary:naviDict];
     }
     
     dict = userActivity.userInfo;
     if ([dict[@"type"] isEqualToString:@"compose"]) {
-        view = self.window.rootViewController;
-        while ([view presentedViewController] != nil) {
-            view = [view presentedViewController];
-        }
-        
         if (userActivity.webpageURL.absoluteString.length == 0 && [dict[@"bid"] length] > 0) {
-            ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
-            dest.bid = dict[@"bid"];
-            
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
-            [navi setToolbarHidden:NO];
-            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            [view presentViewController:navi animated:YES completion:nil];
-            view = [view presentedViewController];
+            [self _handleUrlRequestWithDictionary:@{@"open": @"list", @"bid": dict[@"bid"]}];
         }
         
-        ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
-        dest.bid = dict[@"bid"];
-        dest.tid = dict[@"tid"];
-        dest.floor = dict[@"floor"];
-        dest.defaultTitle = dict[@"title"];
-        dest.defaultContent = dict[@"content"];
-        dest.title = userActivity.title;
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        navi.modalPresentationStyle = UIModalPresentationFormSheet;
-        [view presentViewController:navi animated:YES completion:nil];
+        NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
+        [naviDict addEntriesFromDictionary:dict];
+        naviDict[@"naviTitle"] = userActivity.title;
+        [self _handleUrlRequestWithDictionary:naviDict];
     }
     
     return YES;
 }
 
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
-    UIViewController *view = self.window.rootViewController;
-    while ([view presentedViewController] != nil) {
-        view = [view presentedViewController];
-    }
-    UINavigationController *navi;
     if ([shortcutItem.type isEqualToString:@"Hot"]) {
-        ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
-        dest.bid = @"hot";
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        [navi setToolbarHidden:NO];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
     }else if ([shortcutItem.type isEqualToString:@"Collection"]) {
-        CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        [self _handleUrlRequestWithDictionary:@{@"open": @"collection"}];
     }else if ([shortcutItem.type isEqualToString:@"Message"]) {
-        MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        [navi setToolbarHidden:NO];
-        dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+        [self _handleUrlRequestWithDictionary:@{@"open": @"message"}];
     }else if ([shortcutItem.type isEqualToString:@"Compose"]) {
-        ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
-        
-        navi = [[UINavigationController alloc] initWithRootViewController:dest];
-        navi.modalPresentationStyle = UIModalPresentationFormSheet;
+        [self _handleUrlRequestWithDictionary:@{@"open": @"compose"}];
     }
-    [view presentViewController:navi animated:YES completion:nil];
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+    NSString *urlString = [url absoluteString];
+    urlString = [urlString substringFromIndex:[@"capubbs://" length]];
+    NSArray *paramsArray = [urlString componentsSeparatedByString:@"&"];
+    NSMutableDictionary *params = [NSMutableDictionary dictionary];
+    for (NSString *param in paramsArray) {
+        NSArray *tempArray = [param componentsSeparatedByString:@"="];
+        if (tempArray.count != 2) {
+            NSLog(@"Handle Url error - wrong parameter");
+            return NO;
+        }
+        [params addEntriesFromDictionary:@{tempArray[0] : tempArray[1]}];
+    }
+    if (params.allKeys.count > 0) {
+        [self _handleUrlRequestWithDictionary:params];
+    }
+    return YES;
+}
+
+- (void)_handleUrlRequestWithDictionary:(NSDictionary *)dict {
+    NSString *open = dict[@"open"];
+    if (open) {
+        UIViewController *view = self.window.rootViewController;
+        while ([view presentedViewController] != nil) {
+            view = [view presentedViewController];
+        }
+        UINavigationController *navi;
+        if ([open isEqualToString:@"message"]) {
+            MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            [navi setToolbarHidden:NO];
+        } else if ([open isEqualToString:@"hot"]) {
+            ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
+            dest.bid = @"hot";
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            [navi setToolbarHidden:NO];
+        } else if ([open isEqualToString:@"collection"]) {
+            CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        } else if ([open isEqualToString:@"compose"]) {
+            ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
+            
+            if (dict[@"bid"] && dict[@"pid"]) {
+                dest.bid = dict[@"bid"];
+                dest.tid = dict[@"tid"];
+                dest.floor = dict[@"floor"];
+                dest.defaultTitle = dict[@"title"];
+                dest.defaultContent = dict[@"content"];
+                dest.title = dict[@"naviTitle"];
+            }
+            
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFormSheet;
+        } else if ([open isEqualToString:@"list"]) {
+            ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
+            dest.bid = dict[@"bid"];
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            [navi setToolbarHidden:NO];
+        } else if ([open isEqualToString:@"post"]) {
+            ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
+            
+            dest.bid = dict[@"bid"];
+            dest.tid = dict[@"tid"];
+            if (dict[@"page"]) {
+                dest.floor = [NSString stringWithFormat:@"%d", [dict[@"page"] intValue] * 12];
+            }
+            if (dict[@"floor"]) {
+                dest.exactFloor = dict[@"floor"];
+            }
+            if (dict[@"naviTitle"]) {
+                dest.title = dict[@"naviTitle"];
+            } else {
+                dest.title = @"加载中";
+            }
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        }
+        [view presentViewController:navi animated:YES completion:nil];
+    }
 }
 
 - (void)back {
@@ -183,7 +250,9 @@
 }
 
 - (void)collectionChanged { // 后台更新系统搜索内容
-    [self performSelectorInBackground:@selector(updateCollection) withObject:nil];
+    dispatch_global_default_async(^{
+        [self updateCollection];
+    });
 }
 
 - (void)updateCollection {
@@ -293,13 +362,15 @@
             [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
                 [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
                 if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-                    [DEFAULTS removeObjectForKey:@"token"];
+                    [GROUP_DEFAULTS removeObjectForKey:@"token"];
                     [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
                 }else {
-                    [DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+                    [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                     NSLog(@"AutoLog Completed - %@", uid);
                 }
-                [NOTIFICATION postNotificationName:@"userChanged" object:nil];
+                dispatch_main_async_safe(^{
+                    [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+                });
             }];
         }
     }

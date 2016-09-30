@@ -13,15 +13,9 @@
 - (void)awakeFromNib {
     [super awakeFromNib];
     [self.icon.layer setBorderColor:GREEN_LIGHT.CGColor];
-    [self.icon.layer setMasksToBounds:YES];
+    [self.icon setRounded:YES];
     self.layer.shouldRasterize = YES; // 光栅化 提高流畅度
     self.layer.rasterizationScale = [UIScreen mainScreen].scale;
-}
-
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    [self.icon layoutIfNeeded];
-    [self.icon.layer setCornerRadius:(self.frame.size.width - 10) / 2];
 }
 
 @end
