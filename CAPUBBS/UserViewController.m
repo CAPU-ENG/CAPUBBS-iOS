@@ -287,7 +287,7 @@
 - (void)webViewDidFinishLoad:(UIWebView *)webView {
     if ([[heights objectAtIndex:webView.tag] intValue] == 0) {
         NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight"];
-        NSLog(@"%@", height);
+//        NSLog(@"%@", height);
         [heights replaceObjectAtIndex:webView.tag withObject:height];
         [self.tableView reloadData];
     }
