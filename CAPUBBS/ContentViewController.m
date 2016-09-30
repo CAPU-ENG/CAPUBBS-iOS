@@ -128,12 +128,18 @@
         }
         
         // NSLog(@"%@", result);
+        int code = [[result.firstObject objectForKey:@"code"] intValue];
         data = [NSMutableArray arrayWithArray:result];
-        if ([[result.firstObject objectForKey:@"code"] intValue] != -1 && [[result.firstObject objectForKey:@"code"] intValue] != 0) {
-            [[[UIAlertView alloc] initWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"加载失败";
-            hud.mode = MBProgressHUDModeCustomView;
+        if ([[result.firstObject objectForKey:@"code"] intValue] != -1 && code != 0) {
+            if (code == 1 && page > 1) {
+                [self jumpTo:page - 1];
+                return;
+            } else {
+                [[[UIAlertView alloc] initWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
+                hud.labelText = @"加载失败";
+                hud.mode = MBProgressHUDModeCustomView;
+            }
             [hud hide:YES afterDelay:0.5];
             return ;
         }
