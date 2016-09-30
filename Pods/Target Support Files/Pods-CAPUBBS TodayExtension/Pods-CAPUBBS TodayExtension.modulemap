@@ -1,6 +1,0 @@
-framework module Pods_CAPUBBS_TodayExtension {
-  umbrella header "Pods-CAPUBBS TodayExtension-umbrella.h"
-
-  export *
-  module * { export * }
-}

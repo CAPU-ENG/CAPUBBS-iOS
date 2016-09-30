@@ -4460,6 +4460,13 @@
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
+		<key>45138B8FD4018205EDB3570E</key>
+		<dict>
+			<key>fileRef</key>
+			<string>DF922A262A9AAD1EC74117D4</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
 		<key>4D70AB10B6F6DC9C6044DD99</key>
 		<dict>
 			<key>includeInIndex</key>
@@ -4474,6 +4481,13 @@
 			<string>Pods/Target Support Files/Pods-CAPUBBS TodayExtension/Pods-CAPUBBS TodayExtension.debug.xcconfig</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
+		</dict>
+		<key>5786CE6B7BCB771AB31B9C8A</key>
+		<dict>
+			<key>fileRef</key>
+			<string>AB5EA73D176C6F12CEC769B0</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
 		</dict>
 		<key>7C97AF7194B8E730717EC79C</key>
 		<dict>
@@ -4953,7 +4967,7 @@ fi
 				<string>8B74045E18B63DD7009753FE</string>
 				<string>8B74045C18B63DCA009753FE</string>
 				<string>8BAC8EA718B0F2BE00F68A62</string>
-				<string>E4A259FFFD65B54F373EEE53</string>
+				<string>45138B8FD4018205EDB3570E</string>
 			</array>
 			<key>isa</key>
 			<string>PBXFrameworksBuildPhase</string>
@@ -5221,8 +5235,8 @@ fi
 				<string>8B74045B18B63DCA009753FE</string>
 				<string>8BAC8EA618B0F2BE00F68A62</string>
 				<string>E978B9EA1D9CAB6D000BE141</string>
-				<string>E7ACF6522E9AFFE91591C987</string>
-				<string>BF2F9C5831AF15F4AA42EAF2</string>
+				<string>DF922A262A9AAD1EC74117D4</string>
+				<string>AB5EA73D176C6F12CEC769B0</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -6432,13 +6446,6 @@ fi
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
-		<key>965A0F5FA667303C6E5766FD</key>
-		<dict>
-			<key>fileRef</key>
-			<string>BF2F9C5831AF15F4AA42EAF2</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
 		<key>A43A7AEF2DA29044B84A814A</key>
 		<dict>
 			<key>includeInIndex</key>
@@ -6454,16 +6461,16 @@ fi
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
-		<key>BF2F9C5831AF15F4AA42EAF2</key>
+		<key>AB5EA73D176C6F12CEC769B0</key>
 		<dict>
 			<key>explicitFileType</key>
-			<string>wrapper.framework</string>
+			<string>archive.ar</string>
 			<key>includeInIndex</key>
 			<string>0</string>
 			<key>isa</key>
 			<string>PBXFileReference</string>
 			<key>path</key>
-			<string>Pods_CAPUBBS_TodayExtension.framework</string>
+			<string>libPods-CAPUBBS TodayExtension.a</string>
 			<key>sourceTree</key>
 			<string>BUILT_PRODUCTS_DIR</string>
 		</dict>
@@ -6506,6 +6513,19 @@ fi
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
+		<key>DF922A262A9AAD1EC74117D4</key>
+		<dict>
+			<key>explicitFileType</key>
+			<string>archive.ar</string>
+			<key>includeInIndex</key>
+			<string>0</string>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>libPods-CAPUBBS.a</string>
+			<key>sourceTree</key>
+			<string>BUILT_PRODUCTS_DIR</string>
+		</dict>
 		<key>E2EE5ECD043431127B6E7F05</key>
 		<dict>
 			<key>buildActionMask</key>
@@ -6529,13 +6549,6 @@ fi
 </string>
 			<key>showEnvVarsInLog</key>
 			<string>0</string>
-		</dict>
-		<key>E4A259FFFD65B54F373EEE53</key>
-		<dict>
-			<key>fileRef</key>
-			<string>E7ACF6522E9AFFE91591C987</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
 		</dict>
 		<key>E5D7D2DFE57FF88847E01F70</key>
 		<dict>
@@ -6566,19 +6579,6 @@ fi
 </string>
 			<key>showEnvVarsInLog</key>
 			<string>0</string>
-		</dict>
-		<key>E7ACF6522E9AFFE91591C987</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.framework</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>Pods_CAPUBBS.framework</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
 		</dict>
 		<key>E978B9E31D9CA5F2000BE141</key>
 		<dict>
@@ -6616,7 +6616,7 @@ fi
 			<key>files</key>
 			<array>
 				<string>E978B9EB1D9CAB6D000BE141</string>
-				<string>965A0F5FA667303C6E5766FD</string>
+				<string>5786CE6B7BCB771AB31B9C8A</string>
 			</array>
 			<key>isa</key>
 			<string>PBXFrameworksBuildPhase</string>
