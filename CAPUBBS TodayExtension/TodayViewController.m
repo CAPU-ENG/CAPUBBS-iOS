@@ -93,13 +93,13 @@
     // If an error is encountered, use NCUpdateResultFailed
     // If there's no update required, use NCUpdateResultNoData
     // If there's an update, use NCUpdateResultNewData
-
+    
     completionHandler(NCUpdateResultNewData);
 }
 
 - (void)refreshView {
     dispatch_global_default_async(^{
-        dispatch_sync(dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
             _constraintIndicatorWidth.constant = 20;
             [_indicatorLoading startAnimating];
         });
@@ -112,7 +112,7 @@
         }];
         dispatch_semaphore_wait(signal, DISPATCH_TIME_FOREVER);
         dispatch_semaphore_wait(signal, DISPATCH_TIME_FOREVER);
-        dispatch_sync(dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
             _constraintIndicatorWidth.constant = 0;
             [_indicatorLoading stopAnimating];
         });
@@ -121,20 +121,25 @@
 
 - (void)refreshUserInfoWithBlock:(void (^)())block {
     void(^failBlock)() = ^() {
-        [_imageIcon setImage:PLACEHOLDER];
-        [_labelName setText:@"未登录"];
-        [_buttonMessages setTitle:@"点击打开app" forState:UIControlStateNormal];
-        userInfo = nil;
+        dispatch_main_async_safe(^{
+            [_imageIcon setImage:PLACEHOLDER];
+            [_labelName setText:@"未登录"];
+            [_buttonMessages setTitle:@"点击打开app" forState:UIControlStateNormal];
+            userInfo = nil;
+        });
     };
     void(^updateInfoBlock)() = ^() {
-        [_imageIcon setUrl:userInfo[@"icon"] withPlaceholder:NO];
-        [_labelName setText:userInfo[@"username"]];
         int newMessageNum = [userInfo[@"newmsg"] intValue];
-        if (newMessageNum > 0) {
-            [_buttonMessages setTitle:[NSString stringWithFormat:@"您有 %d 条新消息", newMessageNum] forState:UIControlStateNormal];
-        } else {
-            [_buttonMessages setTitle:@"您暂时没有新消息" forState:UIControlStateNormal];
-        }
+        NSString *newMessageTitle = [NSString stringWithFormat:@"您有 %d 条新消息", newMessageNum];
+        dispatch_main_async_safe(^{
+            [_imageIcon setUrl:userInfo[@"icon"] withPlaceholder:NO];
+            [_labelName setText:userInfo[@"username"]];
+            if (newMessageNum > 0) {
+                [_buttonMessages setTitle:newMessageTitle forState:UIControlStateNormal];
+            } else {
+                [_buttonMessages setTitle:@"您暂时没有新消息" forState:UIControlStateNormal];
+            }
+        });
     };
     
     if (![ActionPerformer checkLogin:NO] || (!userInfo && (!UID || !PASS))) {
@@ -143,7 +148,6 @@
         return;
     }
     
-    [_buttonMessages setHidden:NO];
     userInfo = USERINFO;
     if (userInfo) {
         updateInfoBlock();
@@ -165,20 +169,24 @@
 - (void)refreshHotPostWithBlock:(void (^)())block {
     hotPosts = HOTPOSTS;
     if (hotPosts.count > 0) {
-        [_tableView reloadData];
+        dispatch_main_async_safe(^{
+            [_tableView reloadData];
+        });
     }
     [performer performActionWithDictionary:@{@"hotnum": @"5"} toURL:@"hot" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             if (!hotPosts) {
+                TodayTableViewCell *cell = [_tableView cellForRowAtIndexPath:[NSIndexPath indexPathWithIndex:0]];
                 dispatch_main_async_safe(^{
-                    TodayTableViewCell *cell = [_tableView cellForRowAtIndexPath:[NSIndexPath indexPathWithIndex:0]];
                     [cell.labelAuthor setText:@"网络异常"];
                 });
             }
         } else {
             hotPosts = [NSMutableArray arrayWithArray:result];
             [GROUP_DEFAULTS setObject:hotPosts forKey:@"hotPosts"];
-            [self.tableView reloadData];
+            dispatch_main_async_safe(^{
+                [self.tableView reloadData];
+            });
         }
         block();
     }];
@@ -218,7 +226,9 @@
     if (!hotPosts || ! hotPosts[indexPath.row]) {
         [cell.labelTitle setText:(indexPath.row == 0 ? @"加载中..." : @"")];
         [cell.labelAuthor setText:@""];
+        [cell setUserInteractionEnabled:NO];
     } else {
+        [cell setUserInteractionEnabled:YES];
         NSDictionary *dict = hotPosts[indexPath.row];
         
         NSString *title = [NSString stringWithFormat:@"%ld. %@", indexPath.row + 1, [ActionPerformer removeRe:dict[@"text"]]];
