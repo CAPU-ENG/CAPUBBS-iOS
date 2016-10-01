@@ -247,7 +247,6 @@
         [cell.labelAuthor setText:@""];
         [cell setUserInteractionEnabled:NO];
     } else {
-        [cell setUserInteractionEnabled:YES];
         NSDictionary *dict = hotPosts[indexPath.row];
         
         NSString *title = [NSString stringWithFormat:@"%ld. %@", indexPath.row + 1, [ActionPerformer removeRe:dict[@"text"]]];
@@ -260,6 +259,7 @@
             detailText = dict[@"replyer"];
         }
         [cell.labelAuthor setText:detailText];
+        [cell setUserInteractionEnabled:YES];
     }
     return cell;
 }
