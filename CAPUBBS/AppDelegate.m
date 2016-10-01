@@ -157,12 +157,16 @@
     NSArray *paramsArray = [urlString componentsSeparatedByString:@"&"];
     NSMutableDictionary *params = [NSMutableDictionary dictionary];
     for (NSString *param in paramsArray) {
+        if (param.length == 0) {
+            NSLog(@"Handle Url error - wrong parameter");
+            return NO;
+        }
         NSArray *tempArray = [param componentsSeparatedByString:@"="];
         if (tempArray.count != 2) {
             NSLog(@"Handle Url error - wrong parameter");
             return NO;
         }
-        [params addEntriesFromDictionary:@{tempArray[0] : tempArray[1]}];
+        [params addEntriesFromDictionary:@{tempArray[0]: tempArray[1]}];
     }
     if (params.allKeys.count > 0) {
         [self _handleUrlRequestWithDictionary:params];

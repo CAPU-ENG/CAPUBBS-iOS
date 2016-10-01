@@ -13,14 +13,15 @@
 #import "AsyncImageView.h"
 #import "TodayTableViewCell.h"
 
-#define SMALL_SIZE 110
-#define LARGE_SIZE 209
+#define TOP_VIEW_HEIGHT 44
+#define DEFAULT_ROW_HEIGHT 33
 #define TEXT_INFO_COLOR [UIColor colorWithWhite:1.0 alpha:1.0]
 #define TEXT_HINT_COLOR [UIColor colorWithWhite:0.75 alpha:1.0]
 
 @interface TodayViewController () <NCWidgetProviding, UITableViewDelegate, UITableViewDataSource> {
     float iOS;
     float height;
+    float rowHeight;
     ActionPerformer *performer;
     NSDictionary *userInfo;
     NSArray *hotPosts;
@@ -52,7 +53,7 @@
     if (iOS < 10.0) {
         height = [[DEFAULTS objectForKey:@"size"] floatValue];
         if (height == 0) {
-            height = SMALL_SIZE;
+            height = TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT;
         }
         [self _refreshShowMoreButtonTitle];
         [self setPreferredContentSize:CGSizeMake(0, height)];
@@ -68,15 +69,23 @@
     // Do any additional setup after loading the view from its nib.
 }
 
-- (UIEdgeInsets)widgetMarginInsetsForProposedMarginInsets:(UIEdgeInsets)defaultMarginInsets{
+// iOS 8-9 起作用
+- (UIEdgeInsets)widgetMarginInsetsForProposedMarginInsets:(UIEdgeInsets)defaultMarginInsets {
     return UIEdgeInsetsMake(0, 15, 0, 15);
 }
 
+// iOS 10+ 起作用
 - (void)widgetActiveDisplayModeDidChange:(NCWidgetDisplayMode)activeDisplayMode withMaximumSize:(CGSize)maxSize {
+    CGFloat originalRowHeight = rowHeight;
     if (activeDisplayMode == NCWidgetDisplayModeCompact) {
-        [self setPreferredContentSize:maxSize];
+        rowHeight = (maxSize.height - TOP_VIEW_HEIGHT) / 2;
+        [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 2 * rowHeight)];
     } else {
-        [self setPreferredContentSize:CGSizeMake(0, LARGE_SIZE)];
+        [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 5 * rowHeight)];
+    }
+    if (rowHeight != originalRowHeight) {
+        [_tableView beginUpdates];
+        [_tableView endUpdates];
     }
 }
 
@@ -201,20 +210,29 @@
 }
 
 - (IBAction)showMore:(id)sender {
-    height = (height == SMALL_SIZE ? LARGE_SIZE : SMALL_SIZE);
+    assert(iOS < 10);
+    height = (height == TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT ? TOP_VIEW_HEIGHT + 5 * DEFAULT_ROW_HEIGHT: TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT);
     [DEFAULTS setObject:@(height) forKey:@"size"];
     [self _refreshShowMoreButtonTitle];
     [self setPreferredContentSize:CGSizeMake(0, height)];
 }
 
 - (void)_refreshShowMoreButtonTitle {
-    [_buttonMore setImage:[UIImage imageNamed:(height == SMALL_SIZE ? @"down": @"up")] forState:UIControlStateNormal];
+    [_buttonMore setImage:[UIImage imageNamed:(height == TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT ? @"down": @"up")] forState:UIControlStateNormal];
 }
 
 #pragma mark Table View delegate & Data Source
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     return 5;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (iOS < 10) {
+        return DEFAULT_ROW_HEIGHT;
+    } else {
+        return rowHeight;
+    }
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
