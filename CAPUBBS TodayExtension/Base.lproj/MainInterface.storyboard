@@ -61,10 +61,10 @@
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="hot" id="sfB-p9-4bG" customClass="TodayTableViewCell">
-                                        <rect key="frame" x="0.0" y="28" width="375" height="33"/>
+                                        <rect key="frame" x="0.0" y="28" width="360" height="33"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="sfB-p9-4bG" id="Q4D-DO-Nys">
-                                            <frame key="frameInset" width="342" height="32"/>
+                                            <frame key="frameInset" width="327" height="32.5"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="标题" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="niV-7C-1bD">
@@ -99,7 +99,7 @@
                             </tableView>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="0jW-6j-JCd" firstAttribute="leading" secondItem="S3S-Oj-5AN" secondAttribute="leading" id="7YL-Ui-BHb"/>
+                            <constraint firstItem="0jW-6j-JCd" firstAttribute="leading" secondItem="S3S-Oj-5AN" secondAttribute="leading" constant="15" id="7YL-Ui-BHb"/>
                             <constraint firstItem="Xud-YF-Dyu" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="wxa-zN-uMr" secondAttribute="trailing" constant="8" id="ESp-dh-CQq"/>
                             <constraint firstItem="Xud-YF-Dyu" firstAttribute="centerY" secondItem="g5g-QO-P5K" secondAttribute="centerY" id="FWK-VN-ch0"/>
                             <constraint firstAttribute="trailing" secondItem="0jW-6j-JCd" secondAttribute="trailing" id="GVU-Ew-0V3"/>
