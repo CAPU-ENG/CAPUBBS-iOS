@@ -51,7 +51,7 @@
     performer = [ActionPerformer new];
     
     if (iOS < 10.0) {
-        height = [[DEFAULTS objectForKey:@"size"] floatValue];
+        height = [[DEFAULTS objectForKey:@"height"] floatValue];
         if (height == 0) {
             height = TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT;
         }
@@ -61,6 +61,7 @@
         [_buttonMessages setTitleColor:TEXT_HINT_COLOR forState:UIControlStateNormal];
         [_buttonMore setTintColor:TEXT_HINT_COLOR];
     } else {
+        rowHeight = [[DEFAULTS objectForKey:@"rowHeight"] floatValue];
         _constraintMoreButtonWidth.constant = 0;
         [self.extensionContext setWidgetLargestAvailableDisplayMode:NCWidgetDisplayModeExpanded];
         self.preferredContentSize = [self.extensionContext widgetMaximumSizeForDisplayMode:NCWidgetDisplayModeCompact];
@@ -79,6 +80,7 @@
     CGFloat originalRowHeight = rowHeight;
     if (activeDisplayMode == NCWidgetDisplayModeCompact) {
         rowHeight = (maxSize.height - TOP_VIEW_HEIGHT) / 2;
+        [DEFAULTS setObject:@(rowHeight) forKey:@"rowHeight"];
         [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 2 * rowHeight)];
     } else {
         [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 5 * rowHeight)];
@@ -212,7 +214,7 @@
 - (IBAction)showMore:(id)sender {
     assert(iOS < 10);
     height = (height == TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT ? TOP_VIEW_HEIGHT + 5 * DEFAULT_ROW_HEIGHT: TOP_VIEW_HEIGHT + 2 * DEFAULT_ROW_HEIGHT);
-    [DEFAULTS setObject:@(height) forKey:@"size"];
+    [DEFAULTS setObject:@(height) forKey:@"height"];
     [self _refreshShowMoreButtonTitle];
     [self setPreferredContentSize:CGSizeMake(0, height)];
 }
