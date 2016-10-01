@@ -40,10 +40,6 @@
 
 @implementation TodayViewController
 
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     [_imageIcon setRounded:YES];
@@ -80,12 +76,12 @@
     CGFloat originalRowHeight = rowHeight;
     if (activeDisplayMode == NCWidgetDisplayModeCompact) {
         rowHeight = (maxSize.height - TOP_VIEW_HEIGHT) / 2;
-        [DEFAULTS setObject:@(rowHeight) forKey:@"rowHeight"];
         [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 2 * rowHeight)];
     } else {
         [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 5 * rowHeight)];
     }
     if (rowHeight != originalRowHeight) {
+        [DEFAULTS setObject:@(rowHeight) forKey:@"rowHeight"];
         [_tableView beginUpdates];
         [_tableView endUpdates];
     }
@@ -99,7 +95,7 @@
 - (void)widgetPerformUpdateWithCompletionHandler:(void (^)(NCUpdateResult))completionHandler {
     // Perform any setup necessary in order to update the view.
     
-    [self refreshView];
+    [self _refreshView];
     
     // If an error is encountered, use NCUpdateResultFailed
     // If there's no update required, use NCUpdateResultNoData
@@ -108,17 +104,17 @@
     completionHandler(NCUpdateResultNewData);
 }
 
-- (void)refreshView {
+- (void)_refreshView {
     dispatch_global_default_async(^{
         dispatch_async(dispatch_get_main_queue(), ^{
             _constraintIndicatorWidth.constant = 20;
             [_indicatorLoading startAnimating];
         });
         dispatch_semaphore_t signal = dispatch_semaphore_create(0);
-        [self refreshUserInfoWithBlock:^{
+        [self _refreshUserInfoWithBlock:^{
             dispatch_semaphore_signal(signal);
         }];
-        [self refreshHotPostWithBlock:^{
+        [self _refreshHotPostWithBlock:^{
             dispatch_semaphore_signal(signal);
         }];
         dispatch_semaphore_wait(signal, DISPATCH_TIME_FOREVER);
@@ -130,7 +126,7 @@
     });
 }
 
-- (void)refreshUserInfoWithBlock:(void (^)())block {
+- (void)_refreshUserInfoWithBlock:(void (^)())block {
     void(^failBlock)() = ^() {
         dispatch_main_async_safe(^{
             [_imageIcon setImage:PLACEHOLDER];
@@ -177,7 +173,7 @@
     }];
 }
 
-- (void)refreshHotPostWithBlock:(void (^)())block {
+- (void)_refreshHotPostWithBlock:(void (^)())block {
     hotPosts = HOTPOSTS;
     if (hotPosts.count > 0) {
         dispatch_main_async_safe(^{
