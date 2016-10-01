@@ -78,15 +78,12 @@
         rowHeight = (maxSize.height - TOP_VIEW_HEIGHT) / 2;
         [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 2 * rowHeight)];
     } else {
-        if (rowHeight == 0) {
-            rowHeight = DEFAULT_ROW_HEIGHT;
-        }
+        rowHeight = DEFAULT_ROW_HEIGHT;
         [self setPreferredContentSize:CGSizeMake(0, TOP_VIEW_HEIGHT + 5 * rowHeight)];
     }
     if (rowHeight != originalRowHeight) {
         [DEFAULTS setObject:@(rowHeight) forKey:@"rowHeight"];
-        [_tableView beginUpdates];
-        [_tableView endUpdates];
+        [_tableView reloadData];
     }
 }
 
