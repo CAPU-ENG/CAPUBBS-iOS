@@ -60,14 +60,14 @@
 - (void)changeNoti {
     dispatch_main_async_safe(^{
         if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""] && [[USERINFO objectForKey:@"newmsg"] integerValue] > 0) {
-            self.buttonUser.image = [UIImage imageNamed:@"user-noti"];
+            [self.buttonUser setImage:[UIImage imageNamed:@"user-noti"]];
             if (shouldVibrate && [[DEFAULTS objectForKey:@"vibrate"] boolValue] == YES) {
                 AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
                 NSLog(@"Vibreate");
             }
             shouldVibrate = NO;
         }else {
-            self.buttonUser.image = [UIImage imageNamed:@"user"];
+            [self.buttonUser setImage:[UIImage imageNamed:@"user"]];
         }
     });
 }
