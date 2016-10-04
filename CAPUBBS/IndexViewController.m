@@ -59,7 +59,9 @@
 
 - (void)changeNoti {
     dispatch_main_async_safe(^{
-        if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""] && [[USERINFO objectForKey:@"newmsg"] integerValue] > 0) {
+        NSDictionary *infoDict = USERINFO;
+        NSLog(@"%@", infoDict);
+        if ([ActionPerformer checkLogin:NO] && ![infoDict isEqual:@""] && [[infoDict objectForKey:@"newmsg"] integerValue] > 0) {
             [self.buttonUser setImage:[UIImage imageNamed:@"user-noti"]];
             if (shouldVibrate && [[DEFAULTS objectForKey:@"vibrate"] boolValue] == YES) {
                 AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);

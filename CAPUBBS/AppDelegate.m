@@ -74,6 +74,9 @@
     if (IOS >= 9.0) {
         [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     }
+    if ([ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
+        [self _loginAsync:YES];
+    }
     return YES;
 }
 
@@ -400,7 +403,7 @@
                 [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
             }else {
                 [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
-                NSLog(@"AutoLog Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
+                NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
             }
             dispatch_semaphore_signal(signal);
             [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
