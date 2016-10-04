@@ -197,7 +197,7 @@
         NSMutableDictionary *dict = [USERINFO mutableCopy];
         NSString *msgNum = [NSString stringWithFormat:@"%d", [[data[0] objectForKey:@"sysmsg"] intValue] + [[data[0] objectForKey:@"prvmsg"] intValue]];
         [dict setObject:msgNum forKey:@"newmsg"];
-        [DEFAULTS setObject:dict forKey:@"userInfo"];
+        [GROUP_DEFAULTS setObject:dict forKey:@"userInfo"];
     }
     dispatch_main_async_safe(^{
         [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
@@ -347,8 +347,7 @@
         if (![cell.imageIcon.image isEqual:PLACEHOLDER]) {
             dest.iconData = UIImagePNGRepresentation(cell.imageIcon.image);
         }
-    }
-    if ([segue.identifier isEqualToString:@"post"]) {
+    } else if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [segue destinationViewController];
         if ([dict[@"type"] hasPrefix:@"replylzl"]) {
             dict = [ContentViewController getLink:dict[@"url"]];
