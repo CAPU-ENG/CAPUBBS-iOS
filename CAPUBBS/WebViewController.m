@@ -22,7 +22,14 @@
     if (IOS >= 9.0) {
         [self.webView setAllowsLinkPreview:YES];
     }
-    NSMutableURLRequest *newRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.URL]];
+    self.buttonBack.enabled = NO;
+    self.buttonForward.enabled = NO;
+    
+    activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".web"]];
+    activity.webpageURL = [NSURL URLWithString:self.URL];
+    [activity becomeCurrent];
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.URL]];
     if ([ActionPerformer checkLogin:NO]) {
         NSMutableDictionary *cookieProperties = [NSMutableDictionary dictionary]; // 设置cookie保留登录状态
         [cookieProperties setObject:@"token" forKey:NSHTTPCookieName];
@@ -32,12 +39,7 @@
         NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:cookieProperties];
         [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookie:cookie];
     }
-    self.buttonBack.enabled = NO;
-    self.buttonForward.enabled = NO;
-    activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".web"]];
-    activity.webpageURL = [NSURL URLWithString:self.URL];
-    [activity becomeCurrent];
-    [self.webView loadRequest:newRequest];
+    [self.webView loadRequest:request];
     // Do any additional setup after loading the view.
 }
 
@@ -47,6 +49,7 @@
 }
 
 - (void)webViewDidStartLoad:(UIWebView *)webView {
+    NSLog(@"%@", [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies]);
     self.title = @"加载中";
     self.navigationItem.rightBarButtonItems = @[self.buttonStop];
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
@@ -77,17 +80,14 @@
     }
     self.navigationItem.rightBarButtonItems = @[self.buttonRefresh];
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+    if (error.code == -1022) { // http不安全链接 尝试使用https重连
+        NSString *httpUrl = error.userInfo[NSURLErrorFailingURLStringErrorKey];
+        self.URL = [httpUrl stringByReplacingOccurrencesOfString:@"http://" withString:@"https://"];
+        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:self.URL]]];
+        return;
+    }
     if (error.code != -999) { // 999:主动终止加载
-        if (self.URL && ![self.URL hasPrefix:@"https://"]) {
-            if ([self.URL hasPrefix:@"http://"]) { // 尝试更换https加载
-                self.URL = [self.URL stringByReplacingOccurrencesOfString:@"http://" withString:@"https://"];
-            } else {
-                self.URL = [@"https://" stringByAppendingString:self.URL];
-            }
-            [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:self.URL]]];
-        }else {
-            [[[UIAlertView alloc] initWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        }
+        [[[UIAlertView alloc] initWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
     }
 }
 
