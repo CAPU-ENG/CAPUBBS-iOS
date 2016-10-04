@@ -267,7 +267,7 @@
     hud.mode = MBProgressHUDModeIndeterminate;
     hud.labelText = @"正在登录";
     [hud show:YES];
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid,@"username",[ActionPerformer md5:pass],@"password",@"ios",@"os",[ActionPerformer doDevicePlatform],@"device",[[UIDevice currentDevice] systemVersion],@"version", nil];
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid,@"username",[ActionPerformer md5:pass],@"password",[ActionPerformer doDevicePlatform],@"device",[[UIDevice currentDevice] systemVersion],@"version", nil];
     [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
         //NSLog(@"%@",result);
         if (err || result.count == 0) {

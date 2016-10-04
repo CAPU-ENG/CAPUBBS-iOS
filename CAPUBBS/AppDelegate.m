@@ -109,46 +109,55 @@
     BOOL continueFronCollectionSearch = ([info[0] isEqualToString:@"collection"]);
     BOOL continueFromHandoff = (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]);
     if (continueFronCollectionSearch || continueFromHandoff) {
-        NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"post"}];
-        if (continueFronCollectionSearch) {
-            naviDict[@"bid"] = info[1];
-            naviDict[@"tid"] = info[2];
-            naviDict[@"naviTitle"] = info[3];
-        } else if (continueFromHandoff) {
-            naviDict[@"bid"] = dict[@"bid"];
-            naviDict[@"tid"] = dict[@"tid"];
-            naviDict[@"page"] = dict[@"p"];
-            naviDict[@"floor"] = dict[@"floor"];
-            naviDict[@"naviTitle"] = userActivity.title;
-        }
-        [self _handleUrlRequestWithDictionary:naviDict];
+        dispatch_global_default_async(^{
+            NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"post"}];
+            if (continueFronCollectionSearch) {
+                naviDict[@"bid"] = info[1];
+                naviDict[@"tid"] = info[2];
+                naviDict[@"naviTitle"] = info[3];
+            } else if (continueFromHandoff) {
+                naviDict[@"bid"] = dict[@"bid"];
+                naviDict[@"tid"] = dict[@"tid"];
+                naviDict[@"page"] = dict[@"p"];
+                naviDict[@"floor"] = dict[@"floor"];
+                naviDict[@"naviTitle"] = userActivity.title;
+            }
+            [self _handleUrlRequestWithDictionary:naviDict];
+        });
     }
     
     dict = userActivity.userInfo;
     if ([dict[@"type"] isEqualToString:@"compose"]) {
-        if (userActivity.webpageURL.absoluteString.length == 0 && [dict[@"bid"] length] > 0) {
-            [self _handleUrlRequestWithDictionary:@{@"open": @"list", @"bid": dict[@"bid"]}];
-        }
-        
-        NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
-        [naviDict addEntriesFromDictionary:dict];
-        naviDict[@"naviTitle"] = userActivity.title;
-        [self _handleUrlRequestWithDictionary:naviDict];
+        dispatch_global_default_async(^{
+            if (userActivity.webpageURL.absoluteString.length == 0 && [dict[@"bid"] length] > 0) {
+                NSMutableDictionary *listDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"list"}];
+                listDict[@"bid"] = dict[@"bid"];
+                [self _handleUrlRequestWithDictionary:listDict];
+            }
+            
+            NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
+            [naviDict addEntriesFromDictionary:dict];
+            naviDict[@"naviTitle"] = userActivity.title;
+            [self _handleUrlRequestWithDictionary:naviDict];
+        });
     }
     
     return YES;
 }
 
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
-    if ([shortcutItem.type isEqualToString:@"Hot"]) {
-        [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
-    }else if ([shortcutItem.type isEqualToString:@"Collection"]) {
-        [self _handleUrlRequestWithDictionary:@{@"open": @"collection"}];
-    }else if ([shortcutItem.type isEqualToString:@"Message"]) {
-        [self _handleUrlRequestWithDictionary:@{@"open": @"message"}];
-    }else if ([shortcutItem.type isEqualToString:@"Compose"]) {
-        [self _handleUrlRequestWithDictionary:@{@"open": @"compose"}];
-    }
+    dispatch_global_default_async(^{
+        if ([shortcutItem.type isEqualToString:@"Hot"]) {
+            [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
+        }else if ([shortcutItem.type isEqualToString:@"Collection"]) {
+            [self _handleUrlRequestWithDictionary:@{@"open": @"collection"}];
+        }else if ([shortcutItem.type isEqualToString:@"Message"]) {
+            [self _handleUrlRequestWithDictionary:@{@"open": @"message"}];
+        }else if ([shortcutItem.type isEqualToString:@"Compose"]) {
+            [self _handleUrlRequestWithDictionary:@{@"open": @"compose"}];
+        }
+    });
+    completionHandler(YES);
 }
 
 - (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
@@ -169,7 +178,9 @@
         [params addEntriesFromDictionary:@{tempArray[0]: tempArray[1]}];
     }
     if (params.allKeys.count > 0) {
-        [self _handleUrlRequestWithDictionary:params];
+        dispatch_global_default_async(^{
+            [self _handleUrlRequestWithDictionary:params];
+        });
     }
     return YES;
 }
@@ -183,6 +194,10 @@
         }
         UINavigationController *navi;
         if ([open isEqualToString:@"message"]) {
+            // 同步登陆
+            [self _loginAsync:NO];
+            [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"wakeLogin"];
+            
             MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
@@ -222,6 +237,10 @@
             navi = [[UINavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"post"]) {
+            // 同步登陆
+            [self _loginAsync:NO];
+            [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"wakeLogin"];
+            
             ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
             
             dest.bid = dict[@"bid"];
@@ -242,6 +261,7 @@
             navi = [[UINavigationController alloc] initWithRootViewController:dest];
         }
         [view presentViewController:navi animated:YES completion:nil];
+        NSLog(@"Open with %@", open);
     }
 }
 
@@ -358,28 +378,37 @@
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     NSLog(@"Become Active");
     // 返回后自动登录
-    if (([ActionPerformer checkLogin:NO] || [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) && [[DEFAULTS objectForKey:@"wakeLogin"] boolValue] == YES) { // 已登录 或 不是第一次打开软件且开启了自动登录
-        NSString *uid = UID;
-        if (uid.length > 0) {
-            [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
-            NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid, @"username", [ActionPerformer md5:PASS], @"password", @"ios", @"os", [ActionPerformer doDevicePlatform], @"device", [[UIDevice currentDevice] systemVersion], @"version", nil];
-            [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
-                [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
-                if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-                    [GROUP_DEFAULTS removeObjectForKey:@"token"];
-                    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-                }else {
-                    [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
-                    NSLog(@"AutoLog Completed - %@", uid);
-                }
-                dispatch_main_async_safe(^{
-                    [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
-                });
-            }];
-        }
+    // 条件为 已登录 或 不是第一次打开软件且开启了自动登录
+    if (([ActionPerformer checkLogin:NO] || [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) && [[DEFAULTS objectForKey:@"wakeLogin"] boolValue] == YES) {
+        [self _loginAsync:YES];
     }
     [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"wakeLogin"];
+
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+}
+
+- (void)_loginAsync:(BOOL)async {
+    NSString *uid = UID;
+    if (uid.length > 0) {
+        [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
+        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid, @"username", [ActionPerformer md5:PASS], @"password", @"ios", @"os", [ActionPerformer doDevicePlatform], @"device", [[UIDevice currentDevice] systemVersion], @"version", nil];
+        dispatch_semaphore_t signal = dispatch_semaphore_create(0);
+        [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
+            [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+            if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+                [GROUP_DEFAULTS removeObjectForKey:@"token"];
+                [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            }else {
+                [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+                NSLog(@"AutoLog Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
+            }
+            dispatch_semaphore_signal(signal);
+            [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+        }];
+        if (!async) {
+            dispatch_semaphore_wait(signal, DISPATCH_TIME_FOREVER);
+        }
+    }
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
