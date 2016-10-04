@@ -60,7 +60,6 @@
 - (void)changeNoti {
     dispatch_main_async_safe(^{
         NSDictionary *infoDict = USERINFO;
-        NSLog(@"%@", infoDict);
         if ([ActionPerformer checkLogin:NO] && ![infoDict isEqual:@""] && [[infoDict objectForKey:@"newmsg"] integerValue] > 0) {
             [self.buttonUser setImage:[UIImage imageNamed:@"user-noti"]];
             if (shouldVibrate && [[DEFAULTS objectForKey:@"vibrate"] boolValue] == YES) {
