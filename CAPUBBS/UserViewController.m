@@ -317,7 +317,9 @@
     [hud show:YES];
     NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url.absoluteString]];
     if ([MANAGER fileExistsAtPath:cachePath] && [AsyncImageView fileType:[MANAGER contentsAtPath:cachePath]] == GIF_TYPE) { // GIF是未压缩的格式 可直接调取
-        [self presentImage:[MANAGER contentsAtPath:cachePath]];
+        NSData *imageData = [MANAGER contentsAtPath:cachePath];
+        imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:imageData] == GIF_TYPE) ? @"gif" : @"png"];
+        [self presentImage:imageData];
     }else {
         [self performSelectorInBackground:@selector(showPicThread:) withObject:url];
     }
