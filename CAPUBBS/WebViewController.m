@@ -80,12 +80,12 @@
     }
     self.navigationItem.rightBarButtonItems = @[self.buttonRefresh];
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
-    if (error.code == -1022) { // http不安全链接 尝试使用https重连
-        NSString *httpUrl = error.userInfo[NSURLErrorFailingURLStringErrorKey];
-        self.URL = [httpUrl stringByReplacingOccurrencesOfString:@"http://" withString:@"https://"];
-        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:self.URL]]];
-        return;
-    }
+//    if (error.code == -1022) { // http不安全链接 尝试使用https重连
+//        NSString *httpUrl = error.userInfo[NSURLErrorFailingURLStringErrorKey];
+//        self.URL = [httpUrl stringByReplacingOccurrencesOfString:@"http://" withString:@"https://"];
+//        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:self.URL]]];
+//        return;
+//    }
     if (error.code != -999) { // 999:主动终止加载
         [[[UIAlertView alloc] initWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
     }

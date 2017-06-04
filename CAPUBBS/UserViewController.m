@@ -97,7 +97,7 @@
         if ([webView isLoading]) {
             [webView stopLoading];
         }
-        [webView loadHTMLString:[webData objectAtIndex:i] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];
+        [webView loadHTMLString:[webData objectAtIndex:i] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
     }
 }
 
@@ -227,7 +227,7 @@
                 if ([webView isLoading]) {
                     [webView stopLoading];
                 }
-                [webView loadHTMLString:htmlString baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];
+                [webView loadHTMLString:htmlString baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
             }
             
             [recentPost removeAllObjects];
@@ -265,7 +265,7 @@
         [mfc.navigationBar setTintColor:[UIColor whiteColor]];
         [mfc setSubject:@"CAPUBBS 举报违规用户"];
         [mfc setToRecipients:REPORT_EMAIL];
-        [mfc setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"https://%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID] isHTML:YES];
+        [mfc setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID] isHTML:YES];
         [self presentViewController:mfc animated:YES completion:nil];
     }
 }

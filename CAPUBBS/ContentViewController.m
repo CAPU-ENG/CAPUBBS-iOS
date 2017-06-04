@@ -101,7 +101,7 @@
     self.buttonLatest.enabled = NO;
     self.buttonJump.enabled = NO;
     self.buttonCompose.enabled = NO;
-    URL = [NSString stringWithFormat:@"https://%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)page];
+    URL = [NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)page];
     activity.webpageURL = [NSURL URLWithString:URL];
     activity.title = self.title;
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%ld", (long)pageNum], @"p", self.bid, @"bid", self.tid, @"tid", nil];
@@ -121,7 +121,7 @@
             [hud hide:YES afterDelay:0.5];
             NSLog(@"%@", err);
             if (err.code == 111) {
-                tempPath = [NSString stringWithFormat:@"https://%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)page];
+                tempPath = [NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)page];
                 [self performSegueWithIdentifier:@"web" sender:nil];
             }
             return;
@@ -390,7 +390,7 @@
     [cell.icon setUrl:dict[@"icon"]];
     
     [cell.webView setDelegate:self];
-    [cell.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];
+    [cell.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
     
     
     if (([[heights objectAtIndex:indexPath.row] floatValue] > 1)) {
@@ -501,7 +501,7 @@
             NSString *piclink = [path substringFromIndex:@"pic:".length];
             NSURL *picurl = [NSURL URLWithString:piclink];
             if (![piclink hasPrefix:@"http://"] && ![piclink hasPrefix:@"https://"] && ![piclink hasPrefix:@"ftp://"]) {
-                picurl = [NSURL URLWithString:piclink relativeToURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/index.php", CHEXIE]]];
+                picurl = [NSURL URLWithString:piclink relativeToURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
             }
             [self showPic:picurl];
             return NO;

@@ -106,7 +106,7 @@
 
 - (void)updateActivity {
     if (self.bid.length > 0 && self.tid.length > 0) {
-        activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)self.floor]];
+        activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)self.floor]];
     }else {
         activity.webpageURL = nil;
     }
