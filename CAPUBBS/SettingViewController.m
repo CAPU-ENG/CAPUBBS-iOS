@@ -179,7 +179,7 @@
         }else if (indexPath.row == 5) {
             NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
             NSString *app_Version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
-            [[[UIAlertView alloc] initWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"CAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", app_Version, __DATE__, COPYRIGHT, EULA] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [[[UIAlertView alloc] initWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", app_Version, __DATE__, COPYRIGHT, EULA] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
         }
     }
 }
