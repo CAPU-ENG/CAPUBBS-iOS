@@ -54,7 +54,7 @@
                           @"2016-01-01", @"checkPass",
                           nil];
     NSDictionary *group = [NSDictionary dictionaryWithObjectsAndKeys:
-                           @"www.chexie.net", @"URL",
+                           DEFAULT_SERVER_URL, @"URL",
                            @"", @"token",
                            @"", @"userInfo",
                            @(NO), @"iconOnlyInWifi",

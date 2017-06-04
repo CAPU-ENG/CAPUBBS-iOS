@@ -40,7 +40,7 @@
         [self.imageUidAvailable setImage:SUCCESSMARK];
         [self setDefaultValue];
     }else {
-        iconURL = [NSString stringWithFormat:@"https://%@/bbsimg/icons/%@", CHEXIE, [ICON_NAMES objectAtIndex:arc4random() % [ICON_NAMES count]]];
+        iconURL = [NSString stringWithFormat:@"%@/bbsimg/icons/%@", CHEXIE, [ICON_NAMES objectAtIndex:arc4random() % [ICON_NAMES count]]];
         [self.icon setUrl:iconURL];
         [self editingDidEnd:self.textUid];
     }

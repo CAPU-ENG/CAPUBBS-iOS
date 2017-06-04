@@ -153,7 +153,7 @@
     UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"快速访问" message:[NSString stringWithFormat: @"输入带有帖子链接的文本进行快速访问\n\n高级功能\n输入要连接的论坛地址\n目前地址：%@\n链接会被自动判别", CHEXIE] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
     alert.alertViewStyle = UIAlertViewStylePlainTextInput;
     [alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeURL;
-    [alert textFieldAtIndex:0].text = @"www.chexie.net";
+    [alert textFieldAtIndex:0].text = @"https://www.chexie.net";
     [alert textFieldAtIndex:0].placeholder = @"地址链接";
     [alert show];
 }
@@ -207,7 +207,7 @@
         }else {
             [DEFAULTS removeObjectForKey:@"IDNum"];
             [DEFAULTS removeObjectForKey:@"hotNum"];
-            if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"])) {
+            if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"] || [text rangeOfString:@"[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" options:NSRegularExpressionSearch].location != NSNotFound)) {
                 [[[UIAlertView alloc] initWithTitle:@"错误" message:@"不是有效的链接" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
                 hud.labelText = @"设置失败";
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
