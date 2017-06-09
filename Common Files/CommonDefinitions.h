@@ -43,7 +43,7 @@
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
 #define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
-#define IS_CELLULAR ([[Reachability reachabilityForLocalWiFi] currentReachabilityStatus] == NotReachable && [[Reachability reachabilityForInternetConnection] currentReachabilityStatus] != NotReachable)
+#define IS_CELLULAR (![[AFNetworkReachabilityManager sharedManager] isReachableViaWWAN] && [[AFNetworkReachabilityManager sharedManager] isReachable])
 
 #define MAX_ID_NUM 10
 #define MAX_HOT_NUM 40
