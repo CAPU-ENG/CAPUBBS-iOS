@@ -14,7 +14,7 @@
 #define APP_GROUP_IDENTIFIER @"group.net.chexie.capubbs"
 
 #define REPORT_EMAIL @[@"beidachexie@163.com"]
-#define FEEDBACK_EMAIL @[@"goodman.capu@qq.com", @"beidachexie@163.com"]
+#define FEEDBACK_EMAIL @[@"goodman.capu@gmail.com", @"beidachexie@163.com"]
 #define COPYRIGHT @"Copyright®  2001 - 2017\nPowered by：CAPU ver 3.0"
 #define EULA @"本论坛作为北京大学自行车协会内部以及自行车爱好者之间交流平台，不欢迎任何商业广告和无关话题。发言者对自己发表的任何言论、信息负责。"
 

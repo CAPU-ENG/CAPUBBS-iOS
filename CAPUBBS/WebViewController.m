@@ -34,8 +34,11 @@
         NSMutableDictionary *cookieProperties = [NSMutableDictionary dictionary]; // 设置cookie保留登录状态
         [cookieProperties setObject:@"token" forKey:NSHTTPCookieName];
         [cookieProperties setObject:TOKEN forKey:NSHTTPCookieValue];
-        [cookieProperties setObject:CHEXIE forKey:NSHTTPCookieDomain];
         [cookieProperties setObject:@"/" forKey:NSHTTPCookiePath];
+        NSString *domain = CHEXIE;
+        domain = [domain stringByReplacingOccurrencesOfString:@"https?://" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, domain.length)];
+        domain = [domain stringByReplacingOccurrencesOfString:@":[0-9]{1,5}$" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, domain.length)];
+        [cookieProperties setObject:domain forKey:NSHTTPCookieDomain];
         NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:cookieProperties];
         [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookie:cookie];
     }
