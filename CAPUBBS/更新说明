@@ -16,14 +16,14 @@ CAPUBBS iOS客户端包含功能：
 
 审核信息：
 
-"分享到QQ、微信”，指的是，例如，在点击查看贴子中的图片时，用户可以分享该图片文件，并且是在用户设备安装了QQ、微信app的前提下。
+Users have to agree with EULA (shown to the user when they open the app for the first time) to use the app.
+若要使用软件，用户必须同意EULA，EULA会在第一次打开软件时显示，如果拒绝EULA则无法开始使用软件。
 
-用户认为是违规内容的帖子/用户/私信均可举报，具体举报方法：
-帖子：在相应帖子界面，点击底部Action键，选择“举报”。
-用户/私信：在用户信息界面，（如果是举报私信内容，则先返回或点击右上方“(i)”键进入对方的用户信息），拉至表格底部，选择“举报该用户”。
-举报内容可以在邮件中详细说明，我们有一个团队随时处理用户的举报，对核实内容可以做删帖、删除聊天内容、封禁/删除用户等处理，并且可以通过admin账号发送私信告知双方处理结果。
+We don't force users to register. Users can read posts (except in the working board) without registering. When users register, they're not forced to submit any private information like gender (They can select "保密", which means "Confidential").
+本软件不强制要求用户注册，未注册用户可以正常浏览非工作区的所有帖子，并且正常使用搜索等功能，注册用户也不必填写隐私信息例如性别，可以选择“保密”代之。
 
-若要使用软件，用户必须同意EULA，EULA会在第一次打开软件时显示，如果拒绝EULA则无法开始使用软件。本软件不强制要求用户注册，未注册用户可以正常浏览非工作区的所有帖子，并且正常使用搜索等功能。
+User can report posts/users if they think the content is inappropriate. We have a special team to deal with the reports in time.
+用户认为是违规内容的帖子/用户/私信均可举报，举报内容可以在邮件中详细说明，我们有一个团队随时处理用户的举报，对核实内容可以做删帖、删除聊天内容、封禁/删除用户等处理，并且可以通过admin账号发送私信告知双方处理结果。
 
 1.2.1
 1、适配iPhone 6/iPhone 6 Plus
@@ -286,5 +286,5 @@ For A Better CAPU!
 
 3.6.4
 - 适配iOS 11系统
-- 适配iPhone 8/8 plus、iPhone X机型
+- 适配iPhone 8/8 plus机型
 - 小错误修复
