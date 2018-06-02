@@ -71,10 +71,10 @@
         [self.searchController setActive:YES];
     }
     
-    if (![[DEFAULTS objectForKey:@"FeatureCollection3.2"] boolValue]) {
-        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"在帖子里添加/删除个人收藏\n点右上角以管理个人收藏\niOS 9及更高可以在系统中搜索收藏" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureCollection3.2"];
-    }
+//    if (![[DEFAULTS objectForKey:@"FeatureCollection3.2"] boolValue]) {
+//        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"在帖子里添加/删除个人收藏\n点右上角以管理个人收藏\niOS 9及更高可以在系统中搜索收藏" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureCollection3.2"];
+//    }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
