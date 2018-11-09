@@ -6,7 +6,8 @@
 //  Copyright (c) 2014年 熊典. All rights reserved.
 //
 
-#import "Reachability.h"
+#import <Foundation/Foundation.h>
+#import "AFNetworking.h"
 
 typedef void (^ActionPerformerResultBlock)(NSArray* result, NSError* err);
 

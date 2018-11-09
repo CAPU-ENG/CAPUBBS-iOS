@@ -156,7 +156,7 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 1) {
         if (indexPath.row == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"确认清除软件缓存？" message:@"这将清除部分缓存和临时文件\n不会清除头像缓存" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
+            [[[UIAlertView alloc] initWithTitle:@"确认清除软件缓存？" message:@"这将清除缓存和临时文件\n不会清除头像缓存\n部分系统缓存无法彻底清除" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
         }
         if (indexPath.row == 1) {
             [[[UIAlertView alloc] initWithTitle:@"确认清除头像缓存？" message:@"建议仅在头像出错时使用" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];

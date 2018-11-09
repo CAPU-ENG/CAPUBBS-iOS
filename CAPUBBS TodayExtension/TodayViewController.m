@@ -126,8 +126,8 @@
     });
 }
 
-- (void)_refreshUserInfoWithBlock:(void (^)())block {
-    void(^failBlock)() = ^() {
+- (void)_refreshUserInfoWithBlock:(void (^)(void))block {
+    void(^failBlock)(void) = ^() {
         dispatch_main_async_safe(^{
             [_imageIcon setImage:PLACEHOLDER];
             [_labelName setText:@"未登录"];
@@ -135,7 +135,7 @@
             userInfo = nil;
         });
     };
-    void(^updateInfoBlock)() = ^() {
+    void(^updateInfoBlock)(void) = ^() {
         int newMessageNum = [userInfo[@"newmsg"] intValue];
         NSString *newMessageTitle = [NSString stringWithFormat:@"您有 %d 条新消息", newMessageNum];
         dispatch_main_async_safe(^{
@@ -173,7 +173,7 @@
     }];
 }
 
-- (void)_refreshHotPostWithBlock:(void (^)())block {
+- (void)_refreshHotPostWithBlock:(void (^)(void))block {
     hotPosts = HOTPOSTS;
     if (hotPosts.count > 0) {
         dispatch_main_async_safe(^{

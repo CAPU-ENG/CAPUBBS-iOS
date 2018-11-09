@@ -9,12 +9,12 @@
 #ifndef CommonDefinitions_h
 #define CommonDefinitions_h
 
-//#define DEFAULT_SERVER_URL @"https://www.chexie.net"
-#define DEFAULT_SERVER_URL @"http://162.105.69.21" // 临时IP
+#define DEFAULT_SERVER_URL @"https://www.chexie.net"
+//#define DEFAULT_SERVER_URL @"http://capu.fanzhikang.cn" // 临时域名
 #define APP_GROUP_IDENTIFIER @"group.net.chexie.capubbs"
 
 #define REPORT_EMAIL @[@"beidachexie@163.com"]
-#define FEEDBACK_EMAIL @[@"goodman.capu@qq.com", @"beidachexie@163.com"]
+#define FEEDBACK_EMAIL @[@"goodman.capu@gmail.com", @"beidachexie@163.com"]
 #define COPYRIGHT @"Copyright®  2001 - 2017\nPowered by：CAPU ver 3.0"
 #define EULA @"本论坛作为北京大学自行车协会内部以及自行车爱好者之间交流平台，不欢迎任何商业广告和无关话题。发言者对自己发表的任何言论、信息负责。"
 
@@ -43,7 +43,7 @@
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
 #define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
-#define IS_CELLULAR ([[Reachability reachabilityForLocalWiFi] currentReachabilityStatus] == NotReachable && [[Reachability reachabilityForInternetConnection] currentReachabilityStatus] != NotReachable)
+#define IS_CELLULAR (![[AFNetworkReachabilityManager sharedManager] isReachableViaWWAN] && [[AFNetworkReachabilityManager sharedManager] isReachable])
 
 #define MAX_ID_NUM 10
 #define MAX_HOT_NUM 40

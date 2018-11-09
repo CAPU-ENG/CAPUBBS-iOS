@@ -71,7 +71,7 @@
     //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureText2.1"];
     //    }
     if (![[DEFAULTS objectForKey:@"FeaturePreview2.2"] boolValue]) {
-        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"发帖前可以预览，所见即所得\n向左滑动或者点击右上方▶︎前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+        [[[UIAlertView alloc] initWithTitle:@"Tips" message:@"发帖前可以预览，所见即所得\n向左滑动或者点击右上方▶︎前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
         [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePreview2.2"];
     }
     

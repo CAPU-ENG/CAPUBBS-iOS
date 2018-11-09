@@ -58,7 +58,7 @@
         //        }
     }else {
         if (![[DEFAULTS objectForKey:@"FeatureViewOnline3.0"] boolValue]) {
-            [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+            [[[UIAlertView alloc] initWithTitle:@"Tips" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
             [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureViewOnline3.0"];
         }
     }

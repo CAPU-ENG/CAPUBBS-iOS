@@ -7,7 +7,6 @@
 //
 
 #import "ActionPerformer.h"
-#import "AFNetworking.h"
 #import <CommonCrypto/CommonCrypto.h> // MD5
 #import "sys/utsname.h" // 设备型号
 #import "CommonDefinitions.h"
@@ -17,7 +16,6 @@
 #pragma mark Web Request
 
 - (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
-    
     NSString *postUrl = [NSString stringWithFormat:@"%@/api/client.php?ask=%@",CHEXIE, url];
     
     NSMutableDictionary *requestDictionary = [[NSMutableDictionary alloc] init];

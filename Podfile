@@ -10,3 +10,7 @@ target 'CAPUBBS TodayExtension' do
     pod 'AFNetworking'
     pod 'FLAnimatedImage'
 end
+
+target 'CAPUBBSTests' do
+    pod 'AFNetworking'
+end

@@ -79,10 +79,10 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     if ([self.ID isEqualToString:UID]) {
-        if (![[DEFAULTS objectForKey:@"FeatureEditUser3.0"] boolValue]) {
-            [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"可以编辑个人信息\n点击右上方铅笔前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureEditUser3.0"];
-        }
+//        if (![[DEFAULTS objectForKey:@"FeatureEditUser3.0"] boolValue]) {
+//            [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"可以编辑个人信息\n点击右上方铅笔前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+//            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureEditUser3.0"];
+//        }
     }
 }
 

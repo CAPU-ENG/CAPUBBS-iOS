@@ -40,10 +40,10 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    //    if (![[DEFAULTS objectForKey:@"Featurelzl1.3"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"长按某层楼中楼可以快捷回复" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"Featurelzl1.3"];
-    //    }
+    if (![[DEFAULTS objectForKey:@"Featurelzl1.3"] boolValue]) {
+        [[[UIAlertView alloc] initWithTitle:@"Tips" message:@"长按某层楼中楼可以快捷回复" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"Featurelzl1.3"];
+    }
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".lzl"]];
     activity.webpageURL = self.URL;
     [activity becomeCurrent];
