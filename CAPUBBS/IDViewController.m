@@ -55,12 +55,12 @@
         if ([cell.labelText.text isEqualToString:UID] && [ActionPerformer checkLogin:NO]) {
             cell.accessoryType = UITableViewCellAccessoryCheckmark;
             cell.userInteractionEnabled = NO;
-        }else {
+        } else {
             cell.accessoryType = UITableViewCellAccessoryNone;
             cell.userInteractionEnabled = YES;
         }
         [cell.icon setUrl:data[indexPath.row][@"icon"]];
-    }else {
+    } else {
         cell = [tableView dequeueReusableCellWithIdentifier:@"new" forIndexPath:indexPath];
     }
     // Configure the cell...
@@ -81,7 +81,7 @@
     // Return NO if you do not want the specified item to be editable.
     if (indexPath.row < data.count) {
         return YES;
-    }else {
+    } else {
         return NO;
     }
 }
@@ -113,7 +113,7 @@
         IDCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
         if (cell.accessoryType == UITableViewCellAccessoryCheckmark) {
             lastCell = cell;
-        }else {
+        } else {
             [self performSegueWithIdentifier:@"login" sender:cell];
         }
     }
@@ -129,7 +129,7 @@
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
     if (buttonIndex == alertView.cancelButtonIndex) {
         return;
-    }else if ([alertView.title isEqualToString:@"警告"]) {
+    } else if ([alertView.title isEqualToString:@"警告"]) {
         [performer performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
         NSLog(@"Logout - %@", UID);
         [GROUP_DEFAULTS removeObjectForKey:@"uid"];

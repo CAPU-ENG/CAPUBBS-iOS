@@ -87,7 +87,7 @@
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     if (section == 0) {
         return iconNames.count + HAS_CUSTOM_ICON;
-    }else {
+    } else {
         return OLD_ICON_TOTAL;
     }
 }
@@ -100,14 +100,14 @@
         if (width <= 450) {
             largeCellSize = (width - 25) / 4;
             smallCellSize = ((width - 35) / 6);
-        }else {
+        } else {
             largeCellSize = 80;
             smallCellSize = 50;
         }
     }
     if (indexPath.section == 0) {
         return CGSizeMake(largeCellSize, largeCellSize);
-    }else {
+    } else {
         return CGSizeMake(smallCellSize, smallCellSize);
     }
 }
@@ -117,12 +117,12 @@
     if (indexPath.section == 0) {
         if (HAS_CUSTOM_ICON && indexPath.row == 0) {
             [cell.icon setUrl:self.userIcon];
-        }else {
+        } else {
             [cell.icon setUrl:[NSString stringWithFormat:@"/bbsimg/icons/%@", [iconNames objectAtIndex:(int)indexPath.row - HAS_CUSTOM_ICON]]];
         }
         [cell.imageCheck setHidden:(indexPath.row != newIconNum + HAS_CUSTOM_ICON)];
         [cell.icon.layer setBorderWidth:3 * (indexPath.row == newIconNum + HAS_CUSTOM_ICON)];
-    }else {
+    } else {
         [cell.icon setUrl:[NSString stringWithFormat:@"/bbsimg/i/%d.gif", (int)indexPath.row]];
         [cell.imageCheck setHidden:(indexPath.row != oldIconNum)];
         [cell.icon.layer setBorderWidth:2 * (indexPath.row == oldIconNum)];
@@ -148,7 +148,7 @@
     float scale = 1.5;
     if (frame.origin.y < (frame.size.height * scale + [self.view convertRect:self.collectionView.bounds toView:self.view].origin.y)) {
         frame.origin.y += frame.size.height;
-    }else {
+    } else {
         frame.origin.y -= frame.size.height;
     }
     frame.origin.x -= ((scale - 1) / 2) * frame.size.width;
@@ -166,7 +166,7 @@
     [previewImageView setRounded:YES];
     if (![cell.icon.image isEqual:PLACEHOLDER]) {
         [previewImageView setImage:cell.icon.image];
-    }else {
+    } else {
         [previewImageView setUrl:[cell.icon getUrl]];
     }
     [self.collectionView addSubview:previewImageView];
@@ -224,7 +224,7 @@
     image = [info objectForKey:UIImagePickerControllerEditedImage];
     if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
         [[[UIAlertView alloc] initWithTitle:@"警告" message:@"所选图片偏离正方形\n建议裁剪处理后使用" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"继续上传", nil] show];
-    }else {
+    } else {
         [self prepareUpload];
     }
     [picker dismissViewControllerAnimated:YES completion:nil];
@@ -236,8 +236,8 @@
         [self.navigationController.view addSubview:hud];
     }
     hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在压缩";
-    [hud show:YES];
+    hud.label.text = @"正在压缩";
+    [hud showAnimated:YES];
     [self performSelectorInBackground:@selector(upload) withObject:nil];
 }
 
@@ -250,25 +250,25 @@
         imageData = UIImageJPEGRepresentation(image, ratio);
     }
     NSLog(@"Icon Size:%dkB", (int)imageData.length / 1024);
-    hud.labelText = @"正在上传";
+    hud.label.text = @"正在上传";
     [performer performActionWithDictionary:[NSDictionary dictionaryWithObjectsAndKeys:[imageData base64EncodedStringWithOptions:0], @"image", nil] toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"上传失败";
-        }else {
+            hud.label.text = @"上传失败";
+        } else {
             if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"上传完成";
+                hud.label.text = @"上传完成";
                 NSString *url = [[result firstObject] objectForKey:@"imgurl"];
                 [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:url, @"URL", nil]];
                 [self.navigationController popViewControllerAnimated:YES];
-            }else {
+            } else {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"上传失败";
+                hud.label.text = @"上传失败";
             }
         }
         hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
     }];
 }
 
@@ -289,10 +289,10 @@
         if (url.length > 0) {
             [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"-1", @"num", url, @"URL", nil]];
             [self.navigationController popViewControllerAnimated:YES];
-        }else {
+        } else {
             [[[UIAlertView alloc] initWithTitle:@"错误" message:@"链接不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
         }
-    }else if ([alertView.title isEqualToString:@"警告"]) {
+    } else if ([alertView.title isEqualToString:@"警告"]) {
         [self prepareUpload];
     }
 }

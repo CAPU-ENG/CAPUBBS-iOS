@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -23,6 +23,7 @@
 		017FE5F21A9DC2E5001BDD15 /* Launch Screen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 017FE5F11A9DC2E5001BDD15 /* Launch Screen.xib */; };
 		01830CB91C2694B70026D1EB /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01830CB81C2694B70026D1EB /* Accelerate.framework */; };
 		018DC2021BFF482600334BF1 /* IDCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 018DC2011BFF482600334BF1 /* IDCell.m */; };
+		019D7E952DEA179F00F91E41 /* jquery.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 019D7E942DEA179500F91E41 /* jquery.min.js */; };
 		01A552BB1C1204AA002317C0 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 01A552BA1C1204AA002317C0 /* Images.xcassets */; };
 		01A616CB1AB7C9CD009A0D0A /* IconViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01A616CA1AB7C9CD009A0D0A /* IconViewController.m */; };
 		01A616CE1AB7CA84009A0D0A /* IconCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01A616CD1AB7CA84009A0D0A /* IconCell.m */; };
@@ -200,7 +201,9 @@
 		01D80F431B4C2E56006F8957 /* 31_0.gif in Resources */ = {isa = PBXBuildFile; fileRef = 01D80F221B4C2E56006F8957 /* 31_0.gif */; };
 		01D80F441B4C2E56006F8957 /* 32_0.gif in Resources */ = {isa = PBXBuildFile; fileRef = 01D80F231B4C2E56006F8957 /* 32_0.gif */; };
 		01D80F451B4C2E56006F8957 /* 33_0.gif in Resources */ = {isa = PBXBuildFile; fileRef = 01D80F241B4C2E56006F8957 /* 33_0.gif */; };
-		01DCE2691D9D6D9000D93694 /* TodayTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01DCE2681D9D6D9000D93694 /* TodayTableViewCell.m */; };
+		01E042BF2DE4B1C900590A6C /* ReachabilityManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 01E042BE2DE4B1C800590A6C /* ReachabilityManager.m */; };
+		01E042CA2DE4C9A000590A6C /* MBProgressHUD in Frameworks */ = {isa = PBXBuildFile; productRef = 01E042C92DE4C9A000590A6C /* MBProgressHUD */; };
+		01E042CD2DE4C9D700590A6C /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = 01E042CC2DE4C9D700590A6C /* SDWebImage */; };
 		01E15A3C1B27D68400946A0C /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01E15A3B1B27D68400946A0C /* AVFoundation.framework */; };
 		01E1B15B1C28061500EC680D /* UIImageEffects.m in Sources */ = {isa = PBXBuildFile; fileRef = 01E1B15A1C28061500EC680D /* UIImageEffects.m */; };
 		01E4CC2F1BF260F700C88FFC /* CollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01E4CC2E1BF260F700C88FFC /* CollectionViewCell.m */; };
@@ -209,13 +212,6 @@
 		01F38EB71AE1516C007F25D0 /* ChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01F38EB61AE1516C007F25D0 /* ChatViewController.m */; };
 		01F38EBA1AE1533C007F25D0 /* MessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01F38EB91AE1533C007F25D0 /* MessageCell.m */; };
 		01F38EBD1AE1537F007F25D0 /* ChatCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01F38EBC1AE1537F007F25D0 /* ChatCell.m */; };
-		01F471491D9CFE06009221F6 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 01F471481D9CFE06009221F6 /* Images.xcassets */; };
-		01F79C891D9CAD44000594F1 /* ActionPerformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EE418B100B100F68A62 /* ActionPerformer.m */; };
-		01F79C8A1D9CAD47000594F1 /* AsyncImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0100A0D11C0C562C00A1282D /* AsyncImageView.m */; };
-		01F79C8E1D9CB07A000594F1 /* UIImageEffects.m in Sources */ = {isa = PBXBuildFile; fileRef = 01E1B15A1C28061500EC680D /* UIImageEffects.m */; };
-		2106B0286CD5612E2C1F485B /* libPods-CAPUBBSTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C086CF9C15B71F5CF93FF4FB /* libPods-CAPUBBSTests.a */; };
-		45138B8FD4018205EDB3570E /* libPods-CAPUBBS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DF922A262A9AAD1EC74117D4 /* libPods-CAPUBBS.a */; };
-		5786CE6B7BCB771AB31B9C8A /* libPods-CAPUBBS TodayExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AB5EA73D176C6F12CEC769B0 /* libPods-CAPUBBS TodayExtension.a */; };
 		8B7403D818B5A09F009753FE /* SettingViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B7403D718B5A09F009753FE /* SettingViewController.m */; };
 		8B7403DB18B5A41E009753FE /* InternalLoginViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B7403DA18B5A41E009753FE /* InternalLoginViewController.m */; };
 		8B7403DD18B5A921009753FE /* MessageUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B7403DC18B5A921009753FE /* MessageUI.framework */; };
@@ -244,10 +240,6 @@
 		8BAC8EF718B11B4C00F68A62 /* ContentCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EF618B11B4C00F68A62 /* ContentCell.m */; };
 		8BD9862319CEFFD10006ECEC /* LzlCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BD9862219CEFFD10006ECEC /* LzlCell.m */; };
 		8BD9862619CF052D0006ECEC /* LzlViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BD9862519CF052D0006ECEC /* LzlViewController.m */; };
-		E978B9EB1D9CAB6D000BE141 /* NotificationCenter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E978B9EA1D9CAB6D000BE141 /* NotificationCenter.framework */; };
-		E978B9EF1D9CAB6D000BE141 /* TodayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */; };
-		E978B9F21D9CAB6D000BE141 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */; };
-		E978B9F61D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -258,26 +250,18 @@
 			remoteGlobalIDString = 8BAC8E9E18B0F2BE00F68A62;
 			remoteInfo = CAPUBBS;
 		};
-		E978B9F41D9CAB6D000BE141 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 8BAC8E9718B0F2BE00F68A62 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E978B9E81D9CAB6D000BE141;
-			remoteInfo = "CAPUBBS TodayExtension";
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		E978B9FA1D9CAB6D000BE141 /* Embed App Extensions */ = {
+		E978B9FA1D9CAB6D000BE141 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 8;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				E978B9F61D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex in Embed App Extensions */,
 			);
-			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -312,6 +296,7 @@
 		01830CB81C2694B70026D1EB /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		018DC2001BFF482600334BF1 /* IDCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IDCell.h; sourceTree = "<group>"; };
 		018DC2011BFF482600334BF1 /* IDCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IDCell.m; sourceTree = "<group>"; };
+		019D7E942DEA179500F91E41 /* jquery.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = jquery.min.js; sourceTree = "<group>"; };
 		01A552BA1C1204AA002317C0 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		01A616C91AB7C9CD009A0D0A /* IconViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IconViewController.h; sourceTree = "<group>"; };
 		01A616CA1AB7C9CD009A0D0A /* IconViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IconViewController.m; sourceTree = "<group>"; };
@@ -494,8 +479,9 @@
 		01D80F221B4C2E56006F8957 /* 31_0.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = 31_0.gif; sourceTree = "<group>"; };
 		01D80F231B4C2E56006F8957 /* 32_0.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = 32_0.gif; sourceTree = "<group>"; };
 		01D80F241B4C2E56006F8957 /* 33_0.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = 33_0.gif; sourceTree = "<group>"; };
-		01DCE2671D9D6D9000D93694 /* TodayTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TodayTableViewCell.h; sourceTree = "<group>"; };
-		01DCE2681D9D6D9000D93694 /* TodayTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TodayTableViewCell.m; sourceTree = "<group>"; };
+		01E042BA2DE4308100590A6C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		01E042BD2DE4B1B700590A6C /* ReachabilityManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReachabilityManager.h; sourceTree = "<group>"; };
+		01E042BE2DE4B1C800590A6C /* ReachabilityManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ReachabilityManager.m; sourceTree = "<group>"; };
 		01E15A3B1B27D68400946A0C /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		01E1B1591C28061500EC680D /* UIImageEffects.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIImageEffects.h; sourceTree = "<group>"; };
 		01E1B15A1C28061500EC680D /* UIImageEffects.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIImageEffects.m; sourceTree = "<group>"; };
@@ -510,11 +496,7 @@
 		01F38EB91AE1533C007F25D0 /* MessageCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MessageCell.m; sourceTree = "<group>"; };
 		01F38EBB1AE1537F007F25D0 /* ChatCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChatCell.h; sourceTree = "<group>"; };
 		01F38EBC1AE1537F007F25D0 /* ChatCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ChatCell.m; sourceTree = "<group>"; };
-		01F471481D9CFE06009221F6 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		01F79C8D1D9CAEAC000594F1 /* CommonDefinitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommonDefinitions.h; sourceTree = "<group>"; };
-		285721F82A6CF5EDB19CA172 /* Pods-CAPUBBS TodayExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS TodayExtension.release.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS TodayExtension/Pods-CAPUBBS TodayExtension.release.xcconfig"; sourceTree = "<group>"; };
-		4D70AB10B6F6DC9C6044DD99 /* Pods-CAPUBBS TodayExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS TodayExtension.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS TodayExtension/Pods-CAPUBBS TodayExtension.debug.xcconfig"; sourceTree = "<group>"; };
-		5DC9C137145C8F004284676D /* Pods-CAPUBBSTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBSTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBSTests/Pods-CAPUBBSTests.debug.xcconfig"; sourceTree = "<group>"; };
 		8B7403D618B5A09F009753FE /* SettingViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SettingViewController.h; sourceTree = "<group>"; };
 		8B7403D718B5A09F009753FE /* SettingViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = SettingViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		8B7403D918B5A41D009753FE /* InternalLoginViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InternalLoginViewController.h; sourceTree = "<group>"; };
@@ -562,20 +544,8 @@
 		8BD9862219CEFFD10006ECEC /* LzlCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LzlCell.m; sourceTree = "<group>"; };
 		8BD9862419CF052D0006ECEC /* LzlViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzlViewController.h; sourceTree = "<group>"; };
 		8BD9862519CF052D0006ECEC /* LzlViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = LzlViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
-		A43A7AEF2DA29044B84A814A /* Pods-CAPUBBS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS/Pods-CAPUBBS.debug.xcconfig"; sourceTree = "<group>"; };
-		AB5EA73D176C6F12CEC769B0 /* libPods-CAPUBBS TodayExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CAPUBBS TodayExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		B2CB829261CA3C43B5813A76 /* Pods-CAPUBBSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBSTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBSTests/Pods-CAPUBBSTests.release.xcconfig"; sourceTree = "<group>"; };
-		C086CF9C15B71F5CF93FF4FB /* libPods-CAPUBBSTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CAPUBBSTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		DCA2A405C66F0233505B0580 /* Pods-CAPUBBS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CAPUBBS.release.xcconfig"; path = "Pods/Target Support Files/Pods-CAPUBBS/Pods-CAPUBBS.release.xcconfig"; sourceTree = "<group>"; };
-		DF922A262A9AAD1EC74117D4 /* libPods-CAPUBBS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CAPUBBS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E978B9E31D9CA5F2000BE141 /* CAPUBBS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CAPUBBS.entitlements; sourceTree = "<group>"; };
-		E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "CAPUBBS TodayExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E978B9EA1D9CAB6D000BE141 /* NotificationCenter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NotificationCenter.framework; path = System/Library/Frameworks/NotificationCenter.framework; sourceTree = SDKROOT; };
-		E978B9ED1D9CAB6D000BE141 /* TodayViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TodayViewController.h; sourceTree = "<group>"; };
-		E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TodayViewController.m; sourceTree = "<group>"; };
-		E978B9F11D9CAB6D000BE141 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
-		E978B9F31D9CAB6D000BE141 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E978B9FB1D9CAB7C000BE141 /* CAPUBBS TodayExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "CAPUBBS TodayExtension.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -589,11 +559,12 @@
 				8BAC8EA518B0F2BE00F68A62 /* CoreGraphics.framework in Frameworks */,
 				01C7F0971BF747640007FD39 /* CoreSpotlight.framework in Frameworks */,
 				8BAC8EA318B0F2BE00F68A62 /* Foundation.framework in Frameworks */,
+				01E042CA2DE4C9A000590A6C /* MBProgressHUD in Frameworks */,
 				8B7403DD18B5A921009753FE /* MessageUI.framework in Frameworks */,
 				8B74045E18B63DD7009753FE /* MobileCoreServices.framework in Frameworks */,
 				8B74045C18B63DCA009753FE /* SystemConfiguration.framework in Frameworks */,
+				01E042CD2DE4C9D700590A6C /* SDWebImage in Frameworks */,
 				8BAC8EA718B0F2BE00F68A62 /* UIKit.framework in Frameworks */,
-				45138B8FD4018205EDB3570E /* libPods-CAPUBBS.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -603,16 +574,6 @@
 			files = (
 				8BAC8EC718B0F2BE00F68A62 /* UIKit.framework in Frameworks */,
 				8BAC8EC618B0F2BE00F68A62 /* Foundation.framework in Frameworks */,
-				2106B0286CD5612E2C1F485B /* libPods-CAPUBBSTests.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E978B9E61D9CAB6D000BE141 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E978B9EB1D9CAB6D000BE141 /* NotificationCenter.framework in Frameworks */,
-				5786CE6B7BCB771AB31B9C8A /* libPods-CAPUBBS TodayExtension.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -830,36 +791,24 @@
 				8BAC8EE418B100B100F68A62 /* ActionPerformer.m */,
 				0100A0D01C0C562C00A1282D /* AsyncImageView.h */,
 				0100A0D11C0C562C00A1282D /* AsyncImageView.m */,
+				01E042BD2DE4B1B700590A6C /* ReachabilityManager.h */,
+				01E042BE2DE4B1C800590A6C /* ReachabilityManager.m */,
 				01E1B1591C28061500EC680D /* UIImageEffects.h */,
 				01E1B15A1C28061500EC680D /* UIImageEffects.m */,
 			);
 			path = "Common Files";
 			sourceTree = "<group>";
 		};
-		7C97AF7194B8E730717EC79C /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				A43A7AEF2DA29044B84A814A /* Pods-CAPUBBS.debug.xcconfig */,
-				DCA2A405C66F0233505B0580 /* Pods-CAPUBBS.release.xcconfig */,
-				4D70AB10B6F6DC9C6044DD99 /* Pods-CAPUBBS TodayExtension.debug.xcconfig */,
-				285721F82A6CF5EDB19CA172 /* Pods-CAPUBBS TodayExtension.release.xcconfig */,
-				5DC9C137145C8F004284676D /* Pods-CAPUBBSTests.debug.xcconfig */,
-				B2CB829261CA3C43B5813A76 /* Pods-CAPUBBSTests.release.xcconfig */,
-			);
-			name = Pods;
-			sourceTree = "<group>";
-		};
 		8BAC8E9618B0F2BE00F68A62 = {
 			isa = PBXGroup;
 			children = (
+				01E042BA2DE4308100590A6C /* README.md */,
 				01E60CF81A9EE37A00B2504A /* 更新说明 */,
 				01F79C8C1D9CAE55000594F1 /* Common Files */,
 				8BAC8EA818B0F2BE00F68A62 /* CAPUBBS */,
 				8BAC8ECA18B0F2BE00F68A62 /* CAPUBBSTests */,
-				E978B9EC1D9CAB6D000BE141 /* CAPUBBS TodayExtension */,
 				8BAC8EA118B0F2BE00F68A62 /* Frameworks */,
 				8BAC8EA018B0F2BE00F68A62 /* Products */,
-				7C97AF7194B8E730717EC79C /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -868,7 +817,6 @@
 			children = (
 				8BAC8E9F18B0F2BE00F68A62 /* CAPUBBS.app */,
 				8BAC8EC318B0F2BE00F68A62 /* CAPUBBSTests.xctest */,
-				E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -887,9 +835,6 @@
 				8B74045B18B63DCA009753FE /* SystemConfiguration.framework */,
 				8BAC8EA618B0F2BE00F68A62 /* UIKit.framework */,
 				E978B9EA1D9CAB6D000BE141 /* NotificationCenter.framework */,
-				DF922A262A9AAD1EC74117D4 /* libPods-CAPUBBS.a */,
-				AB5EA73D176C6F12CEC769B0 /* libPods-CAPUBBS TodayExtension.a */,
-				C086CF9C15B71F5CF93FF4FB /* libPods-CAPUBBSTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -981,6 +926,7 @@
 		8BAC8EA918B0F2BE00F68A62 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				019D7E942DEA179500F91E41 /* jquery.min.js */,
 				8BAC8EAA18B0F2BE00F68A62 /* CAPUBBS-Info.plist */,
 				8BAC8EAB18B0F2BE00F68A62 /* InfoPlist.strings */,
 				8BAC8EAE18B0F2BE00F68A62 /* main.m */,
@@ -1007,21 +953,6 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		E978B9EC1D9CAB6D000BE141 /* CAPUBBS TodayExtension */ = {
-			isa = PBXGroup;
-			children = (
-				E978B9FB1D9CAB7C000BE141 /* CAPUBBS TodayExtension.entitlements */,
-				E978B9ED1D9CAB6D000BE141 /* TodayViewController.h */,
-				E978B9EE1D9CAB6D000BE141 /* TodayViewController.m */,
-				01DCE2671D9D6D9000D93694 /* TodayTableViewCell.h */,
-				01DCE2681D9D6D9000D93694 /* TodayTableViewCell.m */,
-				E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */,
-				E978B9F31D9CAB6D000BE141 /* Info.plist */,
-				01F471481D9CFE06009221F6 /* Images.xcassets */,
-			);
-			path = "CAPUBBS TodayExtension";
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1029,16 +960,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8BAC8ED418B0F2BE00F68A62 /* Build configuration list for PBXNativeTarget "CAPUBBS" */;
 			buildPhases = (
-				E5D7D2DFE57FF88847E01F70 /* [CP] Check Pods Manifest.lock */,
 				8BAC8E9B18B0F2BE00F68A62 /* Sources */,
 				8BAC8E9C18B0F2BE00F68A62 /* Frameworks */,
 				8BAC8E9D18B0F2BE00F68A62 /* Resources */,
-				E978B9FA1D9CAB6D000BE141 /* Embed App Extensions */,
+				E978B9FA1D9CAB6D000BE141 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				E978B9F51D9CAB6D000BE141 /* PBXTargetDependency */,
 			);
 			name = CAPUBBS;
 			productName = CAPUBBS;
@@ -1049,7 +978,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8BAC8ED718B0F2BE00F68A62 /* Build configuration list for PBXNativeTarget "CAPUBBSTests" */;
 			buildPhases = (
-				7F840CA5735B0717D2E3535B /* [CP] Check Pods Manifest.lock */,
 				8BAC8EBF18B0F2BE00F68A62 /* Sources */,
 				8BAC8EC018B0F2BE00F68A62 /* Frameworks */,
 				8BAC8EC118B0F2BE00F68A62 /* Resources */,
@@ -1064,37 +992,18 @@
 			productReference = 8BAC8EC318B0F2BE00F68A62 /* CAPUBBSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		E978B9E81D9CAB6D000BE141 /* CAPUBBS TodayExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E978B9F91D9CAB6D000BE141 /* Build configuration list for PBXNativeTarget "CAPUBBS TodayExtension" */;
-			buildPhases = (
-				7DD69F12BFB828F6E3975409 /* [CP] Check Pods Manifest.lock */,
-				E978B9E51D9CAB6D000BE141 /* Sources */,
-				E978B9E61D9CAB6D000BE141 /* Frameworks */,
-				E978B9E71D9CAB6D000BE141 /* Resources */,
-				0129DD201D9E2FFE00FA8DBC /* Remove Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "CAPUBBS TodayExtension";
-			productName = "CAPUBBS TodayExtension";
-			productReference = E978B9E91D9CAB6D000BE141 /* CAPUBBS TodayExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		8BAC8E9718B0F2BE00F68A62 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0940;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1630;
 				ORGANIZATIONNAME = "熊典";
 				TargetAttributes = {
 					8BAC8E9E18B0F2BE00F68A62 = {
-						DevelopmentTeam = 674549EE7Z;
-						ProvisioningStyle = Manual;
+						LastSwiftMigration = 1630;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
@@ -1107,21 +1016,11 @@
 					8BAC8EC218B0F2BE00F68A62 = {
 						TestTargetID = 8BAC8E9E18B0F2BE00F68A62;
 					};
-					E978B9E81D9CAB6D000BE141 = {
-						CreatedOnToolsVersion = 8.0;
-						DevelopmentTeam = 674549EE7Z;
-						ProvisioningStyle = Manual;
-						SystemCapabilities = {
-							com.apple.ApplicationGroups.iOS = {
-								enabled = 1;
-							};
-						};
-					};
 				};
 			};
 			buildConfigurationList = 8BAC8E9A18B0F2BE00F68A62 /* Build configuration list for PBXProject "CAPUBBS" */;
-			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			compatibilityVersion = "Xcode 12.0";
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -1129,12 +1028,15 @@
 				"zh-Hans",
 			);
 			mainGroup = 8BAC8E9618B0F2BE00F68A62;
+			packageReferences = (
+				01E042C82DE4C9A000590A6C /* XCRemoteSwiftPackageReference "MBProgressHUD" */,
+				01E042CB2DE4C9D700590A6C /* XCRemoteSwiftPackageReference "SDWebImage" */,
+			);
 			productRefGroup = 8BAC8EA018B0F2BE00F68A62 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				8BAC8E9E18B0F2BE00F68A62 /* CAPUBBS */,
-				E978B9E81D9CAB6D000BE141 /* CAPUBBS TodayExtension */,
 				8BAC8EC218B0F2BE00F68A62 /* CAPUBBSTests */,
 			);
 		};
@@ -1283,6 +1185,7 @@
 				01D80F391B4C2E56006F8957 /* 21_0.gif in Resources */,
 				01D80E821B4C2E36006F8957 /* 3.gif in Resources */,
 				01D80EAD1B4C2E36006F8957 /* 46.gif in Resources */,
+				019D7E952DEA179F00F91E41 /* jquery.min.js in Resources */,
 				01D80EE01B4C2E36006F8957 /* 97.gif in Resources */,
 				01D80ECD1B4C2E36006F8957 /* 78.gif in Resources */,
 				01D80EA61B4C2E36006F8957 /* 39.gif in Resources */,
@@ -1331,87 +1234,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E978B9E71D9CAB6D000BE141 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E978B9F21D9CAB6D000BE141 /* MainInterface.storyboard in Resources */,
-				01F471491D9CFE06009221F6 /* Images.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		0129DD201D9E2FFE00FA8DBC /* Remove Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Remove Frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "cd \"${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\"\nif [[ -d \"Frameworks\" ]]; then\nrm -fr Frameworks\nfi";
-		};
-		7DD69F12BFB828F6E3975409 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CAPUBBS TodayExtension-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		7F840CA5735B0717D2E3535B /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CAPUBBSTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E5D7D2DFE57FF88847E01F70 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CAPUBBS-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		8BAC8E9B18B0F2BE00F68A62 /* Sources */ = {
@@ -1432,6 +1255,7 @@
 				01460D991AA8CE3A00762761 /* SearchViewController.m in Sources */,
 				01A616CB1AB7C9CD009A0D0A /* IconViewController.m in Sources */,
 				8BD9862619CF052D0006ECEC /* LzlViewController.m in Sources */,
+				01E042BF2DE4B1C900590A6C /* ReachabilityManager.m in Sources */,
 				011509C11BF21B080076D6F3 /* CollectionViewController.m in Sources */,
 				8BAC8EF118B112E300F68A62 /* ListCell.m in Sources */,
 				8BAC8EE518B100B100F68A62 /* ActionPerformer.m in Sources */,
@@ -1469,18 +1293,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E978B9E51D9CAB6D000BE141 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				01F79C891D9CAD44000594F1 /* ActionPerformer.m in Sources */,
-				01F79C8A1D9CAD47000594F1 /* AsyncImageView.m in Sources */,
-				01DCE2691D9D6D9000D93694 /* TodayTableViewCell.m in Sources */,
-				01F79C8E1D9CB07A000594F1 /* UIImageEffects.m in Sources */,
-				E978B9EF1D9CAB6D000BE141 /* TodayViewController.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1488,11 +1300,6 @@
 			isa = PBXTargetDependency;
 			target = 8BAC8E9E18B0F2BE00F68A62 /* CAPUBBS */;
 			targetProxy = 8BAC8EC818B0F2BE00F68A62 /* PBXContainerItemProxy */;
-		};
-		E978B9F51D9CAB6D000BE141 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E978B9E81D9CAB6D000BE141 /* CAPUBBS TodayExtension */;
-			targetProxy = E978B9F41D9CAB6D000BE141 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1523,14 +1330,6 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		E978B9F01D9CAB6D000BE141 /* MainInterface.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				E978B9F11D9CAB6D000BE141 /* Base */,
-			);
-			name = MainInterface.storyboard;
-			sourceTree = "<group>";
-		};
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -1557,6 +1356,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = NO;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1566,6 +1366,8 @@
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_ARCHS = "";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1586,12 +1388,11 @@
 					"/Applications/Xcode51-Beta4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
 					"${SDK_DIR}/usr/include/libxml2",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "-lxml2";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VALID_ARCHS = "arm64 armv7 armv7s";
 			};
 			name = Debug;
 		};
@@ -1618,6 +1419,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = NO;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1627,6 +1429,8 @@
 				COPY_PHASE_STRIP = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_ARCHS = "";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1640,67 +1444,68 @@
 					"/Applications/Xcode51-Beta4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
 					"${SDK_DIR}/usr/include/libxml2",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "-lxml2";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
-				VALID_ARCHS = "arm64 armv7 armv7s";
 			};
 			name = Release;
 		};
 		8BAC8ED518B0F2BE00F68A62 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A43A7AEF2DA29044B84A814A /* Pods-CAPUBBS.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CAPUBBS/CAPUBBS.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Dian Xiong (674549EE7Z)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Dian Xiong (674549EE7Z)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = 674549EE7Z;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CAPUBBS/CAPUBBS-Prefix.pch";
 				INFOPLIST_FILE = "CAPUBBS/CAPUBBS-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xiongdianpku.CAPUBBS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "0935257b-1435-4818-accd-0d556b71a4dc";
-				PROVISIONING_PROFILE_SPECIFIER = "CAPUBBS App Store";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = CAPUBBS_Profile;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VALID_ARCHS = "arm64 armv7 armv7s";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
 		};
 		8BAC8ED618B0F2BE00F68A62 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DCA2A405C66F0233505B0580 /* Pods-CAPUBBS.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CAPUBBS/CAPUBBS.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Dian Xiong (674549EE7Z)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Dian Xiong (674549EE7Z)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = 674549EE7Z;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CAPUBBS/CAPUBBS-Prefix.pch";
 				INFOPLIST_FILE = "CAPUBBS/CAPUBBS-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xiongdianpku.CAPUBBS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "0935257b-1435-4818-accd-0d556b71a4dc";
-				PROVISIONING_PROFILE_SPECIFIER = "CAPUBBS App Store";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = CAPUBBS_Profile;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VALID_ARCHS = "arm64 armv7 armv7s";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
 		};
 		8BAC8ED818B0F2BE00F68A62 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5DC9C137145C8F004284676D /* Pods-CAPUBBSTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/CAPUBBS.app/CAPUBBS";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1714,9 +1519,12 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "CAPUBBSTests/CAPUBBSTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
 			};
@@ -1724,7 +1532,6 @@
 		};
 		8BAC8ED918B0F2BE00F68A62 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B2CB829261CA3C43B5813A76 /* Pods-CAPUBBSTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/CAPUBBS.app/CAPUBBS";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1734,62 +1541,14 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "CAPUBBS/CAPUBBS-Prefix.pch";
 				INFOPLIST_FILE = "CAPUBBSTests/CAPUBBSTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
-			};
-			name = Release;
-		};
-		E978B9F71D9CAB6D000BE141 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4D70AB10B6F6DC9C6044DD99 /* Pods-CAPUBBS TodayExtension.debug.xcconfig */;
-			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_SUSPICIOUS_MOVES = YES;
-				CODE_SIGN_ENTITLEMENTS = "CAPUBBS TodayExtension/CAPUBBS TodayExtension.entitlements";
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Dian Xiong (674549EE7Z)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Dian Xiong (674549EE7Z)";
-				CODE_SIGN_STYLE = Manual;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 674549EE7Z;
-				INFOPLIST_FILE = "CAPUBBS TodayExtension/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.CAPUBBS.CAPUBBS-TodayExtension";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "2c3bad44-5fb0-46f0-8075-670dcfe9366c";
-				PROVISIONING_PROFILE_SPECIFIER = "CAPUBBS Today Extension";
-				SKIP_INSTALL = YES;
-			};
-			name = Debug;
-		};
-		E978B9F81D9CAB6D000BE141 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 285721F82A6CF5EDB19CA172 /* Pods-CAPUBBS TodayExtension.release.xcconfig */;
-			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_SUSPICIOUS_MOVES = YES;
-				CODE_SIGN_ENTITLEMENTS = "CAPUBBS TodayExtension/CAPUBBS TodayExtension.entitlements";
-				CODE_SIGN_IDENTITY = "iPhone Distribution: Dian Xiong (674549EE7Z)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Dian Xiong (674549EE7Z)";
-				CODE_SIGN_STYLE = Manual;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 674549EE7Z;
-				INFOPLIST_FILE = "CAPUBBS TodayExtension/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.xiongdianpku.CAPUBBS.CAPUBBS-TodayExtension";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "2c3bad44-5fb0-46f0-8075-670dcfe9366c";
-				PROVISIONING_PROFILE_SPECIFIER = "CAPUBBS Today Extension";
-				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -1823,16 +1582,39 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E978B9F91D9CAB6D000BE141 /* Build configuration list for PBXNativeTarget "CAPUBBS TodayExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E978B9F71D9CAB6D000BE141 /* Debug */,
-				E978B9F81D9CAB6D000BE141 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		01E042C82DE4C9A000590A6C /* XCRemoteSwiftPackageReference "MBProgressHUD" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jdg/MBProgressHUD.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
+		01E042CB2DE4C9D700590A6C /* XCRemoteSwiftPackageReference "SDWebImage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SDWebImage/SDWebImage.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.21.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		01E042C92DE4C9A000590A6C /* MBProgressHUD */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 01E042C82DE4C9A000590A6C /* XCRemoteSwiftPackageReference "MBProgressHUD" */;
+			productName = MBProgressHUD;
+		};
+		01E042CC2DE4C9D700590A6C /* SDWebImage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 01E042CB2DE4C9D700590A6C /* XCRemoteSwiftPackageReference "SDWebImage" */;
+			productName = SDWebImage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8BAC8E9718B0F2BE00F68A62 /* Project object */;
 }

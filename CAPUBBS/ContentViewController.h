@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
-#import "MBProgressHUD.h"
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface ContentViewController : UITableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
     MBProgressHUD *hud;
@@ -26,7 +26,6 @@
     NSString *defaultContent;
     NSInteger selectedIndex;
     NSMutableArray *heights;
-    NSMutableArray *estimatedHeights;
     NSMutableArray *HTMLStrings;
     NSString *tempPath;
     NSString *imgPath;
@@ -48,7 +47,7 @@
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonJump;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonAction;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCompose;
-+ (NSString *)htmlStringWithRespondString:(NSString *)respondString;
++ (NSString *)htmlStringWithText:(NSString *)text andSig:(NSString *)sig;
 + (NSString *)restoreFormat:(NSString *)text;
 + (NSString *)transFromHTML:(NSString *)text;
 + (NSString *)removeHTML:(NSString *)text;

@@ -28,6 +28,10 @@
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self viewOnline];
     
+    // Auto height
+    self.tableView.estimatedRowHeight = 40;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     
@@ -46,8 +50,8 @@
         [self.navigationController.view addSubview:hud];
     }
     hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"加载中";
-    [hud show:YES];
+    hud.label.text = @"加载中";
+    [hud showAnimated:YES];
     [self performSelectorInBackground:@selector(getData:) withObject:@"online"];
 }
 
@@ -93,36 +97,36 @@
                 }
                 [data addObject:dict];
             }
-        }else {
+        } else {
             fail = YES;
         }
         if (fail) {
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"加载失败";
+            hud.label.text = @"加载失败";
             // [[[UIAlertView alloc] initWithTitle:@"加载失败" message:@"当前功能暂不可用！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        }else {
+        } else {
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"加载成功";
+            hud.label.text = @"加载成功";
             if (data.count == 0) {
                 [[[UIAlertView alloc] initWithTitle:@"当前没有人在线！" message:nil delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
             }
             // NSLog(@"%@", data);
             [self.tableView reloadData];
         }
-    }else {
+    } else {
         hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        hud.labelText = @"加载失败";
+        hud.label.text = @"加载失败";
         // [[[UIAlertView alloc] initWithTitle:@"网络错误" message:@"请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
     }
     hud.mode = MBProgressHUDModeCustomView;
-    [hud hide:YES afterDelay:0.5];
+    [hud hideAnimated:YES afterDelay:0.5];
 }
 
 - (IBAction)viewSign:(id)sender {
     self.buttonStat.enabled = NO;
     hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"加载中";
-    [hud show:YES];
+    hud.label.text = @"加载中";
+    [hud showAnimated:YES];
     [self performSelectorInBackground:@selector(getData:) withObject:@"sign"];
 }
 
@@ -130,24 +134,24 @@
     self.navigationItem.rightBarButtonItem.enabled = YES;
     if (HTMLString && [HTMLString containsString:@"签到统计"]) {
         hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.labelText = @"加载成功";
+        hud.label.text = @"加载成功";
         HTMLString = [[ContentViewController removeHTML:HTMLString] substringFromIndex:@"签到统计\n".length];
         HTMLString = [HTMLString stringByReplacingOccurrencesOfString:@"\n#" withString:@"\n"];
         [[[UIAlertView alloc] initWithTitle:@"签到统计" message:HTMLString delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-    }else {
+    } else {
         hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        hud.labelText = @"加载失败";
+        hud.label.text = @"加载失败";
         // [[[UIAlertView alloc] initWithTitle:@"网络错误" message:@"请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
     }
     hud.mode = MBProgressHUDModeCustomView;
-    [hud hide:YES afterDelay:0.5];
+    [hud hideAnimated:YES afterDelay:0.5];
 }
 
 - (void)getData:(NSString *)type{
     NSString * HTMLString = [[NSString alloc] initWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/%@", CHEXIE, type]] encoding:NSUTF8StringEncoding error:nil];
     if ([type isEqualToString:@"online"]) {
         [self performSelectorOnMainThread:@selector(loadOnline:) withObject:HTMLString waitUntilDone:NO];
-    }else if ([type isEqualToString:@"sign"]) {
+    } else if ([type isEqualToString:@"sign"]) {
         [self performSelectorOnMainThread:@selector(loadSign:) withObject:HTMLString waitUntilDone:NO];
     }
 }
@@ -167,7 +171,7 @@
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     if (data.count > 0) {
         return [NSString stringWithFormat:@"当前共%d人在线", (int)data.count];
-    }else {
+    } else {
         return nil;
     }
 }
@@ -183,11 +187,11 @@
     }
     if ([dict[@"type"] isEqualToString:@"web版登录"]) {
         cell.labelType.text = @"💻";
-    }else if ([dict[@"type"] isEqualToString:@"Android客户端登录"]) {
+    } else if ([dict[@"type"] isEqualToString:@"Android客户端登录"]) {
         cell.labelType.text = @"📱";
-    }else if ([dict[@"type"] isEqualToString:@"iOS客户端登录"]) {
+    } else if ([dict[@"type"] isEqualToString:@"iOS客户端登录"]) {
         cell.labelType.text = @"📱";
-    }else {
+    } else {
         cell.labelType.text = @"❓";
     }
     // Configure the cell...

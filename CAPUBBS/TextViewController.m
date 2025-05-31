@@ -43,7 +43,7 @@
 - (void)textViewDidChange:(UITextView *)textView {
     if (textView.text.length > 0) {
         self.labelPreview.text = textView.text;
-    }else {
+    } else {
         self.labelPreview.text = @"北大车协 CAPU";
     }
     [self updateLabel];
@@ -59,7 +59,7 @@
     [textPreview addAttribute:NSForegroundColorAttributeName value:[colors objectAtIndex:color] range:range];
     if ([[colorNames objectAtIndex:color] isEqualToString:@"white"]) {
         [self.labelPreview setBackgroundColor:[UIColor lightGrayColor]];
-    }else {
+    } else {
         [self.labelPreview setBackgroundColor:[UIColor whiteColor]];
     }
     UIFontDescriptor *desc = [UIFontDescriptor fontDescriptorWithName:[fontNames objectAtIndex:isBold] size:size];
@@ -137,7 +137,7 @@
     if (self.textInput.text.length == 0) {
         [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您还未输入正文内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
         [self.textInput becomeFirstResponder];
-    }else {
+    } else {
         [self postText];
         [[[UIAlertView alloc] initWithTitle:@"插入成功" message:@"请选择操作" delegate:self cancelButtonTitle:@"继续插入" otherButtonTitles:@"返回发帖", nil] show];
     }
@@ -170,7 +170,7 @@
     }
     if ([alertView.title isEqualToString:@"插入成功"]) {
         [self.navigationController popViewControllerAnimated:YES];
-    }else if ([alertView.title isEqualToString:@"继续插入"]) {
+    } else if ([alertView.title isEqualToString:@"继续插入"]) {
         self.textInput.text = @"";
     }
 }
@@ -185,11 +185,11 @@
             hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
             [self.navigationController.view addSubview:hud];
         }
-        hud.labelText = @"恢复默认";
-        [hud show:YES];
+        hud.label.text = @"恢复默认";
+        [hud showAnimated:YES];
         hud.mode = MBProgressHUDModeCustomView;
         hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
     }
 }
 

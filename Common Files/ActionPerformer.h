@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AFNetworking.h"
+#import "ReachabilityManager.h"
 
 typedef void (^ActionPerformerResultBlock)(NSArray* result, NSError* err);
 

@@ -21,10 +21,41 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
     
-    [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
-    [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
-    [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
-    [[UINavigationBar appearance] setTranslucent:NO];
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+        [appearance configureWithOpaqueBackground]; // solid background (no transparency)
+        appearance.backgroundColor = GREEN_DARK;
+        appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+        appearance.largeTitleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+        
+        UINavigationBar *navBarAppearance = [UINavigationBar appearance];
+        navBarAppearance.standardAppearance = appearance;
+        navBarAppearance.scrollEdgeAppearance = appearance;
+        navBarAppearance.tintColor = [UIColor whiteColor]; // buttons color
+    } else {
+        [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
+        [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
+        [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
+        [[UINavigationBar appearance] setTranslucent:NO];
+    }
+    
+    if (@available(iOS 13.0, *)) {
+        UIToolbarAppearance *toolbarAppearance = [[UIToolbarAppearance alloc] init];
+        [toolbarAppearance configureWithOpaqueBackground];
+        toolbarAppearance.backgroundColor = [UIColor whiteColor];
+        
+        UIToolbar *toolbarAppearanceProxy = [UIToolbar appearance];
+        toolbarAppearanceProxy.tintColor = BLUE;
+        toolbarAppearanceProxy.standardAppearance = toolbarAppearance;
+        if (@available(iOS 15.0, *)) {
+            toolbarAppearanceProxy.scrollEdgeAppearance = toolbarAppearance;
+        }
+    } else {
+        [[UIToolbar appearance] setTintColor:BLUE];
+        [[UIToolbar appearance] setTranslucent:NO];
+    }
+    
+    
     [[UITextField appearance] setClearButtonMode:UITextFieldViewModeWhileEditing];
     [[UITextField appearance] setBackgroundColor:[UIColor lightTextColor]];
     [[UITextView appearance] setBackgroundColor:[UIColor lightTextColor]];
@@ -32,12 +63,11 @@
     [[UIStepper appearance] setTintColor:BLUE];
     [[UISwitch appearance] setOnTintColor:BLUE];
     [[UISwitch appearance] setTintColor:[UIColor whiteColor]];
-    [[UIToolbar appearance] setTintColor:BLUE];
     [[UITableViewCell appearance] setBackgroundColor:[UIColor clearColor]];
-
+    
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-//                          @(2), @"proxy",
-//                          @"school", @"proxyPosition",
+                          //                          @(2), @"proxy",
+                          //                          @"school", @"proxyPosition",
                           @(YES), @"autoLogin",
                           @(YES), @"enterLogin",
                           @(NO), @"wakeLogin",
@@ -65,15 +95,13 @@
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
     [GROUP_DEFAULTS registerDefaults:group];
     [self transferDefaults];
-
+    
     [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [self performSelectorInBackground:@selector(transport) withObject:nil];
     performer = [[ActionPerformer alloc] init];
-    if (IOS >= 9.0) {
-        [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
-    }
+    [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     if ([ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
         [self _loginAsync:YES];
     }
@@ -152,11 +180,11 @@
     dispatch_global_default_async(^{
         if ([shortcutItem.type isEqualToString:@"Hot"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
-        }else if ([shortcutItem.type isEqualToString:@"Collection"]) {
+        } else if ([shortcutItem.type isEqualToString:@"Collection"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"collection"}];
-        }else if ([shortcutItem.type isEqualToString:@"Message"]) {
+        } else if ([shortcutItem.type isEqualToString:@"Message"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"message"}];
-        }else if ([shortcutItem.type isEqualToString:@"Compose"]) {
+        } else if ([shortcutItem.type isEqualToString:@"Compose"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"compose"}];
         }
     });
@@ -312,7 +340,7 @@
         [[CSSearchableIndex defaultSearchableIndex] indexSearchableItems:seachableItems completionHandler:^(NSError * __nullable error) {
             if (error) {
                 NSLog(@"%@", error.localizedDescription);
-            }else {
+            } else {
                 NSLog(@"Collection Saved");
             }
         }];
@@ -365,13 +393,13 @@
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
-    [[AFNetworkReachabilityManager sharedManager] stopMonitoring];
+    [[ReachabilityManager sharedManager] stopMonitoring];
     // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
     // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
-    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later. 
+    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
 }
 
@@ -387,8 +415,8 @@
         [self _loginAsync:YES];
     }
     [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"wakeLogin"];
-    [[AFNetworkReachabilityManager sharedManager] startMonitoring];
-
+    [[ReachabilityManager sharedManager] startMonitoring];
+    
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 }
 
@@ -403,7 +431,7 @@
             if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
                 [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-            }else {
+            } else {
                 [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                 NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
             }

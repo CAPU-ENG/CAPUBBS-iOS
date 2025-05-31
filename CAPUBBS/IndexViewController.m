@@ -67,7 +67,7 @@
                 NSLog(@"Vibreate");
             }
             shouldVibrate = NO;
-        }else {
+        } else {
             [self.buttonUser setImage:[UIImage imageNamed:@"user"]];
         }
     });
@@ -89,7 +89,7 @@
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"indexcell" forIndexPath:indexPath];
         cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:[NUMBERS objectAtIndex:indexPath.row]]];
         cell.text.text = [ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:indexPath.row]];
-    }else {
+    } else {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"collectioncell" forIndexPath:indexPath];
     }
     cell.text.font = [UIFont systemFontOfSize:fontSize];
@@ -192,27 +192,27 @@
             hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
             [self.navigationController.view addSubview:hud];
         }
-        [hud show:YES];
+        [hud showAnimated:YES];
         hud.mode = MBProgressHUDModeCustomView;
         if (
             (([text containsString:@"15"] && [text containsString:@"骑行团"]) || [text containsString:@"I2"] || [text containsString:@"维茨C"] || [text containsString:@"好男人"] || [text containsString:@"老蒋"] || [text containsString:@"猿"] || [text containsString:@"小猴子"] || [text containsString:@"熊典"] || [text containsString:@"陈章"] || [text containsString:@"范志康"] || [text containsString:@"蒋雨蒙"] || [text containsString:@"扈煊"] || [text containsString:@"侯书漪"])
             && ([text containsString:@"赞"] || [text containsString:@"棒"] || [text containsString:@"给力"] || [text containsString:@"威武"] || [text containsString:@"牛"] || [text containsString:@"厉害"] || [text containsString:@"帅"] || [text containsString:@"爱"] || [text containsString:@"V5"] || [text containsString:@"么么哒"] || [text containsString:@"漂亮"])
             && ![text containsString:@"不"]
             ) {
-            hud.labelText = @"~\(≧▽≦)/~"; // (>^ω^<)
+            hud.label.text = @"~\(≧▽≦)/~"; // (>^ω^<)
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            [hud hide:YES afterDelay:1];
+            [hud hideAnimated:YES afterDelay:1];
             [DEFAULTS setObject:[NSNumber numberWithInt:MAX_ID_NUM] forKey:@"IDNum"];
             [DEFAULTS setObject:[NSNumber numberWithInt:MAX_HOT_NUM] forKey:@"hotNum"];
-        }else {
+        } else {
             [DEFAULTS removeObjectForKey:@"IDNum"];
             [DEFAULTS removeObjectForKey:@"hotNum"];
             if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"] || [text rangeOfString:@"[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" options:NSRegularExpressionSearch].location != NSNotFound)) {
                 [[[UIAlertView alloc] initWithTitle:@"错误" message:@"不是有效的链接" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-                hud.labelText = @"设置失败";
+                hud.label.text = @"设置失败";
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            }else {
-                hud.labelText = @"设置成功";
+            } else {
+                hud.label.text = @"设置成功";
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
                 [GROUP_DEFAULTS setObject:text forKey:@"URL"];
                 if (![text isEqualToString:oriURL]) {
@@ -222,7 +222,7 @@
                     });
                 }
             }
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
         }
     }
 }

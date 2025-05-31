@@ -57,7 +57,7 @@
             self.textUidInfo.text = @"加载中...";
             self.cellUser.accessoryType = UITableViewCellAccessoryDetailButton;
             self.cellUser.userInteractionEnabled = YES;
-        }else {
+        } else {
             [self.iconUser performSelectorOnMainThread:@selector(setImage:) withObject:PLACEHOLDER waitUntilDone:NO];
             self.textUid.text = @"未登录";
             self.textUidInfo.text = @"请在账号管理中登录";
@@ -72,7 +72,7 @@
         NSDictionary *info = USERINFO;
         if ([[info objectForKey:@"sex"] isEqualToString:@"男"]) {
             self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚹"];
-        }else if ([[info objectForKey:@"sex"] isEqualToString:@"女"]) {
+        } else if ([[info objectForKey:@"sex"] isEqualToString:@"女"]) {
             self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚺"];
         }
         [self.iconUser setUrl:[info objectForKey:@"icon"]];
@@ -143,11 +143,11 @@
             hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
             [self.navigationController.view addSubview:hud];
         }
-        [hud show:YES];
-        hud.labelText = @"清除完成";
+        [hud showAnimated:YES];
+        hud.label.text = @"清除完成";
         hud.mode = MBProgressHUDModeCustomView;
         hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
         [self cacheChanged:nil];
     }
 }
@@ -161,25 +161,29 @@
         if (indexPath.row == 1) {
             [[[UIAlertView alloc] initWithTitle:@"确认清除头像缓存？" message:@"建议仅在头像出错时使用" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
         }
-    }else if (indexPath.section == 2) {
+    } else if (indexPath.section == 2) {
         if (indexPath.row == 3) {
-            NSString *app_Version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-            NSString *app_Build = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
-            mail = [[MFMailComposeViewController alloc] init];
-            mail.mailComposeDelegate = self;
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setSubject:@"CAPUBBS iOS客户端反馈"];
-            [mail setToRecipients:FEEDBACK_EMAIL];
-            [mail setMessageBody:[NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], app_Version, app_Build] isHTML:NO];
-            [self presentViewController:mail animated:YES completion:nil];
-        }else if (indexPath.row == 4) {
+            if ([MFMailComposeViewController canSendMail]) {
+                NSString *appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+                NSString *appBuild = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+                mail = [[MFMailComposeViewController alloc] init];
+                mail.mailComposeDelegate = self;
+                [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
+                [mail.navigationBar setTintColor:[UIColor whiteColor]];
+                [mail setSubject:@"CAPUBBS iOS客户端反馈"];
+                [mail setToRecipients:FEEDBACK_EMAIL];
+                [mail setMessageBody:[NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], appVersion, appBuild] isHTML:NO];
+                [self presentViewController:mail animated:YES completion:nil];
+            } else {
+                [[[UIAlertView alloc] initWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            }
+        } else if (indexPath.row == 4) {
             NSString *str = @"itms-apps://itunes.apple.com/app/id826386033";
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:str]];
-        }else if (indexPath.row == 5) {
+        } else if (indexPath.row == 5) {
             NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-            NSString *app_Version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
-            [[[UIAlertView alloc] initWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", app_Version, __DATE__, COPYRIGHT, EULA] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            NSString *appVersion = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
+            [[[UIAlertView alloc] initWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", appVersion, __DATE__, COPYRIGHT, EULA] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
         }
     }
 }
@@ -252,7 +256,7 @@
         dest.navigationItem.leftBarButtonItems = nil;
         if ([UID length] > 0) {
             dest.ID = UID;
-        }else {
+        } else {
             dest.ID = @"";
         }
         if (![self.iconUser.image isEqual:PLACEHOLDER]) {
@@ -268,7 +272,7 @@
         NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)sender];
         if (indexPath.row == 0) {
             dest.URL = [NSString stringWithFormat:@"%@/bbs", CHEXIE];
-        }else if (indexPath.row == 1) {
+        } else if (indexPath.row == 1) {
             dest.URL = [NSString stringWithFormat:@"%@", CHEXIE];
         }
     }

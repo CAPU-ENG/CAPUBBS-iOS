@@ -52,8 +52,8 @@
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
     control.attributedTitle = [[NSAttributedString alloc] initWithString:@"刷新"];
     hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在刷新";
-    [hud show:YES];
+    hud.label.text = @"正在刷新";
+    [hud showAnimated:YES];
     [self getInfo];
 }
 
@@ -64,15 +64,15 @@
     }
     if (self.segmentType.selectedSegmentIndex == 0) {
         self.toolbarItems = @[self.buttonPrevious, self.barFreeSpace, self.barFreeSpace, self.buttonNext];
-    }else {
+    } else {
         self.toolbarItems = @[self.barFreeSpace, self.buttonAdd, self.barFreeSpace];
     }
     if ([ActionPerformer checkLogin:NO] && messageRefreshing == NO) {
         messageRefreshing = YES;
         NSString *type = (self.segmentType.selectedSegmentIndex == 0) ? @"system" : @"private";
         hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"正在加载";
-        [hud show:YES];
+        hud.label.text = @"正在加载";
+        [hud showAnimated:YES];
         NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:type, @"type", [NSString stringWithFormat:@"%ld", (long)page], @"page", nil];
         [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
             if (control.isRefreshing) {
@@ -82,15 +82,15 @@
             isBackground = NO;
             if (err || result.count == 0) {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"加载失败";
+                hud.label.text = @"加载失败";
                 hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
+                [hud hideAnimated:YES afterDelay:0.5];
                 return ;
             }
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
             hud.mode = MBProgressHUDModeCustomView;
-            hud.labelText = @"加载成功";
-            [hud hide:YES afterDelay:0.5];
+            hud.label.text = @"加载成功";
+            [hud hideAnimated:YES afterDelay:0.5];
             
             // NSLog(@"%@", result);
             data = result;
@@ -108,10 +108,10 @@
             }
             if (rowAnimation > 0) {
                 [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:rowAnimation];
-            }else {
+            } else {
                 if (isFirstTime) {
                     [self.tableView reloadData];
-                }else {
+                } else {
                     [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
                 }
                 isFirstTime = NO;
@@ -127,15 +127,15 @@
             self.buttonPrevious.enabled = (page > 1);
             self.buttonNext.enabled = (page < maxPage);
         }];
-    }else {
+    } else {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
-        hud.labelText = @"尚未登录";
-        [hud show:YES];
+        hud.label.text = @"尚未登录";
+        [hud showAnimated:YES];
         hud.mode = MBProgressHUDModeCustomView;
         hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
         data = nil;
         self.buttonPrevious.enabled = NO;
         self.buttonNext.enabled = NO;
@@ -149,7 +149,7 @@
     if (sender.selectedSegmentIndex == 0) {
         page = 1;
         maxPage = 10000;
-    }else {
+    } else {
         page = -1;
         maxPage = -1;
     }
@@ -185,12 +185,12 @@
 - (void)setMessageNum {
     if ([[data[0] objectForKey:@"sysmsg"] integerValue] > 0) {
         [self.segmentType setTitle:[NSString stringWithFormat:@"系统消息(%@)", [data[0] objectForKey:@"sysmsg"]] forSegmentAtIndex:0];
-    }else {
+    } else {
         [self.segmentType setTitle:@"系统消息" forSegmentAtIndex:0];
     }
     if ([[data[0] objectForKey:@"prvmsg"] integerValue] > 0) {
         [self.segmentType setTitle:[NSString stringWithFormat:@"私信消息(%@)", [data[0] objectForKey:@"prvmsg"]] forSegmentAtIndex:1];
-    }else {
+    } else {
         [self.segmentType setTitle:@"私信消息" forSegmentAtIndex:1];
     }
     if (![USERINFO isEqual:@""]) {
@@ -225,7 +225,7 @@
     // NSLog(@"Personal Center Background Refresh");
     if (isVisible) {
         [self getInfo];
-    }else {
+    } else {
         isBackground = YES;
     }
 }
@@ -254,19 +254,19 @@
         if ([type isEqualToString:@"reply"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"回复了您的帖子：%@", titleText]];
             textLenth = 8;
-        }else if ([type isEqualToString:@"replylzl"]) {
+        } else if ([type isEqualToString:@"replylzl"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"回复了您在帖子：%@ 中的回复", titleText]];
             textLenth = 8;
-        }else if ([type isEqualToString:@"replylzlreply"]) {
+        } else if ([type isEqualToString:@"replylzlreply"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"回复了您在帖子：%@ 中的楼中楼", titleText]];
             textLenth = 8;
-        }else if ([type isEqualToString:@"at"]) {
+        } else if ([type isEqualToString:@"at"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"在帖子：%@ 中@了您", titleText]];
             textLenth = 4;
-        }else if ([type isEqualToString:@"quote"]) {
+        } else if ([type isEqualToString:@"quote"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"在帖子：%@ 中引用了您的文章", titleText]];
             textLenth = 4;
-        }else if ([type isEqualToString:@"plain"]) {
+        } else if ([type isEqualToString:@"plain"]) {
             text = [[NSMutableAttributedString alloc] initWithString:titleText];
             textLenth = 0;
         }
@@ -280,7 +280,7 @@
         cell.labelText.attributedText = text;
         cell.labelNum.text = @"";
         [cell.labelNum setHidden:[dict[@"hasread"] boolValue]];
-    }else {
+    } else {
         cell.labelMsgNum.text = dict[@"totalnum"];
         cell.labelText.text = dict[@"text"];
         cell.labelNum.text = dict[@"number"];
@@ -306,7 +306,7 @@
     if ([alertView.title isEqualToString:@"发送私信"]) {
         if ([alertView textFieldAtIndex:0].text.length == 0) {
             [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        }else {
+        } else {
             chatID = [alertView textFieldAtIndex:0].text;
             [self performSegueWithIdentifier:@"chat" sender:nil];
         }
@@ -329,7 +329,7 @@
         if (sender == nil) {
             dest.ID = chatID;
             dest.directTalk = YES;
-        }else {
+        } else {
             dest.ID = dict[@"username"];
             NSMutableArray *tempData = [data mutableCopy];
             if ([tempData[indexPath.row + 1][@"number"] intValue] > 0) {

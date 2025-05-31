@@ -24,7 +24,7 @@
     
     if (self.shouldHideInfo == YES) {
         self.navigationItem.rightBarButtonItems = nil;
-    }else if (self.directTalk == YES) {
+    } else if (self.directTalk == YES) {
         self.navigationItem.rightBarButtonItems = @[self.buttonInfo];
     }
     performer = [[ActionPerformer alloc] init];
@@ -41,10 +41,14 @@
         alert.alertViewStyle = UIAlertViewStylePlainTextInput;
         [alert textFieldAtIndex:0].placeholder = @"用户名";
         [alert show];
-    }else {
+    } else {
         self.title = self.ID;
         [self loadChat];
     }
+    
+    // Auto height
+    self.tableView.estimatedRowHeight = 100;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     
@@ -94,8 +98,8 @@
     }
     if (shouldShowHud) {
         hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"正在加载";
-        [hud show:YES];
+        hud.label.text = @"正在加载";
+        [hud showAnimated:YES];
     }
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:@"chat", @"type", self.ID, @"chatter", nil];
     [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
@@ -105,9 +109,9 @@
         if (err || result.count == 0) {
             if (shouldShowHud) {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"加载失败";
+                hud.label.text = @"加载失败";
                 hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
+                [hud hideAnimated:YES afterDelay:0.5];
             }
             return ;
         }
@@ -119,11 +123,11 @@
         data = result;
         if (data.count == 1) {
             [self checkID:shouldShowHud];
-        }else if (shouldShowHud) {
+        } else if (shouldShowHud) {
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"加载成功";
+            hud.label.text = @"加载成功";
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
         }
         
         // NSLog(@"%@", data);
@@ -146,21 +150,21 @@
             [[[UIAlertView alloc] initWithTitle:@"错误" message:@"没有这个ID！" delegate:self cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
             if (hudVisible) {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"加载失败";
+                hud.label.text = @"加载失败";
             }
-        }else {
+        } else {
             NSString *iconUrl = result[0][@"icon"];
             [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AsyncImageView transIconURL:iconUrl]] object:nil];
             AsyncImageView *icon = [[AsyncImageView alloc] init];
             [icon setUrl:iconUrl];
             if (hudVisible) {
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"加载成功";
+                hud.label.text = @"加载成功";
             }
         }
         if (hudVisible) {
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
         }
     }];
 }
@@ -196,20 +200,8 @@
     // Return the number of rows in the section.
     if (section == 0) {
         return data.count - 1;
-    }else {
+    } else {
         return 1;
-    }
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.section == 0) {
-        NSString *text = [data[indexPath.row + 1] objectForKey:@"text"];
-        //下句中(CELL_CONTENT_WIDTH - CELL_CONTENT_MARGIN 表示显示内容的label的长度 ，20000.0f 表示允许label的最大高度
-        CGSize constraint = CGSizeMake(self.view.frame.size.width - 170 - 10, 20000.0f);
-        CGSize size = [text boundingRectWithSize:constraint options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15]} context:nil].size;
-        return MAX(size.height, 18.0f) + 65;
-    }else {
-        return 100;
     }
 }
 
@@ -217,10 +209,10 @@
     if (section == 0) {
         if (data.count > 1) {
             return [NSString stringWithFormat:@"私信记录 共%d条", (int)data.count - 1];
-        }else {
+        } else {
             return @"私信记录 暂无";
         }
-    }else {
+    } else {
         return @"发送私信";
     }
 }
@@ -235,7 +227,7 @@
             [cell.imageChat setImage:[[UIImage imageNamed:@"balloon_green"] stretchableImageWithLeftCapWidth:15 topCapHeight:15]];
             [cell.imageIcon setUrl:dict[@"icon"]];
             cell.buttonIcon.userInteractionEnabled = (self.shouldHideInfo == NO);
-        }else {
+        } else {
             cell = [tableView dequeueReusableCellWithIdentifier:@"chatSelf" forIndexPath:indexPath];
             [cell.imageChat setImage:[[UIImage imageNamed:@"balloon_white_reverse"] stretchableImageWithLeftCapWidth:15 topCapHeight:15]];
             [cell.imageIcon setUrl:[USERINFO objectForKey:@"icon"]];
@@ -243,7 +235,7 @@
         
         cell.labelTime.text = [NSString stringWithFormat:@"  %@  ", dict[@"time"]];
         cell.textMessage.text = dict[@"text"];
-    }else {
+    } else {
         cell = [tableView dequeueReusableCellWithIdentifier:@"chatSend" forIndexPath:indexPath];
         self.textSend = cell.textSend;
     }
@@ -272,29 +264,29 @@
         [self.navigationController.view addSubview:hud];
     }
     hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在发送";
-    [hud show:YES];
+    hud.label.text = @"正在发送";
+    [hud showAnimated:YES];
     
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:self.ID, @"to", text, @"text", nil];
     [performerSend performActionWithDictionary:dict toURL:@"sendmsg" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@",err);
-            hud.labelText = @"发送失败";
+            hud.label.text = @"发送失败";
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
             return;
         }
         // NSLog(@"%@", result);
         if ([[result.firstObject objectForKey:@"code"] integerValue] == 0) {
-            hud.labelText = @"发送成功";
+            hud.label.text = @"发送成功";
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        }else {
-            hud.labelText = @"发送失败";
+        } else {
+            hud.label.text = @"发送失败";
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
         }
         hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
         switch ([[result.firstObject objectForKey:@"code"] integerValue]) {
             case 0: {
                 cell.textSend.text = @"";

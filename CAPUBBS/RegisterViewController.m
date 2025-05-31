@@ -39,7 +39,7 @@
         self.title = @"修改个人信息";
         [self.imageUidAvailable setImage:SUCCESSMARK];
         [self setDefaultValue];
-    }else {
+    } else {
         iconURL = [NSString stringWithFormat:@"%@/bbsimg/icons/%@", CHEXIE, [ICON_NAMES objectAtIndex:arc4random() % [ICON_NAMES count]]];
         [self.icon setUrl:iconURL];
         [self editingDidEnd:self.textUid];
@@ -77,9 +77,9 @@
     [self.icon setUrl:iconURL];
     if ([dict[@"sex"] isEqualToString:@"男"]) {
         self.segmentSex.selectedSegmentIndex = 1;
-    }else if ([dict[@"sex"] isEqualToString:@"女"]) {
+    } else if ([dict[@"sex"] isEqualToString:@"女"]) {
         self.segmentSex.selectedSegmentIndex = 2;
-    }else {
+    } else {
         self.segmentSex.selectedSegmentIndex = 0;
     }
     if (![dict[@"mail"] isEqualToString:@"Array"]) {
@@ -196,27 +196,27 @@
         [self.navigationController.view addSubview:hud];
     }
     hud.mode = MBProgressHUDModeIndeterminate;
-    [hud show:YES];
+    [hud showAnimated:YES];
     if (self.isEdit == NO) {
-        hud.labelText = @"注册中";
+        hud.label.text = @"注册中";
         [performer performActionWithDictionary:dict toURL:@"register" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [[[UIAlertView alloc] initWithTitle:@"注册失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"注册失败";
+                hud.label.text = @"注册失败";
                 hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
+                [hud hideAnimated:YES afterDelay:0.5];
                 return;
             }
             if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"注册成功";
-            }else {
+                hud.label.text = @"注册成功";
+            } else {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"注册失败";
+                hud.label.text = @"注册失败";
             }
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
                     [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
@@ -246,26 +246,26 @@
                 }
             }
         }];
-    }else {
-        hud.labelText = @"修改中";
+    } else {
+        hud.label.text = @"修改中";
         [performer performActionWithDictionary:dict toURL:@"edituser" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [[[UIAlertView alloc] initWithTitle:@"修改失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"修改失败";
+                hud.label.text = @"修改失败";
                 hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
+                [hud hideAnimated:YES afterDelay:0.5];
                 return;
             }
             if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"修改成功";
-            }else {
+                hud.label.text = @"修改成功";
+            } else {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"修改失败";
+                hud.label.text = @"修改失败";
             }
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
             
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
@@ -275,7 +275,7 @@
                         [passSure textFieldAtIndex:0].placeholder = @"原密码";
                         [passSure textFieldAtIndex:0].secureTextEntry = YES;
                         [passSure show];
-                    }else {
+                    } else {
                         [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
                     }
                     break;
@@ -322,27 +322,27 @@
             [self.navigationController.view addSubview:hud];
         }
         hud.mode = MBProgressHUDModeIndeterminate;
-        [hud show:YES];
-        hud.labelText = @"修改中";
+        [hud showAnimated:YES];
+        hud.label.text = @"修改中";
         NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[ActionPerformer md5:[alertView textFieldAtIndex:0].text], @"old", [ActionPerformer md5:self.textPsd.text], @"new", nil];
         [performerPsd performActionWithDictionary:dict toURL:@"changepsd" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [[[UIAlertView alloc] initWithTitle:@"修改失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"修改失败";
+                hud.label.text = @"修改失败";
                 hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
+                [hud hideAnimated:YES afterDelay:0.5];
                 return;
             }
             if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"修改成功";
-            }else {
+                hud.label.text = @"修改成功";
+            } else {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"修改失败";
+                hud.label.text = @"修改失败";
             }
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
             
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
@@ -392,7 +392,7 @@
         if (err || result.count == 0 || [[[result objectAtIndex:0] objectForKey:@"username"] length] == 0) {
             [self.imageUidAvailable setImage:SUCCESSMARK];
             self.navigationItem.rightBarButtonItem.enabled = YES;
-        }else {
+        } else {
             [self.imageUidAvailable setImage:FAILMARK];
             [self.labelUidGuide setText:UID_WARNING];
             [self.labelUidGuide setTextColor:[UIColor redColor]];
@@ -437,7 +437,7 @@
         if (*p) {
             p++;
             bytes++;
-        }else {
+        } else {
             p++;
         }
     }

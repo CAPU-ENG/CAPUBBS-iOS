@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MBProgressHUD.h"
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface TextViewController : UITableViewController <UIAlertViewDelegate, UITextViewDelegate> {
     NSMutableAttributedString *textPreview;

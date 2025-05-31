@@ -20,7 +20,7 @@
     self.view.backgroundColor = GRAY_PATTERN;
     if (self.iconData.length > 0) {
         [self refreshBackgroundView:YES];
-    }else {
+    } else {
         [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:self.iconUrl] object:nil];
     }
 
@@ -68,7 +68,7 @@
     if (self.data.count > 0) {
         cell.textLabel.text = [ActionPerformer removeRe:[[self.data objectAtIndex:indexPath.row] objectForKey:@"title"]];
         cell.detailTextLabel.text = [[self.data objectAtIndex:indexPath.row] objectForKey:@"time"];
-    }else {
+    } else {
         cell.textLabel.text = [@"暂无" stringByAppendingString:self.title];
         cell.detailTextLabel.text = @"";
         cell.accessoryType = UITableViewCellAccessoryNone;

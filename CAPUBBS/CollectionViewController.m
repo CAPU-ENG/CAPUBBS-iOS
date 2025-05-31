@@ -36,16 +36,18 @@
     self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchController.delegate = self;
     self.searchController.searchResultsUpdater = self;
-    self.searchController.dimsBackgroundDuringPresentation = NO;
-    if (IOS > 9.0) {
-        self.searchController.hidesNavigationBarDuringPresentation = NO;
-    }
+    self.searchController.obscuresBackgroundDuringPresentation = NO;
+    self.searchController.hidesNavigationBarDuringPresentation = NO;
     [self.searchController.searchBar sizeToFit];
     self.searchController.searchBar.searchBarStyle = UISearchBarStyleMinimal;
     self.searchController.searchBar.placeholder = @"搜索";
     self.searchController.searchBar.delegate = self;
     
     self.tableView.tableHeaderView = self.searchController.searchBar;
+    // Auto height
+    self.tableView.estimatedRowHeight = 90;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    
     self.definesPresentationContext = YES;
     // self.tableView.backgroundView = [[UIView alloc] init]; // 否则顶部颜色不一样
     
@@ -93,7 +95,7 @@
     self.searchController.searchBar.text = lastSearch;
     if (wasFirstResponder) {
         [searchController.searchBar becomeFirstResponder];
-    }else {
+    } else {
         [self updateSearchResultsForSearchController:searchController];
     }
 }
@@ -109,7 +111,7 @@
     
     if (self.searchController.isActive) {
         [self updateSearchResultsForSearchController:self.searchController];
-    }else {
+    } else {
         dispatch_main_async_safe(^{
             [self.tableView reloadData];
         });
@@ -239,7 +241,7 @@
     if (self.searchController.searchBar.text.length > 0) {
         if (searchData.count == 0) {
             return @"没有搜索结果";
-        }else {
+        } else {
             return [NSString stringWithFormat:@"搜索到%d个结果", (int)searchData.count];
         }
     }
@@ -264,9 +266,9 @@
     NSDictionary *dict;
     if (self.searchController.searchBar.text.length > 0) {
         dict = [searchData objectAtIndex:indexPath.row];
-    }else if (sortType == SORT_BY_COLLECTION_DATE) {
+    } else if (sortType == SORT_BY_COLLECTION_DATE) {
         dict = data[indexPath.row];
-    }else if (sortType == SORT_BY_BOARD_INDEX || sortType == SORT_BY_AUTHOR) {
+    } else if (sortType == SORT_BY_BOARD_INDEX || sortType == SORT_BY_AUTHOR) {
         dict = [[sortData objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
     }
     cell.infoDict = dict;
@@ -282,7 +284,7 @@
     
     if ([dict[@"text"] length] == 0) {
         cell.labelInfo.text = @"查看楼主楼层后即可显示";
-    }else {
+    } else {
         cell.labelInfo.text = dict[@"text"];
     }
     
@@ -312,7 +314,7 @@
         
         if (!self.searchController.isActive && sectionCount != sortData.count) {
             [tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
-        }else {
+        } else {
             [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
         }
         [DEFAULTS setObject:data forKey:@"collection"];

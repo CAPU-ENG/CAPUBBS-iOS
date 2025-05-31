@@ -25,21 +25,19 @@
     [self.webView.layer setBorderWidth:1.0];
     [self.webView.layer setMasksToBounds:YES];
     [self.webView.layer setCornerRadius:10.0];
-    if (IOS >= 9.0) {
-        [self.webView setAllowsLinkPreview:YES];
-    }
+    [self.webView setAllowsLinkPreview:YES];
     self.labelTitle.text = self.textTitle;
     NSDictionary *dict = USERINFO;
+    NSString *sig = nil;
     if (self.sig > 0) {
         if ([dict isEqual:@""] || [dict[[NSString stringWithFormat:@"sig%d", self.sig]] length] == 0) {
-            self.textBody = [NSString stringWithFormat:@"%@<font color='gray' size=2><br><br>--------<br>您选择了第%d个签名档</font>", self.textBody, self.sig];
-        }else {
-            self.textBody = [NSString stringWithFormat:@"%@<font color='gray' size=2><br><br>--------<br>%@</font>", self.textBody, dict[[NSString stringWithFormat:@"sig%d", self.sig]]];
+            sig = [NSString stringWithFormat:@"[您选择了第%d个签名档]", self.sig];
+        } else {
+            sig = dict[[NSString stringWithFormat:@"sig%d", self.sig]];
         }
     }
-    self.textBody = [self transToHTML:self.textBody];
-    self.textBody = [ContentViewController htmlStringWithRespondString:self.textBody];
-    [self.webView loadHTMLString:self.textBody baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
+    NSString *html = [ContentViewController htmlStringWithText:[self transToHTML:self.textBody] andSig:sig];
+    [self.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     // Do any additional setup after loading the view.
 }
 
@@ -86,15 +84,12 @@
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
         UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
         dest.URL = path;
+        navi.modalPresentationStyle = UIModalPresentationFullScreen;
         [self presentViewController:navi animated:YES completion:nil];
         return NO;
-    }else {
+    } else {
         return YES;
     }
-}
-
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-    [self.webView loadHTMLString:self.textBody baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
 }
 
 @end

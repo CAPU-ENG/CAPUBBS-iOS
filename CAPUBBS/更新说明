@@ -16,14 +16,20 @@ CAPUBBS iOS客户端包含功能：
 
 审核信息：
 
+网站备案号（ICP Filing Number）：京ICP备14031425号
+地址（Address）：北京市海淀区北京大学28号楼B107室 100871
+
 Users have to agree with EULA (shown to the user when they open the app for the first time) to use the app.
 若要使用软件，用户必须同意EULA，EULA会在第一次打开软件时显示，如果拒绝EULA则无法开始使用软件。
 
-We don't force users to register. Users can read posts (except in the working board) without registering. When users register, they're not forced to submit any private information like gender (They can select "保密", which means "Confidential").
-本软件不强制要求用户注册，未注册用户可以正常浏览非工作区的所有帖子，并且正常使用搜索等功能，注册用户也不必填写隐私信息例如性别，可以选择“保密”代之。
+We don't force users to register. Users can read most posts (except in the working board) without registering. When users register, they're not forced to submit any private information like gender (They can leave blank or select "Confidential").
+本软件不强制要求用户注册，未注册用户可以正常浏览非工作区的大多数帖子，并且正常使用搜索等功能，注册用户也不必填写隐私信息例如性别，可以留空或选择“保密”。
 
-User can report posts/users if they think the content is inappropriate. We have a special team to deal with the reports in time.
-用户认为是违规内容的帖子/用户/私信均可举报，举报内容可以在邮件中详细说明，我们有一个团队随时处理用户的举报，对核实内容可以做删帖、删除聊天内容、封禁/删除用户等处理，并且可以通过admin账号发送私信告知双方处理结果。
+User can report posts/users if they think the content is inappropriate. Our site administrators deal with the reports in time.
+用户认为是违规内容的帖子/用户/私信均可举报，举报内容可以在邮件中详细说明，我们的网站管理团队随时处理用户的举报，对核实内容可以做删帖、删除聊天内容、封禁/删除用户等处理，并且可以通过私信告知双方处理结果。
+
+User can request to delete their account in the app (bottom of user info page).
+用户可以在app内（用户信息页面的最底端）申请删除自己的账号。
 
 1.2.1
 1、适配iPhone 6/iPhone 6 Plus
@@ -296,3 +302,19 @@ For A Better CAPU!
 3.6.6
 - 适配 iOS 12.1 系统
 - 适配 iPhone XS, iPhone XS Max, 2018款 iPad Pro
+
+3.9
+庆祝北京大学自行车协会成立30周年
+
+- 适配最新 iOS 18 / iPadOS 18 等系统
+- 适配最新 iPhone / iPad 等设备
+- 最低兼容版本更新为 iOS 12
+- 细节改进，修复错误
+  •改进了帖子的渲染方式，长帖加载速度显著提升
+  •支持帖子中jQuery的执行
+  •支持在论坛热点中显示置顶帖
+  •搜索默认时间范围为过去一年
+  •修复某些时间显示的不一致，所有时间都设定为北京时间
+  •修复一些会导致崩溃的问题
+
+意见或Bug反馈请在App设置菜单中发送邮件给@好男人

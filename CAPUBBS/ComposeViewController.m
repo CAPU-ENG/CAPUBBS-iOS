@@ -32,7 +32,7 @@
     }
     if (self.defaultContent) {
         self.textBody.text = self.defaultContent;
-    }else {
+    } else {
         self.textBody.text = @"";
     }
     if (self.defaultTitle) {
@@ -50,10 +50,10 @@
         if ([NUMBERS containsObject:self.bid]) {
             [self.textTitle becomeFirstResponder];
         }
-    }else {
+    } else {
         if (self.isEdit) {
             self.title = @"编辑帖子";
-        }else {
+        } else {
             self.title = @"发表回复";
         }
         [self.textBody becomeFirstResponder];
@@ -107,7 +107,7 @@
 - (void)updateActivity {
     if (self.bid.length > 0 && self.tid.length > 0) {
         activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)self.floor]];
-    }else {
+    } else {
         activity.webpageURL = nil;
     }
     activity.userInfo = [NSDictionary dictionaryWithObjectsAndKeys:@"compose", @"type", self.textTitle.text, @"title", self.textBody.text, @"content", self.bid, @"bid", self.tid, @"tid", self.floor, @"floor", nil];
@@ -128,15 +128,12 @@
     CGFloat constant = (viewFrame.size.height + viewFrame.origin.y) - keyboardBounds.origin.y;
     if (constant > 0 && viewFrame.origin.y < keyboardBounds.origin.y) {
         self.constraintBottom.constant = 8 + (viewFrame.size.height + viewFrame.origin.y) - keyboardBounds.origin.y;
-    }else {
+    } else {
         self.constraintBottom.constant = 0;
     }
 }
 
 - (void)initiateToolBar {
-    if (IOS < 9.0) { // 🛠低版本Emoji不支持
-        [self.buttonTools setTitle:@"🔧" forState:UIControlStateNormal];
-    }
     toolbarEditor = [[DEFAULTS objectForKey:@"toolbarEditor"] intValue];
     toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 1000, 40)];
     UIBarButtonItem *saveD = [[UIBarButtonItem alloc] initWithTitle:@" 📥 " style:UIBarButtonItemStylePlain target:self action:@selector(saveDraft:)];
@@ -156,11 +153,11 @@
         self.textBody.inputAccessoryView = nil;
         [self.viewTools setHidden:NO];
         self.constraintTop.constant = 66;
-    }else if (toolbarEditor == 1) {
+    } else if (toolbarEditor == 1) {
         self.textBody.inputAccessoryView = toolbar;
         [self.viewTools setHidden:YES];
         self.constraintTop.constant = 8;
-    }else if (toolbarEditor == 2) {
+    } else if (toolbarEditor == 2) {
         self.textBody.inputAccessoryView = nil;
         [self.viewTools setHidden:YES];
         self.constraintTop.constant = 8;
@@ -200,34 +197,34 @@
         [self.navigationController.view addSubview:hud];
     }
     hud.mode = MBProgressHUDModeIndeterminate;
-    [hud show:YES];
-    hud.labelText = @"发表中";
+    [hud showAnimated:YES];
+    hud.label.text = @"发表中";
     NSDictionary *dict;
     NSString *changedText = [self transFormat:self.textBody.text];
     if (self.isEdit) {
         dict = [NSDictionary dictionaryWithObjectsAndKeys:self.bid, @"bid", self.tid, @"tid", self.textTitle.text, @"title", changedText, @"text", [NSString stringWithFormat:@"%ld", (long)self.segmentedControl.selectedSegmentIndex], @"sig", self.floor, @"pid", nil];
-    }else {
+    } else {
         dict = [NSDictionary dictionaryWithObjectsAndKeys:self.bid, @"bid", self.tid, @"tid", self.textTitle.text, @"title", changedText, @"text", [NSString stringWithFormat:@"%ld", (long)self.segmentedControl.selectedSegmentIndex], @"sig", nil];
     }
     [performer performActionWithDictionary:dict toURL:@"post" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@", err);
-            hud.labelText = @"发表失败";
+            hud.label.text = @"发表失败";
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
             hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
             return;
         }
         NSInteger back = [[[result firstObject] objectForKey:@"code"] integerValue];
         if (back == 0) {
-            hud.labelText = @"发表成功";
+            hud.label.text = @"发表成功";
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        }else {
-            hud.labelText = @"发表失败";
+        } else {
+            hud.label.text = @"发表失败";
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
         }
         hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
         switch (back) {
             case 0:{
                 [NOTIFICATION postNotificationName:@"refreshContent" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:self.isEdit], @"isEdit", nil]];
@@ -305,7 +302,7 @@
 - (IBAction)cancel:(id)sender {
     if (self.textBody.text.length > 0 && !([self.textTitle.text isEqualToString:[DEFAULTS objectForKey:@"savedTitle"]] && [self.textBody.text isEqualToString:[DEFAULTS objectForKey:@"savedBody"]])) {
         [[[UIAlertView alloc] initWithTitle:@"确定退出" message:@"您编辑了正文内容，建议先保存草稿，确定要直接退出吗？" delegate:self cancelButtonTitle:@"返回" otherButtonTitles:@"退出", nil] show];
-    }else {
+    } else {
         [self dismissViewControllerAnimated:YES completion:nil];
     }
 }
@@ -353,7 +350,7 @@
     
     if ([sender isKindOfClass:[UIBarButtonItem class]]) {
         action.popoverPresentationController.barButtonItem = sender;
-    }else {
+    } else {
         UIButton *button = sender;
         action.popoverPresentationController.sourceView = button;
         action.popoverPresentationController.sourceRect = button.bounds;
@@ -368,7 +365,7 @@
     image = [info objectForKey:UIImagePickerControllerOriginalImage];
     if (image.size.width <= 800) {
         [self prepareUpload];
-    }else {
+    } else {
         [self performSelector:@selector(showResize) withObject:nil afterDelay:0.5];
     }
     [picker dismissViewControllerAnimated:YES completion:nil];
@@ -396,8 +393,8 @@
         [self.navigationController.view addSubview:hud];
     }
     hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在压缩";
-    [hud show:YES];
+    hud.label.text = @"正在压缩";
+    [hud showAnimated:YES];
     [self performSelectorInBackground:@selector(upload) withObject:nil];
 }
 
@@ -410,25 +407,25 @@
         imageData = UIImageJPEGRepresentation(image, ratio);
     }
     NSLog(@"Image Size:%dkB", (int)imageData.length / 1024);
-    hud.labelText = @"正在上传";
+    hud.label.text = @"正在上传";
     [performer performActionWithDictionary:[NSDictionary dictionaryWithObjectsAndKeys:[imageData base64EncodedStringWithOptions:0], @"image", nil] toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"上传失败";
-        }else {
+            hud.label.text = @"上传失败";
+        } else {
             if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
                 hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"上传完成";
+                hud.label.text = @"上传完成";
                 NSString *url = [[result firstObject] objectForKey:@"imgurl"];
                 [self.textBody insertText:[NSString stringWithFormat:@"[img]%@[/img]",url]];
-            }else {
+            } else {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"上传失败";
+                hud.label.text = @"上传失败";
             }
             [self.textBody becomeFirstResponder];
         }
         hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
+        [hud hideAnimated:YES afterDelay:0.5];
     }];
 }
 
@@ -451,7 +448,7 @@
 - (IBAction)restoreDraft:(id)sender {
     if ([[DEFAULTS objectForKey:@"savedTitle"] length] == 0 && [[DEFAULTS objectForKey:@"savedBody"] length] == 0) {
         [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您还没有保存草稿" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-    }else {
+    } else {
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"警告" message:@"恢复草稿会失去当前编辑的内容\n确定要继续吗？" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"恢复", nil];
         alert.tag = 0;
         [alert show];
@@ -476,11 +473,11 @@
         hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
         [self.navigationController.view addSubview:hud];
     }
-    hud.labelText = @"恢复成功";
-    [hud show:YES];
+    hud.label.text = @"恢复成功";
+    [hud showAnimated:YES];
     hud.mode = MBProgressHUDModeCustomView;
     hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-    [hud hide:YES afterDelay:0.5];
+    [hud hideAnimated:YES afterDelay:0.5];
 }
 
 - (IBAction)addAt:(id)sender {
@@ -488,10 +485,6 @@
     if (text.length > 0) {
         [self.textBody insertText:[NSString stringWithFormat:@"[at]%@[/at]", text]];
         return;
-    }
-    if (IOS < 9) {
-        [self.textTitle resignFirstResponder];
-        [self.textBody resignFirstResponder];
     }
     UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"插入@/引用" message:@"请输入用户和正文\n正文若为空将使用@形式" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"插入", nil];
     alert.alertViewStyle = UIAlertViewStyleLoginAndPasswordInput;
@@ -506,10 +499,6 @@
     if (text.length > 0) {
         [self.textBody insertText:[NSString stringWithFormat:@"[url=%@]%@[/url]", text, text]];
         return;
-    }
-    if (IOS < 9) {
-        [self.textTitle resignFirstResponder];
-        [self.textBody resignFirstResponder];
     }
     UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"插入链接" message:@"请输入链接的标题和地址" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"插入", nil];
     alert.alertViewStyle = UIAlertViewStyleLoginAndPasswordInput;
@@ -550,52 +539,52 @@
         if (alertView.tag == 0) {
             if (self.textTitle.text.length > 0 && ![[DEFAULTS objectForKey:@"savedTitle"] isEqualToString:self.textTitle.text]) {
                 [[[UIAlertView alloc] initWithTitle:@"检测到冲突！" message:[NSString stringWithFormat:@"草稿标题为：%@\n与当前标题不一致！\n请选择操作：", [DEFAULTS objectForKey:@"savedTitle"]] delegate:self cancelButtonTitle:@"放弃恢复" otherButtonTitles:@"继续恢复", nil] show];
-            }else {
+            } else {
                 [self restore];
             }
-        }else if (alertView.tag == 1) {
+        } else if (alertView.tag == 1) {
             [self save];
             if (self.textBody.selectedRange.length > 0) {
                 [self.textBody replaceRange:self.textBody.selectedTextRange withText:[ContentViewController removeHTML:[self.textBody.text substringWithRange:self.textBody.selectedRange]]];
-            }else {
+            } else {
                 self.textBody.text = [ContentViewController removeHTML:self.textBody.text];
             }
             if (!hud && self.navigationController) {
                 hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
                 [self.navigationController.view addSubview:hud];
             }
-            hud.labelText = @"清除成功";
-            [hud show:YES];
+            hud.label.text = @"清除成功";
+            [hud showAnimated:YES];
             hud.mode = MBProgressHUDModeCustomView;
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            [hud hide:YES afterDelay:0.5];
+            [hud hideAnimated:YES afterDelay:0.5];
         }
-    }else if ([alertView.title isEqualToString:@"确认保存"]) {
+    } else if ([alertView.title isEqualToString:@"确认保存"]) {
         [self save];
         if (!hud && self.navigationController) {
             hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
             [self.navigationController.view addSubview:hud];
         }
-        hud.labelText = @"保存成功";
-        [hud show:YES];
+        hud.label.text = @"保存成功";
+        [hud showAnimated:YES];
         hud.mode = MBProgressHUDModeCustomView;
         hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud hide:YES afterDelay:0.5];
-    }else if ([alertView.title isEqualToString:@"检测到冲突！"]) {
+        [hud hideAnimated:YES afterDelay:0.5];
+    } else if ([alertView.title isEqualToString:@"检测到冲突！"]) {
         [self restore];
-    }else if ([alertView.title isEqualToString:@"确定退出"]) {
+    } else if ([alertView.title isEqualToString:@"确定退出"]) {
         [self dismissViewControllerAnimated:YES completion:nil];
-    }else if ([alertView.title isEqualToString:@"插入照片"]) {
+    } else if ([alertView.title isEqualToString:@"插入照片"]) {
         [self.textBody insertText:[NSString stringWithFormat:@"[img]%@[/img]", [alertView textFieldAtIndex:0].text]];
         [self.textBody becomeFirstResponder];
-    }else if ([alertView.title isEqualToString:@"插入@/引用"]) {
+    } else if ([alertView.title isEqualToString:@"插入@/引用"]) {
         if ([alertView textFieldAtIndex:1].text.length == 0) {
             [self.textBody insertText:[NSString stringWithFormat:@"[at]%@[/at]", [alertView textFieldAtIndex:0].text]];
         } else {
             [self.textBody insertText:[NSString stringWithFormat:@"[quote=%@]%@[/quote]\n", [alertView textFieldAtIndex:0].text, [[alertView textFieldAtIndex:1].text stringByReplacingOccurrencesOfString:@"<br>" withString:@"\n"]]];
         }
         [self.textBody becomeFirstResponder];
-    }else if ([alertView.title isEqualToString:@"插入链接"]) {
+    } else if ([alertView.title isEqualToString:@"插入链接"]) {
         NSString *name = [alertView textFieldAtIndex:0].text;
         NSString *url = [alertView textFieldAtIndex:1].text;
         if (name.length == 0) {

@@ -10,12 +10,11 @@
 #define CommonDefinitions_h
 
 #define DEFAULT_SERVER_URL @"https://www.chexie.net"
-//#define DEFAULT_SERVER_URL @"http://capu.fanzhikang.cn" // 临时域名
 #define APP_GROUP_IDENTIFIER @"group.net.chexie.capubbs"
 
 #define REPORT_EMAIL @[@"beidachexie@163.com"]
 #define FEEDBACK_EMAIL @[@"goodman.capu@gmail.com", @"beidachexie@163.com"]
-#define COPYRIGHT @"Copyright®  2001 - 2017\nPowered by：CAPU ver 3.0"
+#define COPYRIGHT @"Copyright®  2001 - 2025\nPowered by：CAPU ver 3.0"
 #define EULA @"本论坛作为北京大学自行车协会内部以及自行车爱好者之间交流平台，不欢迎任何商业广告和无关话题。发言者对自己发表的任何言论、信息负责。"
 
 #define NUMBERS @[@"1", @"2", @"3", @"4", @"5", @"6", @"7", @"9", @"28"]
@@ -41,9 +40,9 @@
 #define SUCCESSMARK [UIImage imageNamed:@"successmark"]
 #define FAILMARK [UIImage imageNamed:@"failmark"]
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
-#define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
+//#define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
-#define IS_CELLULAR (![[AFNetworkReachabilityManager sharedManager] isReachableViaWWAN] && [[AFNetworkReachabilityManager sharedManager] isReachable])
+#define IS_CELLULAR ([ReachabilityManager sharedManager].currentNetworkType == NetworkTypeCellular)
 
 #define MAX_ID_NUM 10
 #define MAX_HOT_NUM 40
@@ -51,21 +50,19 @@
 #define HOT_NUM [[DEFAULTS objectForKey:@"hotNum"] intValue]
 #define IS_SUPER_USER (ID_NUM == MAX_ID_NUM && HOT_NUM == MAX_HOT_NUM)
 
-#define dispatch_main_sync_safe(block)\
-if ([NSThread isMainThread]) {\
-block();\
-} else {\
-dispatch_sync(dispatch_get_main_queue(), block);\
+static inline void dispatch_main_async_safe(dispatch_block_t block) {
+    if ([NSThread isMainThread]) {
+        block();
+    } else {
+        dispatch_async(dispatch_get_main_queue(), block);
+    }
 }
 
-#define dispatch_main_async_safe(block)\
-if ([NSThread isMainThread]) {\
-block();\
-} else {\
-dispatch_async(dispatch_get_main_queue(), block);\
+static inline void dispatch_global_default_async(dispatch_block_t block) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
 }
 
-#define dispatch_global_default_async(block)\
-dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+#define WEB_VIEW_MAX_HEIGHT 100000
+#define JQUERY_MIN_JS [[NSBundle mainBundle] pathForResource:@"jquery.min" ofType:@"js"]
 
 #endif /* CommonDefinitions_h */

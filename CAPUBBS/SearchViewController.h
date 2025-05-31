@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "SearchViewCell.h"
 #import "AsyncImageView.h"
-#import "MBProgressHUD.h"
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface SearchViewController : UIViewController <UITableViewDelegate> {
     ActionPerformer *performer;
@@ -17,8 +17,6 @@
     AsyncImageView *backgroundView;
     NSString *text;
     NSString *type;
-    NSString *beginTime;
-    NSString *endTime;
     NSString *author;
     UIRefreshControl *control;
     UIDatePicker *startDatePicker;

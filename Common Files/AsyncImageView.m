@@ -7,8 +7,6 @@
 //
 
 #import "AsyncImageView.h"
-#import "ActionPerformer.h"
-#import "CommonDefinitions.h"
 #import "UIImageEffects.h"
 
 @implementation AsyncImageView {
@@ -44,14 +42,14 @@
                     [self setAlpha:1.0];
                 }];
             }];
-        }else {
+        } else {
             [self setAlpha:0.0];
             [self setImage:image];
             [UIView animateWithDuration:animationTime animations:^{
                 [self setAlpha:1.0];
             }];
         }
-    }else {
+    } else {
         [self setImage:image];
     }
 }
@@ -63,11 +61,9 @@
 }
 
 - (void)_setGifWithData:(NSData *)data {
-    dispatch_global_default_async(^{
-        FLAnimatedImage *image = [FLAnimatedImage animatedImageWithGIFData:data];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self setAnimatedImage:image];
-        });
+    dispatch_main_async_safe(^{
+        SDAnimatedImage *image = [[SDAnimatedImage alloc] initWithData:data];
+        [self setImage:image];
     });
 }
 
@@ -100,7 +96,7 @@
         dispatch_main_async_safe(^{
             if (SIMPLE_VIEW == YES) {
                 [self setImage:[UIImage imageWithData:data]];
-            }else {
+            } else {
                 int imageType = [AsyncImageView fileType:data];
                 if (imageType == GIF_TYPE) {
                     [self _setGifWithData:data];
@@ -110,7 +106,7 @@
             }
             [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
         });
-    }else if (url.length > 0) {
+    } else if (url.length > 0) {
         if (showPlaceholder) {
             [self setImage:PLACEHOLDER];
         }
@@ -118,6 +114,8 @@
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+        NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
+        [formatter setTimeZone:beijingTimeZone];
         if ([oldInfo hasPrefix:@"loading"]) {
             NSDate *oldDate = [formatter dateFromString:[oldInfo substringFromIndex:@"loading".length]];
             if ([[NSDate date] timeIntervalSinceDate:oldDate] < 60) { // 上次加载图片时间不超过一分钟
@@ -175,10 +173,10 @@
     }
     if (type == PNG_TYPE) { // 带透明信息的png不可转换成jpeg否则丢失透明性
         return UIImagePNGRepresentation(resizeImage);
-    }else {
+    } else {
         if (resizeImage.size.width >= maxWidth) {
             return UIImageJPEGRepresentation(resizeImage, 0.75);
-        }else {
+        } else {
             return UIImageJPEGRepresentation(resizeImage, 1);
         }
     }
@@ -223,9 +221,9 @@
     if (!([iconUrl hasPrefix:@"http://"] || [iconUrl hasPrefix:@"https://"] || [iconUrl hasPrefix:@"ftp://"])) {
         if ([iconUrl hasPrefix:@"/"]) {
             iconUrl = [NSString stringWithFormat:@"%@%@", CHEXIE, iconUrl];
-        }else if ([iconUrl hasPrefix:@".."]) {
+        } else if ([iconUrl hasPrefix:@".."]) {
             iconUrl = [NSString stringWithFormat:@"%@/bbs/content/%@", CHEXIE, [iconUrl substringFromIndex:@"..".length]];
-        }else {
+        } else {
             iconUrl = [NSString stringWithFormat:@"%@/bbsimg/i/%@.gif", CHEXIE, iconUrl];
         }
     }

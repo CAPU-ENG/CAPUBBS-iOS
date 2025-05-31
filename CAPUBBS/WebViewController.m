@@ -19,9 +19,7 @@
     [self.webView setDelegate:self];
     [self.webView.scrollView setDelegate:self];
     [self.webView setScalesPageToFit:YES];
-    if (IOS >= 9.0) {
-        [self.webView setAllowsLinkPreview:YES];
-    }
+    [self.webView setAllowsLinkPreview:YES];
     self.buttonBack.enabled = NO;
     self.buttonForward.enabled = NO;
     
@@ -78,7 +76,7 @@
     if (webView.request.URL.absoluteString.length > 0) {
         self.title = [webView stringByEvaluatingJavaScriptFromString:@"document.title"];
         self.URL = webView.request.URL.absoluteString;
-    }else {
+    } else {
         self.title = self.URL;
     }
     self.navigationItem.rightBarButtonItems = @[self.buttonRefresh];
@@ -147,7 +145,7 @@
     if (isAtEnd == NO && scrollView.dragging) { // 拖拽
         if ((scrollView.contentOffset.y - contentOffsetY) > 5.0f) { // 向上拖拽
             [self.navigationController setToolbarHidden:YES animated:YES];
-        }else if ((contentOffsetY - scrollView.contentOffset.y) > 5.0f) { // 向下拖拽
+        } else if ((contentOffsetY - scrollView.contentOffset.y) > 5.0f) { // 向下拖拽
             [self.navigationController setToolbarHidden:NO animated:YES];
         }
     }

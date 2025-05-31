@@ -30,9 +30,7 @@
     [self.webView.layer setMasksToBounds:YES];
     [self.webView.scrollView setScrollEnabled:NO];
     [self.webView setBackgroundColor:[UIColor whiteColor]];
-    if (IOS >= 9.0) {
-        [self.webView setAllowsLinkPreview:YES];
-    }
+    [self.webView setAllowsLinkPreview:YES];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated

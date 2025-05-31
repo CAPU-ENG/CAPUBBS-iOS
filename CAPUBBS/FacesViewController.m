@@ -38,7 +38,7 @@
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     if (section == 0) {
         return 33;
-    }else {
+    } else {
         return 132;
     }
 }
@@ -46,7 +46,7 @@
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == 0) {
         return CGSizeMake(30, 30);
-    }else {
+    } else {
         return CGSizeMake(40, 40);
     }
 }
@@ -55,7 +55,7 @@
     FacesViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"faces" forIndexPath:indexPath];
     if (indexPath.section == 0) {
         [cell.face setGif:[NSString stringWithFormat:@"%d_0.gif", (int)(indexPath.row + 1)]];
-    }else {
+    } else {
         [cell.face setGif:[NSString stringWithFormat:@"%d.gif", (int)(indexPath.row + 1)]];
     }
     // Configure the cell
@@ -68,7 +68,7 @@
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == 1) {
         [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"[img]/bbsimg/expr/%ld.gif[/img]", (long)(indexPath.row+1)], @"HTML", nil]];
-    }else {
+    } else {
         [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"[img]/bbsimg/%ld.gif[/img]", (long)(indexPath.row+1)], @"HTML", nil]];
     }
     self.numberOfFaces++;
@@ -83,7 +83,7 @@
     float scale = 1.2;
     if (frame.origin.y < (frame.size.height * scale + 8 + [self.view convertRect:self.collectionView.bounds toView:self.view].origin.y)) {
         frame.origin.y += (frame.size.height + 8);
-    }else {
+    } else {
         frame.origin.y -= (frame.size.height + 8);
     }
     frame.origin.x -= ((scale - 1) / 2) * frame.size.width;

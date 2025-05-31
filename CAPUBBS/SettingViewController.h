@@ -10,7 +10,7 @@
 #import <MessageUI/MessageUI.h>
 #import "AppDelegate.h"
 #import "AsyncImageView.h"
-#import "MBProgressHUD.h"
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface SettingViewController : UITableViewController<MFMailComposeViewControllerDelegate>{
     MFMailComposeViewController *mail;

@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "LzlCell.h"
-#import "MBProgressHUD.h"
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface LzlViewController : UITableViewController<UIAlertViewDelegate, UITextViewDelegate> {
     ActionPerformer *performer;

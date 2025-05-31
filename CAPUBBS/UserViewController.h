@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
 #import "AsyncImageView.h"
-#import "MBProgressHUD.h"
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface UserViewController : UITableViewController <UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
     ActionPerformer *performer;
@@ -26,7 +26,8 @@
     NSArray *property;
     NSMutableArray *heights;
     UIDocumentInteractionController *dic;
-    MFMailComposeViewController *mfc;
+    MFMailComposeViewController *mail;
+    NSTimer *heightCheckTimer;
 }
 
 @property NSString *ID;
@@ -52,7 +53,6 @@
 @property (weak, nonatomic) IBOutlet UIWebView *sig2;
 @property (weak, nonatomic) IBOutlet UIWebView *sig3;
 @property (weak, nonatomic) IBOutlet AsyncImageView *icon;
-@property (weak, nonatomic) IBOutlet UITableViewCell *cellReport;
 @property (weak, nonatomic) IBOutlet UILabel *labelReport;
 
 @end
