@@ -491,7 +491,7 @@
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"最终用户许可协议"
                                                                    message:EULA
                                                             preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"查看完整隐私政策"
+    [alert addAction:[UIAlertAction actionWithTitle:@"查看隐私政策"
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction * _Nonnull action) {
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];

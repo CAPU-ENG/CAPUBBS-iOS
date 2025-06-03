@@ -896,7 +896,7 @@ static const float kWebViewMinHeight = 40;
             "<head>"
             "%@"
             "<style type='text/css'>"
-            "img{max-width:100%%}"
+            "img{max-width:min(100%%, 700px)}}"
             "body{word-wrap:break-word;}"
             ".textblock{min-height:3em;}"
             "%@"

@@ -152,7 +152,7 @@
                     page = 1;
                     [self.refreshControl endRefreshing];
                 }
-                if (topErr || hotErr || topResult.count == 0 || hotResult.count == 0) {
+                if (topErr || hotErr || hotResult.count == 0) {
                     failCount++;
                     page = oldPage;
                     self.buttonBack.enabled = page != 1;
@@ -165,6 +165,9 @@
                     }
                     if (hotErr) {
                         NSLog(@"hot error: %@",hotErr);
+                    }
+                    if (hotResult.count == 0) {
+                        NSLog(@"hot not found");
                     }
                 } else {
                     hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
