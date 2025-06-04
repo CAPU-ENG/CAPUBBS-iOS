@@ -184,7 +184,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     NSDictionary *dict = [searchResult objectAtIndex:indexPath.row];
     SearchViewCell *cell = [self.tableview dequeueReusableCellWithIdentifier:@"resultlist"];
-    NSString *titleText = dict[@"text"];
+    NSString *titleText = dict[@"title"] ? dict[@"title"] : dict[@"text"];
     titleText = [ActionPerformer removeRe:titleText];
     cell.titleText.text = titleText;
     cell.authorText.text = dict[@"author"];
@@ -310,11 +310,7 @@
         if ([one objectForKey:@"floor"]) {
             dest.floor = [one objectForKey:@"floor"];
         }
-        if ([one objectForKey:@"title"]) {
-            dest.title = [one objectForKey:@"title"];
-        } else {
-            dest.title = [one objectForKey:@"text"];
-        }
+        dest.title = [one objectForKey:@"title"] ? [one objectForKey:@"title"] : [one objectForKey:@"text"];
         [self.navigationController setToolbarHidden:NO];
     }
 }

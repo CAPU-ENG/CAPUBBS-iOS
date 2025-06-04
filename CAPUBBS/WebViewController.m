@@ -119,7 +119,7 @@
 }
 
 - (IBAction)openInSafari:(id)sender {
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.URL]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.URL] options:@{} completionHandler:nil];
 }
 
 - (IBAction)share:(id)sender {

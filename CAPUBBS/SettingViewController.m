@@ -179,7 +179,7 @@
             }
         } else if (indexPath.row == 4) {
             NSString *str = @"itms-apps://itunes.apple.com/app/id826386033";
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:str]];
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:str] options:@{} completionHandler:nil];
         } else if (indexPath.row == 5) {
             NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
             NSString *appVersion = [infoDictionary objectForKey:@"CFBundleShortVersionString"];

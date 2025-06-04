@@ -14,6 +14,14 @@
 
 #pragma mark Web Request
 
+- (NSString *)encodeURIComponent:(NSString *)string {
+    if (!allowedCharacters) {
+        allowedCharacters = [NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._* "];
+    }
+    NSString *encoded = [string stringByAddingPercentEncodingWithAllowedCharacters:allowedCharacters];
+    return [encoded stringByReplacingOccurrencesOfString:@" " withString:@"+"];
+}
+
 - (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
     NSString *postUrl = [NSString stringWithFormat:@"%@/api/client.php?ask=%@",CHEXIE, url];
     
@@ -35,10 +43,12 @@
     
     // Convert parameters to x-www-form-urlencoded (or JSON, depending on server)
     NSMutableArray *bodyParts = [NSMutableArray array];
-    [requestDictionary enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+    [requestDictionary enumerateKeysAndObjectsUsingBlock:^(id key,
+                                                           id obj,
+                                                           BOOL *stop) {
         NSString *part = [NSString stringWithFormat:@"%@=%@",
-                          [key stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet],
-                          [obj stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet]];
+                          [self encodeURIComponent: key],
+                          [self encodeURIComponent: obj]];
         [bodyParts addObject:part];
     }];
     NSString *bodyString = [bodyParts componentsJoinedByString:@"&"];
@@ -60,7 +70,6 @@
             parser.delegate = self;
             
             if (![parser parse]) {
-                NSLog(@"XML parsing failed.");
                 NSError *parseError = [NSError errorWithDomain:@"XMLParsing" code:0 userInfo:@{NSLocalizedDescriptionKey: @"XML parsing failed"}];
                 block(nil, parseError);
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert"
@@ -109,6 +118,10 @@
     }
     NSString *string = [[NSString alloc] initWithData:CDATABlock encoding:NSUTF8StringEncoding];
     [currentString appendString:string];
+}
+
+- (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
+    NSLog(@"NSXMLParser error: %@", parseError.localizedDescription);
 }
 
 #pragma mark Common Functions

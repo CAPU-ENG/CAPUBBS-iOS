@@ -123,14 +123,27 @@
 }
 
 - (void)keyboardChange:(NSNotification *)info {
-    CGRect keyboardBounds = [[[info userInfo] objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
-    CGRect viewFrame = [self.navigationController.view convertRect:self.navigationController.view.frame toView:[UIApplication sharedApplication].keyWindow]; // 获取在整个软件窗口的绝对坐标
-    CGFloat constant = (viewFrame.size.height + viewFrame.origin.y) - keyboardBounds.origin.y;
-    if (constant > 0 && viewFrame.origin.y < keyboardBounds.origin.y) {
-        self.constraintBottom.constant = 8 + (viewFrame.size.height + viewFrame.origin.y) - keyboardBounds.origin.y;
-    } else {
-        self.constraintBottom.constant = 0;
+    CGRect keyboardFrame = [info.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    NSTimeInterval animationDuration = [info.userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+    UIViewAnimationOptions options = [info.userInfo[UIKeyboardAnimationCurveUserInfoKey] integerValue] << 16;
+    
+    // 将键盘坐标从 window 坐标系转换为当前 view 的坐标系
+    CGRect keyboardFrameInView = [self.view convertRect:keyboardFrame fromView:nil];
+    
+    CGFloat overlap = CGRectGetMaxY(self.view.bounds) - keyboardFrameInView.origin.y;
+    if (overlap < 0) {
+        overlap = 0;
     }
+    
+    CGFloat bottomSafeAreaInset = self.view.safeAreaInsets.bottom;
+    CGFloat newConstant = overlap - bottomSafeAreaInset;
+    if (newConstant < 0) {
+        newConstant = 0;
+    }
+    
+    [UIView animateWithDuration:animationDuration delay:0 options:options animations:^{
+        self.constraintBottom.constant = newConstant + 15;
+    } completion:nil];
 }
 
 - (void)initiateToolBar {
@@ -273,7 +286,7 @@
 }
 
 - (NSString *)transFormat:(NSString *)text {
-    text = [text stringByReplacingOccurrencesOfString:@"\n" withString:@"<br>"];
+    text = [text stringByReplacingOccurrencesOfString:@"\n" withString:@"<br />"];
     int index = 0;
     while (index < text.length) {
         if ([[text substringWithRange:NSMakeRange(index, 1)] isEqualToString:@"<"]) {
@@ -291,7 +304,7 @@
         }
         index++;
     }
-    // NSLog(@"%@", text);
+//    NSLog(@"%@", text);
     return text;
 }
 

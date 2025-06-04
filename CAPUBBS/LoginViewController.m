@@ -407,7 +407,7 @@
         return;
     }
     if ([alertView.title hasPrefix:@"发现新版本"]) {
-        [[UIApplication sharedApplication]openURL:[NSURL URLWithString:newVerURL]];
+        [[UIApplication sharedApplication]openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
     } else if ([alertView.title isEqualToString:@"警告"] || [alertView.title isEqualToString:@"添加公告"]) {
         NSString *method;
         NSString *text = [alertView textFieldAtIndex:0].text;

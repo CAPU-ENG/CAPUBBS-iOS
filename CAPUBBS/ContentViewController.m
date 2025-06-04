@@ -13,7 +13,7 @@
 #import "UserViewController.h"
 #import "WebViewController.h"
 
-static const float kOtherViewHeight = 120;
+static const float kOtherViewHeight = 122;
 static const float kWebViewMinHeight = 40;
 
 @interface ContentViewController ()
@@ -157,7 +157,6 @@ static const float kWebViewMinHeight = 40;
         self.buttonLatest.enabled = !isLast;
         self.buttonJump.enabled = ([[[data lastObject] objectForKey:@"pages"] integerValue] > 1);
         self.buttonCompose.enabled = [ActionPerformer checkLogin:NO];
-        [heights removeAllObjects];
         [HTMLStrings removeAllObjects];
         if (data.count != 0) {
             for (NSDictionary *dict in data) {
@@ -166,7 +165,6 @@ static const float kWebViewMinHeight = 40;
                     [self performSegueWithIdentifier:@"lzl" sender:nil];
                 }
                 
-                [heights addObject:@0];
                 NSString *html = [ContentViewController htmlStringWithText:dict[@"text"] andSig:dict[@"sig"]];
                 NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
                 html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
@@ -176,7 +174,7 @@ static const float kWebViewMinHeight = 40;
         }
         self.exactFloor = @"";
         
-        [self.tableView reloadData];
+        [self clearHeightsAndReloadData];
         if (data.count != 0) {
             if (self.willScroll) {
                 self.willScroll = NO;
@@ -226,6 +224,16 @@ static const float kWebViewMinHeight = 40;
         self.isCollection = NO;
     }
     [self.buttonCollection setImage:[UIImage imageNamed:(self.isCollection ? @"star-full" : @"star-empty")]];
+}
+
+- (void)clearHeightsAndReloadData {
+    [heights removeAllObjects];
+    if (data.count != 0) {
+        for (NSDictionary *dict in data) {
+            [heights addObject:@0];
+        }
+    }
+    [self.tableView reloadData];
 }
 
 - (void)shouldRefresh:(NSNotification *)notification {
@@ -278,8 +286,30 @@ static const float kWebViewMinHeight = 40;
     return kOtherViewHeight + MIN(MAX(kWebViewMinHeight, webViewHeight), WEB_VIEW_MAX_HEIGHT);
 }
 
+- (UITableViewCell *)getCellForView:(UIView *)view {
+    UIView *currentView = view;
+    while (currentView != nil) {
+        if ([currentView isKindOfClass:[UITableViewCell class]]) {
+            return (UITableViewCell *)currentView;
+        }
+        currentView = currentView.superview;
+    }
+    return nil;
+}
+
 - (void)updateWebViewHeight:(UIWebView *)webView {
     NSUInteger row = webView.tag;
+    if (!self.isViewLoaded || !self.view.window ||
+        !self.tableView || !self.tableView.window ||
+        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        return;
+    }
+    
+    UITableViewCell *cell = [self getCellForView:webView];
+    if (!cell || [self.tableView indexPathForCell:cell].row != row) {
+        return;
+    }
+    
     [webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.body.style.webkitTextSizeAdjust= '%d%%'", textSize]];
     
     NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-wrapper').scrollHeight"];
@@ -302,7 +332,10 @@ static const float kWebViewMinHeight = 40;
         row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
         return;
     }
-    ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:row inSection:0]];
+    ContentCell *cell = (ContentCell *)[self getCellForView:webView];
+    if (!cell || [self.tableView indexPathForCell:cell].row != row) {
+        return;
+    }
     if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
         [cell.heightCheckTimer invalidate];
     }
@@ -317,7 +350,10 @@ static const float kWebViewMinHeight = 40;
         row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
         return;
     }
-    ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:row inSection:0]];
+    ContentCell *cell = (ContentCell *)[self getCellForView:webView];
+    if (!cell || [self.tableView indexPathForCell:cell].row != row) {
+        return;
+    }
     [cell.indicatorLoading stopAnimating];
 }
 
@@ -648,7 +684,7 @@ static const float kWebViewMinHeight = 40;
         }
         [self jumpTo:pagen];
     } else if ([alertView.title isEqualToString:@"确认呼叫？"]) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:tempPath]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:tempPath] options:@{} completionHandler:nil];
     }
 }
 
@@ -731,19 +767,19 @@ static const float kWebViewMinHeight = 40;
     if (textSize + 10 != 100 && textSize + 10 < 200) {
         [action addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"增大字体至%d%%", textSize + 10] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize += 10;
-            [self.tableView reloadData];
+            [self clearHeightsAndReloadData];
         }]];
     }
     if (textSize - 10 != 100 & textSize - 10 > 0) {
         [action addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"减小字体至%d%%", textSize - 10] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize -= 10;
-            [self.tableView reloadData];
+            [self clearHeightsAndReloadData];
         }]];
     }
     if (textSize != 100) {
         [action addAction:[UIAlertAction actionWithTitle:@"恢复字体至100%" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize = 100;
-            [self.tableView reloadData];
+            [self clearHeightsAndReloadData];
         }]];
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
@@ -801,11 +837,11 @@ static const float kWebViewMinHeight = 40;
         if (cell.webView.scrollView.isScrollEnabled == NO) {
             hud.label.text = @"透视模式";
             cell.webView.scrollView.scrollEnabled = YES;
-            [cell.webView setBackgroundColor:[UIColor lightGrayColor]];
+            [cell.webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-mask').style.backgroundColor = 'rgba(127, 127, 127, 0.75)'"];
         } else {
             hud.label.text = @"恢复默认";
             cell.webView.scrollView.scrollEnabled = NO;
-            [cell.webView setBackgroundColor:[UIColor whiteColor]];
+            [cell.webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-mask').style.backgroundColor = ''"];
         }
         [hud hideAnimated:YES afterDelay:0.5];
     }
@@ -891,20 +927,22 @@ static const float kWebViewMinHeight = 40;
     }
     
     NSString *sigBlockStyle = text ? @".sigblock{color:gray;font-size:small;margin-top:1em;}" : @"";
+    NSString *bodyBackground = text ? @"rgba(255,255,255,0.75)" : @"transparent";
     
     return [NSString stringWithFormat:@"<html>"
             "<head>"
             "%@"
             "<style type='text/css'>"
-            "img{max-width:min(100%%, 700px)}}"
+            "img{max-width:min(100%%,700px);}"
             "body{word-wrap:break-word;}"
+            "#body-mask{position:absolute;top:0;bottom:0;left:0;right:0;z-index:-1;background-color:%@;transition:background-color 0.2s linear;}"
             ".textblock{min-height:3em;}"
             "%@"
-            ".sig{max-height:400px;overflow-y:scroll;}"
+            ".sig{max-height:400px;overflow-y:scroll;-webkit-overflow-scrolling:touch;}"
             "</style>"
             "</head>"
-            "<body><div id='body-wrapper'>%@</div></body>"
-            "</html>", jQueryScript, sigBlockStyle, body];
+            "<body><div id='body-mask'></div><div id='body-wrapper'>%@</div></body>"
+            "</html>", jQueryScript, bodyBackground, sigBlockStyle, body];
 }
 
 + (NSDictionary *)getLink:(NSString *)path {

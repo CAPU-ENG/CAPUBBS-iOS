@@ -2793,10 +2793,9 @@ Cg
                             <constraint firstItem="cmD-6r-d5I" firstAttribute="centerX" secondItem="yTF-fV-w50" secondAttribute="centerX" id="FGl-aY-28s"/>
                             <constraint firstItem="dRr-cq-NTR" firstAttribute="top" secondItem="PAL-qn-ptW" secondAttribute="bottom" constant="15" id="HUb-yu-L5z"/>
                             <constraint firstAttribute="trailingMargin" secondItem="eeR-j8-dCy" secondAttribute="trailing" id="Q0I-yO-7FU"/>
-                            <constraint firstItem="cmD-6r-d5I" firstAttribute="top" secondItem="yxZ-Cf-euI" secondAttribute="bottom" priority="750" constant="15" id="Q0j-XX-tXG"/>
+                            <constraint firstItem="cmD-6r-d5I" firstAttribute="top" secondItem="yxZ-Cf-euI" secondAttribute="bottom" constant="15" id="Q0j-XX-tXG"/>
                             <constraint firstItem="eeR-j8-dCy" firstAttribute="centerY" secondItem="cmD-6r-d5I" secondAttribute="centerY" id="ZQP-WV-kge"/>
                             <constraint firstItem="yxZ-Cf-euI" firstAttribute="top" secondItem="LiE-LG-Gzz" secondAttribute="bottom" priority="750" constant="8" symbolic="YES" id="hKR-UT-pJk"/>
-                            <constraint firstItem="0zZ-wh-QjN" firstAttribute="top" relation="greaterThanOrEqual" secondItem="yxZ-Cf-euI" secondAttribute="bottom" id="iTO-1w-IaM"/>
                             <constraint firstItem="LiE-LG-Gzz" firstAttribute="trailing" secondItem="uOc-TE-ebG" secondAttribute="trailing" id="l7P-f0-jFF"/>
                             <constraint firstItem="0zZ-wh-QjN" firstAttribute="top" secondItem="cmD-6r-d5I" secondAttribute="bottom" constant="15" id="ori-Ov-koi"/>
                             <constraint firstItem="cmD-6r-d5I" firstAttribute="leading" secondItem="hsx-Qf-0Jh" secondAttribute="trailing" constant="20" id="pq7-KD-ZWw"/>
@@ -2831,7 +2830,7 @@ Cg
                     <connections>
                         <outlet property="buttonPic" destination="pjg-bX-oJp" id="96z-9q-0JZ"/>
                         <outlet property="buttonTools" destination="uOc-TE-ebG" id="SkB-os-j9U"/>
-                        <outlet property="constraintBottom" destination="iTO-1w-IaM" id="eDh-lP-TkX"/>
+                        <outlet property="constraintBottom" destination="ori-Ov-koi" id="Riu-tX-reO"/>
                         <outlet property="constraintTop" destination="4FX-oF-v9p" id="1Nw-uB-SsF"/>
                         <outlet property="restoreDraft" destination="C31-6C-4JB" id="gmk-Ub-7WO"/>
                         <outlet property="saveDraft" destination="aUX-zq-hWM" id="fbs-Ke-xwm"/>
@@ -4510,7 +4509,7 @@ Cg
                                         <rect key="frame" x="0.0" y="785" width="414" height="55"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="M1j-zk-B5y" id="N9C-4g-3hC">
-                                            <rect key="frame" x="0.0" y="0.0" width="383.5" height="55"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="395.5" height="55"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="recentreply" translatesAutoresizingMaskIntoConstraints="NO" id="4TR-3A-94U">
@@ -4539,7 +4538,7 @@ Cg
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="55"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="举报该用户" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ENe-75-aBJ">
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="举报该用户" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ENe-75-aBJ">
                                                     <rect key="frame" x="165" y="17.5" width="84.5" height="20.5"/>
                                                     <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                     <color key="textColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
