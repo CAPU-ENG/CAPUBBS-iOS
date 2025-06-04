@@ -66,12 +66,12 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    //    if (![[DEFAULTS objectForKey:@"FeatureText2.1"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"新增插入带颜色、字号、样式字体的功能" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureText2.1"];
-    //    }
+//    if (![[DEFAULTS objectForKey:@"FeatureText2.1"] boolValue]) {
+//        [self showAlertWithTitle:@"新功能！" message:@"新增插入带颜色、字号、样式字体的功能" cancelTitle:@"我知道了"];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureText2.1"];
+//    }
     if (![[DEFAULTS objectForKey:@"FeaturePreview2.2"] boolValue]) {
-        [[[UIAlertView alloc] initWithTitle:@"Tips" message:@"发帖前可以预览，所见即所得\n向左滑动或者点击右上方▶︎前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"Tips" message:@"发帖前可以预览，所见即所得\n向左滑动或者点击右上方▶︎前往" cancelTitle:@"我知道了"];
         [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePreview2.2"];
     }
     
@@ -189,12 +189,12 @@
 
 - (IBAction)done:(id)sender {
     if (self.textTitle.text.length==0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"请输入标题！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        [self showAlertWithTitle:@"错误" message:@"请输入标题！"];
         [self.textTitle becomeFirstResponder];
         return;
     }
     if (self.textBody.text.length==0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"请输入帖子内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        [self showAlertWithTitle:@"错误" message:@"请输入帖子内容！"];
         [self.textBody becomeFirstResponder];
         return;
     }
@@ -246,39 +246,39 @@
                 break;
             }
             case 1:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码错误，您可能在登录后修改过密码，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"密码错误，您可能在登录后修改过密码，请重新登录！"];
                 break;
             }
             case 2:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不存在，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"用户名不存在，请重新登录！"];
                 break;
             }
             case 3:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的账号被封禁，请联系管理员！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"您的账号被封禁，请联系管理员！"];
                 break;
             }
             case 4:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的操作过频繁，请稍后再试！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"您的操作过频繁，请稍后再试！"];
                 break;
             }
             case 5:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"文章被锁定，无法操作！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"文章被锁定，无法操作！"];
                 break;
             }
             case 6:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"帖子不存在或服务器错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"帖子不存在或服务器错误！"];
                 break;
             }
             case 7:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的权限不够，无法操作！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"您的权限不够，无法操作！"];
                 break;
             }
             case -25:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您长时间未登录，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"您长时间未登录，请重新登录！"];
                 break;
             }
             default:{
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"发生未知错误！"];
                 break;
             }
         }
@@ -460,7 +460,7 @@
 
 - (IBAction)restoreDraft:(id)sender {
     if ([[DEFAULTS objectForKey:@"savedTitle"] length] == 0 && [[DEFAULTS objectForKey:@"savedBody"] length] == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您还没有保存草稿" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"您还没有保存草稿"];
     } else {
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"警告" message:@"恢复草稿会失去当前编辑的内容\n确定要继续吗？" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"恢复", nil];
         alert.tag = 0;

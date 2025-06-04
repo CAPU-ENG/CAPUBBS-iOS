@@ -10,7 +10,7 @@
 #import "IndexViewCell.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface IndexViewController : UIViewController<UICollectionViewDelegate>{
+@interface IndexViewController : CustomViewController<UICollectionViewDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     BOOL shouldVibrate;

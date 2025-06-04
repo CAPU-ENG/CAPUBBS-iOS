@@ -37,12 +37,12 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    //    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
-    //    }
+//    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
+//        [self showAlertWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" cancelTitle:@"我知道了"];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
+//    }
 //    if (![[DEFAULTS objectForKey:@"FeaturePersonalCenter3.0"] boolValue]) {
-//        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+//        [self showAlertWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" cancelTitle:@"我知道了"];
 //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePersonalCenter3.0"];
 //    }
 }
@@ -172,7 +172,7 @@
         
         if ([text containsString:@"filesize"]) {
             NSString *result = [self folderInfo:NSHomeDirectory() showAll:[text containsString:@"all"]];
-            [[[UIAlertView alloc] initWithTitle:@"空间用量\n内容已复制到剪贴板" message:result delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"空间用量\n内容已复制到剪贴板" message:result];
             [[UIPasteboard generalPasteboard] setString:result];
             return;
         }
@@ -208,7 +208,7 @@
             [DEFAULTS removeObjectForKey:@"IDNum"];
             [DEFAULTS removeObjectForKey:@"hotNum"];
             if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"] || [text rangeOfString:@"[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" options:NSRegularExpressionSearch].location != NSNotFound)) {
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"不是有效的链接" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                [self showAlertWithTitle:@"错误" message:@"不是有效的链接"];
                 hud.label.text = @"设置失败";
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
             } else {

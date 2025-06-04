@@ -55,13 +55,13 @@
     [super viewDidAppear:animated];
     [self.navigationController setToolbarHidden:NO];
     if (![self.bid isEqualToString:@"hot"]) {
-        //        if (![[DEFAULTS objectForKey:@"FeatureSwipe2.0"] boolValue]) {
-        //            [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"帖子和列表界面可以左右滑动翻页" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-        //            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSwipe2.0"];
-        //        }
+//        if (![[DEFAULTS objectForKey:@"FeatureSwipe2.0"] boolValue]) {
+//            [self showAlertWithTitle:@"新功能！" message:@"帖子和列表界面可以左右滑动翻页" cancelTitle:@"我知道了"];
+//            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSwipe2.0"];
+//        }
     } else {
         if (![[DEFAULTS objectForKey:@"FeatureViewOnline3.0"] boolValue]) {
-            [[[UIAlertView alloc] initWithTitle:@"Tips" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"新功能！" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" cancelTitle:@"我知道了"];
             [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureViewOnline3.0"];
         }
     }
@@ -118,7 +118,7 @@
                     isLast = YES;
                     self.title = [NSString stringWithFormat:@"%@(未登录)", oriTitle];
                     self.tableView.userInteractionEnabled = NO;
-                    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"您未登录，不能查看本版！\n请登录或者前往其它版面" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                    [self showAlertWithTitle:@"警告" message:@"您未登录，不能查看本版！\n请登录或者前往其它版面"];
                     hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                     hud.label.text = @"读取失败";
                 } else {
@@ -198,7 +198,7 @@
 - (void)checkRobSofa {
     if (isRobbingSofa) {
         if (failCount > 10) {
-            [[[UIAlertView alloc] initWithTitle:@"抢沙发失败" message:@"错误次数过多，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"抢沙发失败" message:@"错误次数过多，请检查原因！"];
             isRobbingSofa = NO;
             isFastRobSofa = NO;
             [hudSofa hideAnimated:YES];
@@ -255,7 +255,7 @@
             fail = YES;
         }
         if (fail == NO) {
-            [[[UIAlertView alloc] initWithTitle:@"抢沙发成功" message:[NSString stringWithFormat:@"您成功在帖子“%@”中抢到了沙发", [postInfo objectForKey:@"text"]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"抢沙发成功" message:[NSString stringWithFormat:@"您成功在帖子“%@”中抢到了沙发", [postInfo objectForKey:@"text"]]];
             isRobbingSofa = NO;
             isFastRobSofa = NO;
         } else {
@@ -356,7 +356,7 @@
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"打开网页版" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = URL;
         [navi setToolbarHidden:NO];
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -458,7 +458,7 @@
         } else {
             hud.label.text = @"操作失败";
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"错误" message:[result.firstObject objectForKey:@"msg"]];
         }
         hud.mode = MBProgressHUDModeCustomView;
         [hud hideAnimated:YES afterDelay:0.5];
@@ -499,7 +499,7 @@
             } else {
                 hud.label.text = @"操作失败";
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                [self showAlertWithTitle:@"错误" message:[result.firstObject objectForKey:@"msg"]];
             }
             hud.mode = MBProgressHUDModeCustomView;
             [hud hideAnimated:YES afterDelay:0.5];
@@ -508,7 +508,7 @@
         NSString *pageip=[alertView textFieldAtIndex:0].text;
         NSInteger pagen=[pageip integerValue];
         if (pagen<=0||pagen>[[[data lastObject] objectForKey:@"pages"] integerValue]) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"输入不合法" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"错误" message:@"输入不合法"];
             return;
         }
         [self jumpTo:pagen];
@@ -531,7 +531,7 @@
         [self.navigationController.view addSubview:hud];
         hudSofa.label.text = @"抢沙发中";
         [hudSofa showAnimated:YES];
-        [[[UIAlertView alloc] initWithTitle:@"已开始抢沙发" message:@"屏幕将常亮，请勿退出软件或者锁屏\n晃动设备可以随时终止抢沙发模式" delegate:self cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"已开始抢沙发" message:@"屏幕将常亮，请勿退出软件或者锁屏\n晃动设备可以随时终止抢沙发模式"];
         [self refresh];
     }
 }

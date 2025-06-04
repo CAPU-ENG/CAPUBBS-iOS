@@ -11,7 +11,7 @@
 #import "AsyncImageView.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface SearchViewController : UIViewController <UITableViewDelegate> {
+@interface SearchViewController : CustomViewController<UITableViewDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     AsyncImageView *backgroundView;
@@ -22,7 +22,7 @@
     UIDatePicker *startDatePicker;
     UIDatePicker *endDatePicker;
     NSDateFormatter *formatter;
-    UINavigationController *navi;
+    CustomNavigationController *navi;
     NSArray *data;
     NSArray *searchResult;
 }

@@ -130,64 +130,69 @@
     //NSString *code = self.textCode.text;
     if (self.isEdit == NO) {
         if (uid.length == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"请填写用户名！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            firstResp = self.textUid;
+            [self showAlertWithTitle:@"错误" message:@"请填写用户名！"];
+            [self.textUid becomeFirstResponder];
             return;
         }
         if (pass.length == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"请填写密码！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            firstResp = self.textPsd;
+            [self showAlertWithTitle:@"错误" message:@"请填写密码！"];
+            [self.textPsd becomeFirstResponder];
             return;
         }
     }
     if (pass.length > 0 && pass.length < 6) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码过于简单，至少为六位！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textPsd;
+        [self showAlertWithTitle:@"错误" message:@"密码过于简单，至少为六位！"];
+        [self.textPsd becomeFirstResponder];
         return;
     }
     if (![pass1 isEqualToString:pass]) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"两次密码填写不一致！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textPsdSure;
+        [self showAlertWithTitle:@"错误" message:@"两次密码填写不一致！"];
+        [self.textPsdSure becomeFirstResponder];
         return;
     }
 //    if (email.length == 0) {
-//        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"请填写邮箱！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-//        firstResp = self.textEmail;
+//        [self showAlertWithTitle:@"错误" message:@"请填写邮箱！"];
+//        [self.textEmail becomeFirstResponder];
 //        return;
 //    }
     if (email.length > 0 && [RegisterViewController isValidateEmail:email] == NO) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"邮箱格式错误！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textEmail;
+        [self showAlertWithTitle:@"错误" message:@"邮箱格式错误！"];
+        [self.textEmail becomeFirstResponder];
         return;
     }
     if (qq.length > 0 && [self isValidQQ:qq] == NO) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"QQ格式错误！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textQQ;
+        [self showAlertWithTitle:@"错误" message:@"QQ格式错误！"];
+        [self.textQQ becomeFirstResponder];
         return;
     }
 //    if (code.length == 0) {
-//        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"请填写注册码！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-//        firstResp = self.textCode;
+//        [self showAlertWithTitle:@"错误" message:@"请填写注册码！"];
+//        [self.textCode becomeFirstResponder];
 //        return;
 //    }
     if ([self getByte:hobby] > 500) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"爱好过长，不能超过500字节！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textHobby;
+        [self showAlertWithTitle:@"错误" message:@"爱好过长，不能超过500字节！"];
+        [self.textHobby becomeFirstResponder];
+        return;
+    }
+    if ([self getByte:intro] > 1000) {
+        [self showAlertWithTitle:@"错误" message:@"个人简介过长，不能超过1000字节！"];
+        [self.textIntro becomeFirstResponder];
         return;
     }
     if ([self getByte:sig] > 1000) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"签名档1过长，不能超过1000字节！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textSig;
+        [self showAlertWithTitle:@"错误" message:@"签名档1过长，不能超过1000字节！"];
+        [self.textSig becomeFirstResponder];
         return;
     }
     if ([self getByte:sig2] > 1000) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"签名档2过长，不能超过1000字节！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textSig2;
+        [self showAlertWithTitle:@"错误" message:@"签名档2过长，不能超过1000字节！"];
+        [self.textSig2 becomeFirstResponder];
         return;
     }
     if ([self getByte:sig3] > 1000) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"签名档3过长，不能超过1000字节！" delegate:self cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        firstResp = self.textSig3;
+        [self showAlertWithTitle:@"错误" message:@"签名档3过长，不能超过1000字节！"];
+        [self.textSig3 becomeFirstResponder];
         return;
     }
     NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid, @"username",[ActionPerformer md5:pass], @"password", sex, @"sex",qq,@"qq",email,@"mail",iconURL, @"icon", from, @"from", intro, @"intro", hobby, @"hobby", sig, @"sig", sig2, @"sig2", sig3, @"sig3", @"ios", @"os", [ActionPerformer doDevicePlatform], @"device", [[UIDevice currentDevice] systemVersion], @"version", nil];
@@ -201,7 +206,7 @@
         hud.label.text = @"注册中";
         [performer performActionWithDictionary:dict toURL:@"register" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"注册失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"注册失败" message:[err localizedDescription]];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                 hud.label.text = @"注册失败";
                 hud.mode = MBProgressHUDModeCustomView;
@@ -226,22 +231,22 @@
                     break;
                 }
                 case 6:{
-                    [[[UIAlertView alloc] initWithTitle:@"注册失败" message:@"数据库错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"注册失败" message:@"数据库错误！"];
                     break;
                 }
                 case 8:{
-                    [[[UIAlertView alloc] initWithTitle:@"注册失败" message:@"用户名含有非法字符！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"注册失败" message:@"用户名含有非法字符！"];
                     [self.textUid becomeFirstResponder];
                     break;
                 }
                 case 9:{
-                    [[[UIAlertView alloc] initWithTitle:@"注册失败" message:@"用户名已经存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"注册失败" message:@"用户名已经存在！"];
                     [self.textUid becomeFirstResponder];
                     break;
                 }
                 default:
                 {
-                    [[[UIAlertView alloc] initWithTitle:@"注册失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"注册失败" message:@"发生未知错误！"];
                     break;
                 }
             }
@@ -250,7 +255,7 @@
         hud.label.text = @"修改中";
         [performer performActionWithDictionary:dict toURL:@"edituser" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"修改失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                 hud.label.text = @"修改失败";
                 hud.mode = MBProgressHUDModeCustomView;
@@ -281,12 +286,12 @@
                     break;
                 }
                 case 1:{
-                    [[[UIAlertView alloc] initWithTitle:@"修改个人信息失败" message:[[result firstObject] objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"修改个人信息失败" message:[[result firstObject] objectForKey:@"msg"]];
                     break;
                 }
                 default:
                 {
-                    [[[UIAlertView alloc] initWithTitle:@"修改个人信息失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"修改个人信息失败" message:@"发生未知错误！"];
                     break;
                 }
             }
@@ -307,9 +312,6 @@
 }
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if ([alertView.title isEqualToString:@"错误"]) {
-        [firstResp becomeFirstResponder];
-    }
     if (buttonIndex == alertView.cancelButtonIndex) {
         if ([alertView.title isEqualToString:@"验证密码"]) {
             [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
@@ -327,7 +329,7 @@
         NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[ActionPerformer md5:[alertView textFieldAtIndex:0].text], @"old", [ActionPerformer md5:self.textPsd.text], @"new", nil];
         [performerPsd performActionWithDictionary:dict toURL:@"changepsd" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"修改失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                 hud.label.text = @"修改失败";
                 hud.mode = MBProgressHUDModeCustomView;
@@ -352,20 +354,20 @@
                     break;
                 }
                 case 1:{
-                    [[[UIAlertView alloc] initWithTitle:@"修改密码失败" message:@"登录超时，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"修改密码失败" message:@"登录超时，请重新登录！"];
                     break;
                 }
                 case 2:{
-                    [[[UIAlertView alloc] initWithTitle:@"修改密码失败" message:@"旧密码错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"修改密码失败" message:@"旧密码错误！"];
                     break;
                 }
                 case 3:{
-                    [[[UIAlertView alloc] initWithTitle:@"修改密码失败" message:@"数据库错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"修改密码失败" message:@"数据库错误！"];
                     break;
                 }
                 default:
                 {
-                    [[[UIAlertView alloc] initWithTitle:@"修改密码失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"修改密码失败" message:@"发生未知错误！"];
                     break;
                 }
             }

@@ -10,7 +10,7 @@
 #import "ChatCell.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface ChatViewController : UITableViewController <UIAlertViewDelegate> {
+@interface ChatViewController : CustomTableViewController<UIAlertViewDelegate> {
     ActionPerformer *performer;
     ActionPerformer *performerUser;
     ActionPerformer *performerSend;

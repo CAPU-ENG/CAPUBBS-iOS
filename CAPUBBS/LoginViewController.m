@@ -61,6 +61,14 @@
     [self.textPass resignFirstResponder];
 }
 
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    if (@available(iOS 13.0, *)) {
+        return UIStatusBarStyleDarkContent;
+    } else {
+        return UIStatusBarStyleDefault;
+    }
+}
+
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
     control.attributedTitle = [[NSAttributedString alloc] initWithString:@"刷新"];
     hud.mode = MBProgressHUDModeIndeterminate;
@@ -118,7 +126,7 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     UITableViewCell *cell = [self.tableview cellForRowAtIndexPath:indexPath];
     if (cell.tag == -1) {
-        [[[UIAlertView alloc] initWithTitle:@"无法打开" message:@"不是论坛链接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil , nil] show];
+        [self showAlertWithTitle:@"无法打开" message:@"不是论坛链接！"];
     }
 }
 
@@ -237,12 +245,12 @@
     NSString *uid = self.textUid.text;
     NSString *pass = self.textPass.text;
     if (uid.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        [self showAlertWithTitle:@"错误" message:@"用户名不能为空"];
         [self.textUid becomeFirstResponder];
         return;
     }
     if (pass.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        [self showAlertWithTitle:@"错误" message:@"密码不能为空"];
         [self.textPass becomeFirstResponder];
         return;
     }
@@ -262,7 +270,7 @@
             hud.mode = MBProgressHUDModeCustomView;
             [hud hideAnimated:YES afterDelay:0.5];
             [self getInformation];
-            // [[[UIAlertView alloc] initWithTitle:@"登录失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+//            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
@@ -275,12 +283,12 @@
         hud.mode = MBProgressHUDModeCustomView;
         [hud hideAnimated:YES afterDelay:0.5];
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"密码错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"登录失败" message:@"密码错误！"];
             [self.textPass becomeFirstResponder];
             [self getInformation];
             return ;
         } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"用户名不存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！"];
             [self.textUid becomeFirstResponder];
             [self getInformation];
             return ;
@@ -295,7 +303,7 @@
             });
             [ActionPerformer checkPasswordLength];
         } else {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"登录失败" message:@"发生未知错误！"];
             [self getInformation];
             return ;
         }
@@ -375,7 +383,7 @@
     NSError *error = nil;
     NSData *recervedData = [NSURLConnection sendSynchronousRequest:request returningResponse:&urlResponse error:&error];
     if (recervedData == nil) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
         NSLog(@"Check Update Failed Error-%@", error);
         return;
     }
@@ -417,7 +425,7 @@
         } else {
             method = @"add";
             if (text.length == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您未填写公告的内容" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                [self showAlertWithTitle:@"错误" message:@"您未填写公告的内容"];
                 return;
             }
         }
@@ -443,7 +451,7 @@
                 } else {
                     hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                     hud.label.text = @"操作失败";
-                    [[[UIAlertView alloc] initWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                    [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
                 }
             }
             [self performSelector:@selector(getInformation) withObject:nil afterDelay:0.5];
@@ -495,7 +503,7 @@
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction * _Nonnull action) {
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = [CHEXIE stringByAppendingString:@"/privacy"];
         [navi setToolbarHidden:NO];
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -516,7 +524,7 @@
         exit(0);
     }]];
     
-    [self presentViewController:alert animated:YES completion:nil];
+    [self presentAlertController:alert];
 }
 
 @end

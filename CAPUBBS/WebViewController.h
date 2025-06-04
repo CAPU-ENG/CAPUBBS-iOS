@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface WebViewController : UIViewController<UIWebViewDelegate, UIScrollViewDelegate> {
+@interface WebViewController : CustomViewController<UIWebViewDelegate, UIScrollViewDelegate> {
     CGFloat contentOffsetY;
     BOOL isAtEnd;
     NSUserActivity *activity;

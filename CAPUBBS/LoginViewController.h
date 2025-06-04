@@ -10,7 +10,7 @@
 #import "AsyncImageView.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface LoginViewController : UIViewController<UIAlertViewDelegate, UITableViewDelegate>{
+@interface LoginViewController : CustomViewController<UIAlertViewDelegate, UITableViewDelegate> {
     MBProgressHUD *hud;
     NSArray *news;
     NSString *title;

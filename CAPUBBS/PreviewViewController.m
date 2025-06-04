@@ -82,7 +82,7 @@
     if (navigationType == UIWebViewNavigationTypeLinkClicked) {
         NSString *path = request.URL.absoluteString;
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = path;
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
         [self presentViewController:navi animated:YES completion:nil];

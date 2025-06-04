@@ -95,7 +95,7 @@
             // NSLog(@"%@", result);
             data = result;
             if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"尚未登录或登录超时" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
             }
             [self setMessageNum];
             
@@ -305,7 +305,7 @@
     }
     if ([alertView.title isEqualToString:@"发送私信"]) {
         if ([alertView textFieldAtIndex:0].text.length == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"错误" message:@"用户名不能为空"];
         } else {
             chatID = [alertView textFieldAtIndex:0].text;
             [self performSegueWithIdentifier:@"chat" sender:nil];

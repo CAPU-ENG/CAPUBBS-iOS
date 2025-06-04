@@ -10,13 +10,13 @@
 #import <MessageUI/MessageUI.h>
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface ContentViewController : UITableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
+@interface ContentViewController : CustomTableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
     MBProgressHUD *hud;
     ActionPerformer *performer;
     NSUserActivity *activity;
     NSString *URL;
     NSMutableArray *data;
-    MFMailComposeViewController *mail;
+    CustomMailComposeViewController *mail;
     UIDocumentInteractionController *dic;
     int page;
     int textSize;

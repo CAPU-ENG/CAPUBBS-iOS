@@ -135,7 +135,7 @@
 
 - (IBAction)addText:(id)sender {
     if (self.textInput.text.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您还未输入正文内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"您还未输入正文内容！"];
         [self.textInput becomeFirstResponder];
     } else {
         [self postText];

@@ -45,7 +45,7 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     if (![[DEFAULTS objectForKey:@"Featurelzl1.3"] boolValue]) {
-        [[[UIAlertView alloc] initWithTitle:@"Tips" message:@"长按某层楼中楼可以快捷回复" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"Tips" message:@"长按某层楼中楼可以快捷回复" cancelTitle:@"我知道了"];
         [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"Featurelzl1.3"];
     }
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".lzl"]];
@@ -210,13 +210,13 @@
                     dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
                     dest.title=@"帖子跳转中";
                     dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done)];
-                    UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+                    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
                     [navi setToolbarHidden:NO];
                     navi.modalPresentationStyle = UIModalPresentationFullScreen;
                     [self presentViewController:navi animated:YES completion:nil];
                 } else {
                     WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-                    UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+                    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
                     dest.URL = lzlUrl;
                     [navi setToolbarHidden:NO];
                     navi.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -258,7 +258,7 @@
                 } else {
                     hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                     hud.label.text = @"删除失败";
-                    [[[UIAlertView alloc] initWithTitle:@"删除失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                    [self showAlertWithTitle:@"删除失败" message:[result.firstObject objectForKey:@"msg"]];
                 }
             }
             hud.mode = MBProgressHUDModeCustomView;
@@ -296,12 +296,12 @@
 
 - (IBAction)buttonPost:(id)sender {
     if (self.textPost.text.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"楼中楼内容为空！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"楼中楼内容为空！"];
         [self.textPost becomeFirstResponder];
         return;
     }
     if (self.textPost.text.length > 140) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"楼中楼内容太长！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"楼中楼内容太长！"];
         [self.textPost becomeFirstResponder];
         return;
     }
@@ -324,7 +324,7 @@
             } else {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                 hud.label.text = @"发布失败";
-                [[[UIAlertView alloc] initWithTitle:@"发布失败" message:[[result firstObject] objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                [self showAlertWithTitle:@"发布失败" message:[[result firstObject] objectForKey:@"msg"]];
             }
         }
         hud.mode = MBProgressHUDModeCustomView;

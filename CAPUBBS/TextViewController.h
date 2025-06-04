@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface TextViewController : UITableViewController <UIAlertViewDelegate, UITextViewDelegate> {
+@interface TextViewController : CustomTableViewController<UIAlertViewDelegate, UITextViewDelegate> {
     NSMutableAttributedString *textPreview;
     int color;
     NSArray *colors;

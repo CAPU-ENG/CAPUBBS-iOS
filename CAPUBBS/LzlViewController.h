@@ -10,7 +10,7 @@
 #import "LzlCell.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface LzlViewController : UITableViewController<UIAlertViewDelegate, UITextViewDelegate> {
+@interface LzlViewController : CustomTableViewController<UIAlertViewDelegate, UITextViewDelegate> {
     ActionPerformer *performer;
     UIImageView *backgroundView;
     NSUserActivity *activity;

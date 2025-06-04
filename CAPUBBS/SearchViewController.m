@@ -219,7 +219,7 @@
         type = @"post";
     }
     if (text.length == 0 && author.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"没有输入搜索内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"警告" message:@"没有输入搜索内容！"];
         [self.inputText becomeFirstResponder];
         if (control.isRefreshing) {
             [control endRefreshing];
@@ -235,7 +235,7 @@
     NSTimeInterval earlyDate = [begin timeIntervalSince1970]*1;
     NSTimeInterval lateDate = [end timeIntervalSince1970]*1;
     if (earlyDate - lateDate > 0) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"日期输入有误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"警告" message:@"日期输入有误！"];
         if (control.isRefreshing) {
             [control endRefreshing];
         }
@@ -270,7 +270,7 @@
         searchResult=[result subarrayWithRange:NSMakeRange(1, result.count-1)];
 //         NSLog(@"Search Result:%@", searchResult);
         if (searchResult.count == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"没有结果" message:@"请尝试更换关键词、日期或讨论区" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"没有结果" message:@"请尝试更换关键词、日期或讨论区"];
         } else {
             [self.tableview reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
         }
@@ -282,7 +282,7 @@
     for (int i = 0; i < 9; i++) {
         [action addAction:[UIAlertAction actionWithTitle:[ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:i]] style:([self.bid isEqualToString:[NUMBERS objectAtIndex:i]]) ? UIAlertActionStyleDestructive : UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             if (![ActionPerformer checkLogin:NO] && i == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"警告" message:@"您未登录，不能搜索工作区！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                [self showAlertWithTitle:@"警告" message:@"您未登录，不能搜索工作区！"];
             } else {
                 self.bid = [NUMBERS objectAtIndex:i];
                 self.labelB.text = [ActionPerformer getBoardTitle:self.bid];

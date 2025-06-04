@@ -42,9 +42,9 @@
         self.labelReport.text = @"申请删除账号";
         self.title = @"个人信息";
     }
-    labels = @[self.rights, self.sign, self.hobby, self.qq, self.mail, self.from, self.regDate, self.lastDate, self.post, self.reply, self.water, self.extr];
-    webViews = @[self.sig1, self.sig2, self.sig3];
-    heights = [[NSMutableArray alloc] initWithArray:@[@0, @0, @0]];
+    labels = @[self.rights, self.sign, self.hobby, self.qq, self.mailBtn, self.from, self.regDate, self.lastDate, self.post, self.reply, self.water, self.extr];
+    webViews = @[self.intro, self.sig1, self.sig2, self.sig3];
+    heights = [[NSMutableArray alloc] initWithArray:@[@0, @0, @0, @0]];
     for (int i = 0; i < webViews.count; i++) {
         UIWebView *webView = [webViews objectAtIndex:i];
         [webView setTag:i];
@@ -76,7 +76,7 @@
     [super viewDidAppear:animated];
     if ([self.ID isEqualToString:UID]) {
 //        if (![[DEFAULTS objectForKey:@"FeatureEditUser3.0"] boolValue]) {
-//            [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"可以编辑个人信息\n点击右上方铅笔前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+//            [self showAlertWithTitle:@"新功能！" message:@"可以编辑个人信息\n点击右上方铅笔前往" cancelTitle:@"我知道了"];
 //            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureEditUser3.0"];
 //        }
     }
@@ -157,7 +157,7 @@
         [hud hideAnimated:YES afterDelay:0.5];
         NSDictionary *dict = [result firstObject];
         if ([dict[@"username"] length] == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"查询错误！" message:@"没有这个ID或者您还未登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"查询错误！" message:@"没有这个ID或者您还未登录！"];
             self.username.text = [self.username.text stringByAppendingString:@"❌"];
             self.navigationItem.rightBarButtonItem.enabled = NO;
         } else {
@@ -199,7 +199,7 @@
             for (int i = 0; i < webViews.count; i++) {
                 [heights replaceObjectAtIndex:i withObject:@0];
                 UIWebView *webView = [webViews objectAtIndex:i];
-                NSString *content = dict[[@"sig" stringByAppendingString:[NSString stringWithFormat:@"%d", i + 1]]];
+                NSString *content = i == 0 ? dict[@"intro"] : dict[[NSString stringWithFormat:@"sig%d", i]];
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
                     content = @"暂无";
                 }
@@ -232,8 +232,8 @@
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.row == 0) {
         return 500;
-    } else if (indexPath.row <= 3) {
-        return MIN(MAX([[heights objectAtIndex:indexPath.row - 1] floatValue], 14) + 40, WEB_VIEW_MAX_HEIGHT);
+    } else if (indexPath.row <= 4) {
+        return MIN(MAX([[heights objectAtIndex:indexPath.row - 1] floatValue], 14) + 35, WEB_VIEW_MAX_HEIGHT);
     } else {
         return 55;
     }
@@ -242,8 +242,8 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 0 && indexPath.row == 6) {
-        if ([MFMailComposeViewController canSendMail]) {
-            mail = [[MFMailComposeViewController alloc] init];
+        if ([CustomMailComposeViewController canSendMail]) {
+            mail = [[CustomMailComposeViewController alloc] init];
             mail.mailComposeDelegate = self;
             [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
             [mail.navigationBar setTintColor:[UIColor whiteColor]];
@@ -257,7 +257,7 @@
             }
             [self presentViewController:mail animated:YES completion:nil];
         } else {
-            [[[UIAlertView alloc] initWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
         }
     }
 }
@@ -267,7 +267,7 @@
     if (navigationType == UIWebViewNavigationTypeLinkClicked) {
         NSString *path = request.URL.absoluteString;
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = path;
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
         [self presentViewController:navi animated:YES completion:nil];
@@ -300,18 +300,18 @@
 }
 
 - (IBAction)sendMail:(id)sender {
-    if (![MFMailComposeViewController canSendMail]) {
+    if (![CustomMailComposeViewController canSendMail]) {
         return;
     }
-    mail = [[MFMailComposeViewController alloc] init];
+    mail = [[CustomMailComposeViewController alloc] init];
     mail.mailComposeDelegate = self;
     [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
     [mail.navigationBar setTintColor:[UIColor whiteColor]];
-    [mail setToRecipients:@[self.mail.titleLabel.text]];
+    [mail setToRecipients:@[self.mailBtn.titleLabel.text]];
     [self presentViewController:mail animated:YES completion:nil];
 }
 
-- (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
+- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
     [mail dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -334,13 +334,14 @@
     }
 }
 - (void)showPicThread:(NSURL *)url {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *idata, NSError *connectionError) {
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         if (idata) {
             imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
         }
         [self performSelectorOnMainThread:@selector(presentImage:) withObject:idata waitUntilDone:NO];
     }];
+    [task resume];
 }
 - (void)presentImage:(NSData *)image {
     hud.mode = MBProgressHUDModeCustomView;
@@ -363,7 +364,7 @@
     return self;
 }
 - (UIView *)documentInteractionControllerViewForPreview:(UIDocumentInteractionController *)controller {
-    return self.view;
+    return self.icon;
 }
 - (void)documentInteractionControllerDidEndPreview:(UIDocumentInteractionController *)controller {
     [MANAGER removeItemAtPath:imgPath error:nil];

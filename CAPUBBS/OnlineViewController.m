@@ -103,12 +103,12 @@
         if (fail) {
             hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
             hud.label.text = @"加载失败";
-            // [[[UIAlertView alloc] initWithTitle:@"加载失败" message:@"当前功能暂不可用！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+//            [self showAlertWithTitle:@"加载失败" message:@"当前功能暂不可用！"];
         } else {
             hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
             hud.label.text = @"加载成功";
             if (data.count == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"当前没有人在线！" message:nil delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                [self showAlertWithTitle:@"当前没有人在线！" message:nil];
             }
             // NSLog(@"%@", data);
             [self.tableView reloadData];
@@ -116,7 +116,7 @@
     } else {
         hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
         hud.label.text = @"加载失败";
-        // [[[UIAlertView alloc] initWithTitle:@"网络错误" message:@"请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+//        [self showAlertWithTitle:@"网络错误" message:@"请检查您的网络连接！"];
     }
     hud.mode = MBProgressHUDModeCustomView;
     [hud hideAnimated:YES afterDelay:0.5];
@@ -137,11 +137,11 @@
         hud.label.text = @"加载成功";
         HTMLString = [[ContentViewController removeHTML:HTMLString] substringFromIndex:@"签到统计\n".length];
         HTMLString = [HTMLString stringByReplacingOccurrencesOfString:@"\n#" withString:@"\n"];
-        [[[UIAlertView alloc] initWithTitle:@"签到统计" message:HTMLString delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"签到统计" message:HTMLString];
     } else {
         hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
         hud.label.text = @"加载失败";
-        // [[[UIAlertView alloc] initWithTitle:@"网络错误" message:@"请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        // [self showAlertWithTitle:@"网络错误" message:@"请检查您的网络连接！"];
     }
     hud.mode = MBProgressHUDModeCustomView;
     [hud hideAnimated:YES afterDelay:0.5];

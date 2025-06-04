@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "InternalLoginViewController.h"
 
-@interface IDViewController : UITableViewController<UIAlertViewDelegate> {
+@interface IDViewController : CustomTableViewController<UIAlertViewDelegate> {
     ActionPerformer *performer;
     NSMutableArray *data;
     BOOL isDelete;

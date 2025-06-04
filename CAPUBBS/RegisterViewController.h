@@ -10,12 +10,11 @@
 #import "AsyncImageView.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface RegisterViewController : UITableViewController<UIAlertViewDelegate>{
+@interface RegisterViewController : CustomTableViewController<UIAlertViewDelegate> {
     ActionPerformer *performer;
     ActionPerformer *performerPsd;
     MBProgressHUD *hud;
     NSString *iconURL;
-    id firstResp;
 }
 
 @property BOOL isEdit;

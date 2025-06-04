@@ -290,7 +290,7 @@
             [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"-1", @"num", url, @"URL", nil]];
             [self.navigationController popViewControllerAnimated:YES];
         } else {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"链接不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"错误" message:@"链接不能为空"];
         }
     } else if ([alertView.title isEqualToString:@"警告"]) {
         [self prepareUpload];

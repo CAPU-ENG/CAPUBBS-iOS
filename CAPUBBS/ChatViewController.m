@@ -117,7 +117,7 @@
         }
         
         if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"尚未登录或登录超时" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
         }
         
         data = result;
@@ -147,7 +147,7 @@
         }
         // NSLog(@"%@", result);
         if ([result[0][@"username"] length] == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"没有这个ID！" delegate:self cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"错误" message:@"没有这个ID！"];
             if (hudVisible) {
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                 hud.label.text = @"加载失败";
@@ -256,7 +256,7 @@
     ChatCell *cell = (ChatCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
     NSString *text = cell.textSend.text;
     if (text.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您未填写私信内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！"];
         return;
     }
     if (!hud && self.navigationController) {
@@ -295,19 +295,19 @@
                 break;
             }
             case 1:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"您长时间未登录，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"您长时间未登录，请重新登录！"];
                 break;
             }
             case 3:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"留言的对象不存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"私信的对象不存在！"];
                 break;
             }
             case 4:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"数据库错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"数据库错误！"];
                 break;
             }
             default:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"发生未知错误！"];
                 break;
             }
         }

@@ -13,7 +13,7 @@
 #import "UserViewController.h"
 #import "WebViewController.h"
 
-static const float kOtherViewHeight = 122;
+static const float kOtherViewHeight = 118;
 static const float kWebViewMinHeight = 40;
 
 @interface ContentViewController ()
@@ -60,10 +60,10 @@ static const float kWebViewMinHeight = 40;
     activity.title = self.title;
     [activity becomeCurrent];
     
-    //    if (![[DEFAULTS objectForKey:@"FeatureSize2.1"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"底栏中可以调整字体大小\n设置中还可选择默认大小" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSize2.1"];
-    //    }
+//    if (![[DEFAULTS objectForKey:@"FeatureSize2.1"] boolValue]) {
+//        [self showAlertWithTitle:@"新功能！" message:@"底栏中可以调整字体大小\n设置中还可选择默认大小" cancelTitle:@"我知道了"];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSize2.1"];
+//    }
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -132,7 +132,7 @@ static const float kWebViewMinHeight = 40;
                 [self jumpTo:page - 1];
                 return;
             } else {
-                [[[UIAlertView alloc] initWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"]];
                 hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
                 hud.label.text = @"加载失败";
                 hud.mode = MBProgressHUDModeCustomView;
@@ -228,9 +228,12 @@ static const float kWebViewMinHeight = 40;
 
 - (void)clearHeightsAndReloadData {
     [heights removeAllObjects];
-    if (data.count != 0) {
-        for (NSDictionary *dict in data) {
-            [heights addObject:@0];
+    for (int i = 0; i < data.count; i++) {
+        [heights addObject:@0];
+        ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+        [cell.webView stopLoading];
+        if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
+            [cell.heightCheckTimer invalidate];
         }
     }
     [self.tableView reloadData];
@@ -482,13 +485,14 @@ static const float kWebViewMinHeight = 40;
     [self performSelectorInBackground:@selector(showPicThread:) withObject:url];
 }
 - (void)showPicThread:(NSURL *)url {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse * _Nullable response, NSData * _Nullable idata, NSError * _Nullable connectionError) {
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         if (idata) {
             imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
         }
         [self performSelectorOnMainThread:@selector(presentImage:) withObject:idata waitUntilDone:NO];
     }];
+    [task resume];
 }
 - (void)presentImage:(NSData *)image {
     hud.mode = MBProgressHUDModeCustomView;
@@ -536,9 +540,9 @@ static const float kWebViewMinHeight = 40;
             return NO;
         }
         
-        if ([path hasPrefix:@"mailto:"] && [MFMailComposeViewController canSendMail]) {
+        if ([path hasPrefix:@"mailto:"] && [CustomMailComposeViewController canSendMail]) {
             path = [path substringFromIndex:@"mailto:".length];
-            mail = [[MFMailComposeViewController alloc] init];
+            mail = [[CustomMailComposeViewController alloc] init];
             [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
             [mail.navigationBar setTintColor:[UIColor whiteColor]];
             [mail setToRecipients:@[path]];
@@ -552,7 +556,7 @@ static const float kWebViewMinHeight = 40;
         if (matchs.count != 0) {
             NSRange range = [path rangeOfString:@"name="];
             NSString *uid = [path substringFromIndex:range.location+range.length];
-            uid = [uid stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+            uid = [uid stringByRemovingPercentEncoding];
             [self performSegueWithIdentifier:@"userInfo" sender:uid];
             return NO;
         }
@@ -598,7 +602,7 @@ static const float kWebViewMinHeight = 40;
                 hud.label.text = @"删除失败";
                 hud.mode = MBProgressHUDModeCustomView;
                 [hud hideAnimated:YES afterDelay:0.5];
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:err.localizedDescription delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"错误" message:err.localizedDescription];
                 return;
             }
             NSInteger back=[[[result firstObject] objectForKey:@"code"] integerValue];
@@ -630,47 +634,47 @@ static const float kWebViewMinHeight = 40;
                 }
                     break;
                 case 1:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码错误，您可能在登录后修改过密码，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"密码错误，您可能在登录后修改过密码，请重新登录！"];
                     return;
                 }
                     break;
                 case 2:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不存在，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"用户名不存在，请重新登录！"];
                     return;
                 }
                     break;
                 case 3:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的账号被封禁，请联系管理员！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"您的账号被封禁，请联系管理员！"];
                     return;
                 }
                     break;
                 case 4:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的操作过频繁，请稍后再试！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"您的操作过频繁，请稍后再试！"];
                     return;
                 }
                     break;
                 case 5:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"文章被锁定，无法操作！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"文章被锁定，无法操作！"];
                     return;
                 }
                     break;
                 case 6:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"帖子不存在或服务器错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"帖子不存在或服务器错误！"];
                     return;
                 }
                     break;
                 case 10:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的权限不够，无法操作！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"您的权限不够，无法操作！"];
                     return;
                 }
                     break;
                 case -25:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您长时间未登录，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"您长时间未登录，请重新登录！"];
                     return;
                 }
                     break;
                 default:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                    [self showAlertWithTitle:@"错误" message:@"发生未知错误！"];
                     return;
                 }
             }
@@ -679,7 +683,7 @@ static const float kWebViewMinHeight = 40;
         NSString *pageip = [alertView textFieldAtIndex:0].text;
         int pagen = [pageip intValue];
         if (pagen <= 0 || pagen > [[[data lastObject] objectForKey:@"pages"] integerValue]) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"输入不合法" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"错误" message:@"输入不合法"];
             return;
         }
         [self jumpTo:pagen];
@@ -732,8 +736,8 @@ static const float kWebViewMinHeight = 40;
 - (IBAction)action:(id)sender {
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"更多操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"举报" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        if ([MFMailComposeViewController canSendMail]) {
-            mail = [[MFMailComposeViewController alloc] init];
+        if ([CustomMailComposeViewController canSendMail]) {
+            mail = [[CustomMailComposeViewController alloc] init];
             mail.mailComposeDelegate = self;
             [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
             [mail.navigationBar setTintColor:[UIColor whiteColor]];
@@ -742,7 +746,7 @@ static const float kWebViewMinHeight = 40;
             [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我在帖子 <a href=\"%@\">%@</a> 中发现了违规内容，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", URL, self.title] isHTML:YES];
             [self presentViewController:mail animated:YES completion:nil];
         } else {
-            [[[UIAlertView alloc] initWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
         }
     }]];
     [action addAction:[UIAlertAction actionWithTitle:self.isCollection ? @"取消收藏" : @"收藏" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -758,7 +762,7 @@ static const float kWebViewMinHeight = 40;
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"打开网页版" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = URL;
         [navi setToolbarHidden:NO];
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -787,7 +791,7 @@ static const float kWebViewMinHeight = 40;
     [self presentViewController:action animated:YES completion:nil];
 }
 
-- (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
+- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
     [mail dismissViewControllerAnimated:YES completion:nil];
 }
 

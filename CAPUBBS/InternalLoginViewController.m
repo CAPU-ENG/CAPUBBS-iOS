@@ -54,12 +54,12 @@
     NSString *uid = self.textUid.text;
     NSString *pass = self.textPass.text;
     if (uid.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        [self showAlertWithTitle:@"错误" message:@"用户名不能为空"];
         [self.textUid becomeFirstResponder];
         return;
     }
     if (pass.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        [self showAlertWithTitle:@"错误" message:@"密码不能为空"];
         [self.textPass becomeFirstResponder];
         return;
     }
@@ -78,7 +78,7 @@
             hud.label.text = @"登录失败";
             hud.mode = MBProgressHUDModeCustomView;
             [hud hideAnimated:YES afterDelay:0.5];
-            // [[[UIAlertView alloc] initWithTitle:@"登录失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+//            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
@@ -91,11 +91,11 @@
         hud.mode = MBProgressHUDModeCustomView;
         [hud hideAnimated:YES afterDelay:0.5];
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"密码错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"登录失败" message:@"密码错误！"];
             [self.textPass becomeFirstResponder];
             return ;
         } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"用户名不存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！"];
             [self.textUid becomeFirstResponder];
             return ;
         } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
@@ -115,7 +115,7 @@
             shouldPop = YES;
             [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:[NSNumber numberWithBool:YES] afterDelay:0.5];
         } else {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"登录失败" message:@"发生未知错误！"];
         }
     }];
 }

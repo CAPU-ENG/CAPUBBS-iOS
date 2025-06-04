@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "AsyncImageView.h"
 
-@interface RecentViewController : UITableViewController {
+@interface RecentViewController : CustomTableViewController {
     AsyncImageView *backgroundView;
 }
 

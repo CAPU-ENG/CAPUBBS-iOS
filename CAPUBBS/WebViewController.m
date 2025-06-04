@@ -88,7 +88,7 @@
 //        return;
 //    }
     if (error.code != -999) { // 999:主动终止加载
-        [[[UIAlertView alloc] initWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]]];
     }
 }
 

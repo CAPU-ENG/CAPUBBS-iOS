@@ -126,7 +126,11 @@
 
 - (void)showAlert:(NSNotification *)noti {
     NSDictionary *dict = noti.userInfo;
-    [[[UIAlertView alloc] initWithTitle:dict[@"title"] message:dict[@"message"] delegate:nil cancelButtonTitle:(dict[@"cancelTitle"] ? : @"好") otherButtonTitles:nil, nil] show];
+    UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topVC.presentedViewController) {
+        topVC = topVC.presentedViewController;
+    }
+    [topVC showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
 }
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
@@ -191,7 +195,11 @@
     completionHandler(YES);
 }
 
-- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    if (![url.scheme isEqualToString:@"capubbs"]) {
+        return NO;
+    }
+    
     NSString *urlString = [url absoluteString];
     urlString = [urlString substringFromIndex:[@"capubbs://" length]];
     NSArray *paramsArray = [urlString componentsSeparatedByString:@"&"];
@@ -206,7 +214,7 @@
             NSLog(@"Handle Url error - wrong parameter");
             return NO;
         }
-        [params addEntriesFromDictionary:@{tempArray[0]: tempArray[1]}];
+        [params addEntriesFromDictionary:@{tempArray[0]: [tempArray[1] stringByRemovingPercentEncoding]}];
     }
     if (params.allKeys.count > 0) {
         dispatch_global_default_async(^{
@@ -223,7 +231,7 @@
         while ([view presentedViewController] != nil) {
             view = [view presentedViewController];
         }
-        UINavigationController *navi;
+        CustomNavigationController *navi;
         if ([open isEqualToString:@"message"]) {
             // 同步登陆
             [self _loginAsync:NO];
@@ -232,20 +240,20 @@
             MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"hot"]) {
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = @"hot";
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"collection"]) {
             CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         } else if ([open isEqualToString:@"compose"]) {
             ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
             
@@ -258,14 +266,14 @@
                 dest.title = dict[@"naviTitle"];
             }
             
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             navi.modalPresentationStyle = UIModalPresentationFormSheet;
         } else if ([open isEqualToString:@"list"]) {
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = dict[@"bid"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"post"]) {
             // 同步登陆
@@ -289,7 +297,7 @@
             }
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         }
         [view presentViewController:navi animated:YES completion:nil];
         NSLog(@"Open with %@", open);
@@ -430,7 +438,11 @@
             [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
             if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
-                [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+                UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+                while (topVC.presentedViewController) {
+                    topVC = topVC.presentedViewController;
+                }
+                [topVC showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
             } else {
                 [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                 NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");

@@ -10,7 +10,7 @@
 #import "MessageCell.h"
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface MessageViewController : UIViewController<UITableViewDelegate, UIAlertViewDelegate> {
+@interface MessageViewController : CustomViewController<UITableViewDelegate, UIAlertViewDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     UIRefreshControl *control;

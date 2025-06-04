@@ -10,7 +10,7 @@
 #import <MessageUI/MessageUI.h>
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface ListViewController : UITableViewController<UIAlertViewDelegate>{
+@interface ListViewController : CustomTableViewController<UIAlertViewDelegate> {
     ActionPerformer *performer;
     ActionPerformer *performerReply;
     NSMutableArray *data;

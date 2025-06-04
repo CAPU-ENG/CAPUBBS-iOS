@@ -163,10 +163,10 @@
         }
     } else if (indexPath.section == 2) {
         if (indexPath.row == 3) {
-            if ([MFMailComposeViewController canSendMail]) {
+            if ([CustomMailComposeViewController canSendMail]) {
                 NSString *appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
                 NSString *appBuild = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
-                mail = [[MFMailComposeViewController alloc] init];
+                mail = [[CustomMailComposeViewController alloc] init];
                 mail.mailComposeDelegate = self;
                 [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
                 [mail.navigationBar setTintColor:[UIColor whiteColor]];
@@ -175,7 +175,7 @@
                 [mail setMessageBody:[NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], appVersion, appBuild] isHTML:NO];
                 [self presentViewController:mail animated:YES completion:nil];
             } else {
-                [[[UIAlertView alloc] initWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
             }
         } else if (indexPath.row == 4) {
             NSString *str = @"itms-apps://itunes.apple.com/app/id826386033";
@@ -183,12 +183,12 @@
         } else if (indexPath.row == 5) {
             NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
             NSString *appVersion = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
-            [[[UIAlertView alloc] initWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", appVersion, __DATE__, COPYRIGHT, EULA] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", appVersion, __DATE__, COPYRIGHT, EULA]];
         }
     }
 }
 
-- (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
+- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
     [mail dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -207,14 +207,14 @@
 - (IBAction)picChanged:(id)sender {
     [DEFAULTS setObject:[NSNumber numberWithBool:self.switchPic.isOn] forKey:@"picOnlyInWifi"];
     if (self.switchPic.isOn) {
-        [[[UIAlertView alloc] initWithTitle:@"图片显示已关闭" message:@"使用流量时\n帖子图片将以🚫代替\n点击🚫可以加载图片" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"图片显示已关闭" message:@"使用流量时\n帖子图片将以🚫代替\n点击🚫可以加载图片"];
     }
 }
 
 - (IBAction)iconChanged:(id)sender {
     [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchIcon.isOn] forKey:@"iconOnlyInWifi"];
     if (self.switchIcon.isOn) {
-        [[[UIAlertView alloc] initWithTitle:@"头像显示已关闭" message:@"使用流量时\n未缓存过的头像将以会标代替\n已缓存过的头像将会正常加载" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"头像显示已关闭" message:@"使用流量时\n未缓存过的头像将以会标代替\n已缓存过的头像将会正常加载"];
     }
 }
 
@@ -230,7 +230,7 @@
 - (IBAction)simpleViewChanged:(id)sender {
     [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchSimpleView.isOn] forKey:@"simpleView"];
     if (self.switchSimpleView.isOn) {
-        [[[UIAlertView alloc] initWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n动图头像将静态显示\n模糊效果将禁用" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n动图头像将静态显示\n模糊效果将禁用"];
     }
 }
 
