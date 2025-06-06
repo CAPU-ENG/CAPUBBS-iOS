@@ -7,17 +7,22 @@
 //
 
 #import "ActionPerformer.h"
-#import "AFNetworking.h"
 #import <CommonCrypto/CommonCrypto.h> // MD5
 #import "sys/utsname.h" // 设备型号
-#import "CommonDefinitions.h"
 
 @implementation ActionPerformer
 
 #pragma mark Web Request
 
+- (NSString *)encodeURIComponent:(NSString *)string {
+    if (!allowedCharacters) {
+        allowedCharacters = [NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._* "];
+    }
+    NSString *encoded = [string stringByAddingPercentEncodingWithAllowedCharacters:allowedCharacters];
+    return [encoded stringByReplacingOccurrencesOfString:@" " withString:@"+"];
+}
+
 - (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
-    
     NSString *postUrl = [NSString stringWithFormat:@"%@/api/client.php?ask=%@",CHEXIE, url];
     
     NSMutableDictionary *requestDictionary = [[NSMutableDictionary alloc] init];
@@ -31,33 +36,60 @@
         [requestDictionary setObject:data forKey:key];
     }
     
-    AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
-    manager.responseSerializer = [AFXMLParserResponseSerializer serializer];
-    [manager POST:postUrl parameters:requestDictionary progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-
-        [responseObject setDelegate:self];
-        if (![responseObject parse]) {
-            block(nil, [responseObject parserError]);
-            NSLog(@"%@", [responseObject parserError]);
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert" object:nil userInfo:@{@"title": @"加载失败", @"message": @"内容解析出现异常\n请使用网页版查看"}];
-        }else {
-            block([NSArray arrayWithArray:finalData], nil);
-        }
-        return;
-    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-
-        NSLog(@"%@", error.localizedDescription);
-        block(nil, error);
-        return;
+    NSMutableURLRequest *request = [NSMutableURLRequest
+                                    requestWithURL:[NSURL URLWithString:postUrl]];
+    request.HTTPMethod = @"POST";
+    request.timeoutInterval = 30;
+    
+    // Convert parameters to x-www-form-urlencoded (or JSON, depending on server)
+    NSMutableArray *bodyParts = [NSMutableArray array];
+    [requestDictionary enumerateKeysAndObjectsUsingBlock:^(id key,
+                                                           id obj,
+                                                           BOOL *stop) {
+        NSString *part = [NSString stringWithFormat:@"%@=%@",
+                          [self encodeURIComponent: key],
+                          [self encodeURIComponent: obj]];
+        [bodyParts addObject:part];
     }];
+    NSString *bodyString = [bodyParts componentsJoinedByString:@"&"];
+    NSData *bodyData = [bodyString dataUsingEncoding:NSUTF8StringEncoding];
+    request.HTTPBody = bodyData;
+    [request setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+    
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        dispatch_main_async_safe(^{
+            if (error) {
+                NSLog(@"%@", error.localizedDescription);
+                block(nil, error);
+                return;
+            }
+            
+            NSXMLParser *parser = [[NSXMLParser alloc] initWithData:data];
+            parser.delegate = self;
+            
+            if (![parser parse]) {
+                NSError *parseError = [NSError errorWithDomain:@"XMLParsing" code:0 userInfo:@{NSLocalizedDescriptionKey: @"XML parsing failed"}];
+                block(nil, parseError);
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert"
+                                                                    object:nil
+                                                                  userInfo:@{@"title": @"加载失败",
+                                                                             @"message": @"内容解析出现异常\n请使用网页版查看"}];
+                return;
+            }
+            block(finalData, nil);
+        });
+    }];
+    [task resume];
 }
 
 - (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName attributes:(NSDictionary *)attributeDict {
     if ([elementName isEqualToString:@"capu"]) {
         finalData = [[NSMutableArray alloc] init];
-    }else if ([elementName isEqualToString:@"info"]) {
+    } else if ([elementName isEqualToString:@"info"]) {
         tempData = [[NSMutableDictionary alloc] init];
-    }else {
+    } else {
         currentString = nil;
     }
 }
@@ -68,7 +100,7 @@
     }
     if ([elementName isEqualToString:@"info"]) {
         [finalData addObject:tempData];
-    }else {
+    } else {
         [tempData setObject:currentString ? [currentString stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]] : @"" forKey:elementName];
     }
 }
@@ -88,6 +120,10 @@
     [currentString appendString:string];
 }
 
+- (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
+    NSLog(@"NSXMLParser error: %@", parseError.localizedDescription);
+}
+
 #pragma mark Common Functions
 
 + (BOOL)checkLogin:(BOOL)showAlert {
@@ -96,7 +132,7 @@
             [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert" object:nil userInfo:@{@"title": @"错误", @"message": @"尚未登录"}];
         }
         return NO;
-    }else {
+    } else {
         return YES;
     }
 }
@@ -104,7 +140,7 @@
 + (int)checkRight {
     if ([self checkLogin:NO] && ![USERINFO isEqual:@""]) {
         return [[USERINFO objectForKey:@"rights"] intValue];
-    }else {
+    } else {
         return -1;
     }
 }
@@ -113,6 +149,8 @@
     if ([PASS length] < 6) {
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd"];
+        NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
+        [formatter setTimeZone:beijingTimeZone];
         NSDate *currentDate = [NSDate date];
         NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkPass"]];
         NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
@@ -172,69 +210,73 @@
     NSString *platform = [NSString stringWithCString:systemInfo.machine encoding:NSUTF8StringEncoding];
     
     // return platform;
-    NSDictionary *dict = @{@"x86_64": @"iOS Simulator",
-                           
-                           @"iPhone8,1": @"iPhone 6s",
-                           @"iPhone8,2": @"iPhone 6s Plus",
-                           @"iPhone7,1": @"iPhone 6 Plus",
-                           @"iPhone7,2": @"iPhone 6",
-                           @"iPhone6,1": @"iPhone 5s",
-                           @"iPhone6,2": @"iPhone 5s",
-                           @"iPhone5,3": @"iPhone 5c",
-                           @"iPhone5,4": @"iPhone 5c",
-                           @"iPhone5,1": @"iPhone 5",
-                           @"iPhone5,2": @"iPhone 5",
-                           @"iPhone4,1": @"iPhone 4s",
-                           @"iPhone3,1": @"iPhone 4",
-                           @"iPhone3,2": @"iPhone 4",
-                           @"iPhone3,3": @"iPhone 4",
-                           @"iPhone2,1": @"iPhone 3Gs",
-                           @"iPhone1,2": @"iPhone 3G",
-                           @"iPhone1,1": @"iPhone",
-                           
-                           @"iPod6,1": @"iPod touch 6",
-                           @"iPod5,1": @"iPod touch 5",
-                           @"iPod4,1": @"iPod touch 4",
-                           @"iPod3,1": @"iPod touch 3",
-                           @"iPod2,1": @"iPod touch 2",
-                           @"iPod1,1": @"iPod touch",
-                           
-                           @"iPad6,8": @"iPad Pro",
-                           
-                           @"iPad5,3": @"iPad Air 2",
-                           @"iPad5,4": @"iPad Air 2",
-                           @"iPad4,1": @"iPad Air",
-                           @"iPad4,2": @"iPad Air",
-                           @"iPad4,3": @"iPad Air",
-                           @"iPad3,4": @"iPad 4",
-                           @"iPad3,5": @"iPad 4",
-                           @"iPad3,6": @"iPad 4",
-                           @"iPad3,1": @"iPad 3",
-                           @"iPad3,2": @"iPad 3",
-                           @"iPad3,3": @"iPad 3",
-                           @"iPad2,1": @"iPad 2",
-                           @"iPad2,2": @"iPad 2",
-                           @"iPad2,3": @"iPad 2",
-                           @"iPad2,4": @"iPad 2",
-                           @"iPad1,1": @"iPad 1",
-                           @"iPad1,2": @"iPad 1",
-                           
-                           @"iPad5,1": @"iPad mini 4",
-                           @"iPad5,2": @"iPad mini 4",
-                           @"iPad4,7": @"iPad mini 3",
-                           @"iPad4,8": @"iPad mini 3",
-                           @"iPad4,9": @"iPad mini 3",
-                           @"iPad4,4": @"iPad mini 2",
-                           @"iPad4,5": @"iPad mini 2",
-                           @"iPad4,6": @"iPad mini 2",
-                           @"iPad2,5": @"iPad mini",
-                           @"iPad2,6": @"iPad mini",
-                           @"iPad2,7": @"iPad mini"};
+    NSDictionary *dict = @{
+        // Simulator
+        @"x86_64": @"iOS Simulator",
+        @"arm64": @"iOS Simulator",
+        
+        //        @"iPhone8,1": @"iPhone 6s",
+        //        @"iPhone8,2": @"iPhone 6s Plus",
+        //        @"iPhone7,1": @"iPhone 6 Plus",
+        //        @"iPhone7,2": @"iPhone 6",
+        //        @"iPhone6,1": @"iPhone 5s",
+        //        @"iPhone6,2": @"iPhone 5s",
+        //        @"iPhone5,3": @"iPhone 5c",
+        //        @"iPhone5,4": @"iPhone 5c",
+        //        @"iPhone5,1": @"iPhone 5",
+        //        @"iPhone5,2": @"iPhone 5",
+        //        @"iPhone4,1": @"iPhone 4s",
+        //        @"iPhone3,1": @"iPhone 4",
+        //        @"iPhone3,2": @"iPhone 4",
+        //        @"iPhone3,3": @"iPhone 4",
+        //        @"iPhone2,1": @"iPhone 3Gs",
+        //        @"iPhone1,2": @"iPhone 3G",
+        //        @"iPhone1,1": @"iPhone",
+        //
+        //        @"iPod6,1": @"iPod touch 6",
+        //        @"iPod5,1": @"iPod touch 5",
+        //        @"iPod4,1": @"iPod touch 4",
+        //        @"iPod3,1": @"iPod touch 3",
+        //        @"iPod2,1": @"iPod touch 2",
+        //        @"iPod1,1": @"iPod touch",
+        //
+        //        @"iPad6,8": @"iPad Pro",
+        //
+        //        @"iPad5,3": @"iPad Air 2",
+        //        @"iPad5,4": @"iPad Air 2",
+        //        @"iPad4,1": @"iPad Air",
+        //        @"iPad4,2": @"iPad Air",
+        //        @"iPad4,3": @"iPad Air",
+        //        @"iPad3,4": @"iPad 4",
+        //        @"iPad3,5": @"iPad 4",
+        //        @"iPad3,6": @"iPad 4",
+        //        @"iPad3,1": @"iPad 3",
+        //        @"iPad3,2": @"iPad 3",
+        //        @"iPad3,3": @"iPad 3",
+        //        @"iPad2,1": @"iPad 2",
+        //        @"iPad2,2": @"iPad 2",
+        //        @"iPad2,3": @"iPad 2",
+        //        @"iPad2,4": @"iPad 2",
+        //        @"iPad1,1": @"iPad 1",
+        //        @"iPad1,2": @"iPad 1",
+        //
+        //        @"iPad5,1": @"iPad mini 4",
+        //        @"iPad5,2": @"iPad mini 4",
+        //        @"iPad4,7": @"iPad mini 3",
+        //        @"iPad4,8": @"iPad mini 3",
+        //        @"iPad4,9": @"iPad mini 3",
+        //        @"iPad4,4": @"iPad mini 2",
+        //        @"iPad4,5": @"iPad mini 2",
+        //        @"iPad4,6": @"iPad mini 2",
+        //        @"iPad2,5": @"iPad mini",
+        //        @"iPad2,6": @"iPad mini",
+        //        @"iPad2,7": @"iPad mini",
+    };
     
     if ([dict[platform] length] > 0) {
         platform = dict[platform];
     }
-
+    
     // NSLog(@"Platform = %@",platform);
     return platform;
 }

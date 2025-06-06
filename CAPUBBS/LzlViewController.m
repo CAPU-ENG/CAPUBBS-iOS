@@ -20,14 +20,21 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
-    
     self.preferredContentSize = CGSizeMake(360, 0);
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     performer = [[ActionPerformer alloc] init];
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     shouldShowHud = YES;
+    
+    // Auto height
+    self.tableView.estimatedRowHeight = 100;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
@@ -40,10 +47,10 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    //    if (![[DEFAULTS objectForKey:@"Featurelzl1.3"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"长按某层楼中楼可以快捷回复" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"Featurelzl1.3"];
-    //    }
+    if (![[DEFAULTS objectForKey:@"Featurelzl1.3"] boolValue]) {
+        [self showAlertWithTitle:@"Tips" message:@"长按某层楼中楼可以快捷回复" cancelTitle:@"我知道了"];
+        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"Featurelzl1.3"];
+    }
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".lzl"]];
     activity.webpageURL = self.URL;
     [activity becomeCurrent];
@@ -63,8 +70,10 @@
 - (IBAction)back:(id)sender {
     if (self.textPost.text.length == 0) {
         [self dismissViewControllerAnimated:YES completion:nil];
-    }else {
-        [[[UIAlertView alloc] initWithTitle:@"确定退出" message:@"您输入了尚未发表的楼中楼内容，确定继续退出？" delegate:self cancelButtonTitle:@"返回" otherButtonTitles:@"退出", nil] show];
+    } else {
+        [self showAlertWithTitle:@"确定退出" message:@"您输入了尚未发表的楼中楼内容，确定继续退出？" confirmTitle:@"退出" confirmAction:^(UIAlertAction *action) {
+            [self dismissViewControllerAnimated:YES completion:nil];
+        } cancelTitle:@"返回"];
     }
 }
 
@@ -78,35 +87,26 @@
 }
 
 - (void)loadData {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
     if (shouldShowHud) {
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"读取中";
-        [hud show:YES];
+        [hud showWithProgressMessage:@"读取中"];
     }
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:self.fid, @"fid", @"show", @"method", nil];
+    NSDictionary *dict = @{
+        @"fid" : self.fid,
+        @"method" : @"show"
+    };
     [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
         if (err || result.count == 0) {
             if (shouldShowHud) {
-                hud.mode = MBProgressHUDModeCustomView;
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"读取失败";
-                [hud hide:YES afterDelay:0.5];
+                [hud hideWithFailureMessage:@"读取失败"];
             }
             return;
         }
         
         if (shouldShowHud) {
-            hud.mode = MBProgressHUDModeCustomView;
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"读取成功";
-            [hud hide:YES afterDelay:0.5];
+            [hud hideWithSuccessMessage:@"读取成功"];
         }
         shouldShowHud = NO;
         
@@ -117,7 +117,10 @@
 }
 
 - (void)postRefreshLzlNotification {
-    [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%i", (int)data.count], @"num", self.fid, @"fid", nil]];
+    [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:@{
+        @"num" : [NSString stringWithFormat:@"%i", (int)data.count],
+        @"fid" : self.fid
+    }];
 }
 
 #pragma mark - Table view data source
@@ -131,7 +134,7 @@
     // Return the number of rows in the section.
     if (section == 0) {
         return data.count;
-    }else {
+    } else {
         return 1;
     }
 }
@@ -152,7 +155,7 @@
         if (cell.gestureRecognizers.count == 0) {
             [cell addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPress:)]];
         }
-    }else if (indexPath.section == 1) {
+    } else if (indexPath.section == 1) {
         cell = [tableView dequeueReusableCellWithIdentifier:@"post" forIndexPath:indexPath];
         
         self.textPost = cell.textPost;
@@ -163,27 +166,15 @@
     return cell;
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.section == 0) {
-        NSString *text = [data[[indexPath row]] objectForKey:@"text"];
-        //下句中(CELL_CONTENT_WIDTH - CELL_CONTENT_MARGIN 表示显示内容的label的长度 ，20000.0f 表示允许label的最大高度
-        CGSize constraint = CGSizeMake(self.view.frame.size.width - 110, 20000.0f);
-        CGSize size = [text boundingRectWithSize:constraint options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]} context:nil].size;
-        return MAX(size.height, 18.0f) + 52;
-    }else {
-        return 100;
-    }
-}
-
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
     if (section == 0) {
         if (!data) {
             return @"正在加载";
-        }else if (data.count == 0) {
+        } else if (data.count == 0) {
             return @"暂时没有楼中楼";
         }
         return [NSString stringWithFormat:@"共有%lu条楼中楼",(unsigned long)data.count];
-    }else {
+    } else {
         return @"发表楼中楼";
     }
 }
@@ -196,11 +187,7 @@
         }]];
         [action addAction:[UIAlertAction actionWithTitle:@"复制" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             [[UIPasteboard generalPasteboard] setString:lzlText];
-            hud.labelText = @"复制完成";
-            [hud show:YES];
-            hud.mode = MBProgressHUDModeCustomView;
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            [hud hide:YES afterDelay:0.5];
+            [hud showAndHideWithSuccessMessage:@"复制完成"];
         }]];
         [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
         lzlText = [data[indexPath.row] objectForKey:@"text"];
@@ -218,15 +205,17 @@
                     dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
                     dest.title=@"帖子跳转中";
                     dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done)];
-                    UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+                    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
                     [navi setToolbarHidden:NO];
-                    [self presentViewController:navi animated:YES completion:nil];
-                }else {
+                    navi.modalPresentationStyle = UIModalPresentationFullScreen;
+                    [self presentViewControllerSafe:navi];
+                } else {
                     WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-                    UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+                    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
                     dest.URL = lzlUrl;
                     [navi setToolbarHidden:NO];
-                    [self presentViewController:navi animated:YES completion:nil];
+                    navi.modalPresentationStyle = UIModalPresentationFullScreen;
+                    [self presentViewControllerSafe:navi];
                 }
             }]];
         }
@@ -234,44 +223,7 @@
         UIView *view = cell.textMain;
         action.popoverPresentationController.sourceView = view;
         action.popoverPresentationController.sourceRect = view.bounds;
-        [self presentViewController:action animated:YES completion:nil];
-    }
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title isEqualToString:@"警告"]) {
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"正在删除";
-        [hud show:YES];
-        
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:@"delete", @"method", self.fid, @"fid", [data[alertView.tag] objectForKey:@"id"], @"id", nil];
-        [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
-            if (err || result.count == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"删除失败";
-            }else {
-                if ([[result.firstObject objectForKey:@"code"] integerValue]==0) {
-                    hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                    hud.labelText = @"删除成功";
-                    NSMutableArray *temp = [NSMutableArray arrayWithArray:data];
-                    [temp removeObjectAtIndex:alertView.tag];
-                    data = [NSArray arrayWithArray:temp];
-                    [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:alertView.tag inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
-                    [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
-                }else {
-                    hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                    hud.labelText = @"删除失败";
-                    [[[UIAlertView alloc] initWithTitle:@"删除失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-                }
-            }
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
-        }];
-    }else if ([alertView.title isEqualToString:@"确定退出"]) {
-        [self dismissViewControllerAnimated:YES completion:nil];
+        [self presentViewControllerSafe:action];
     }
 }
 
@@ -292,49 +244,72 @@
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         // Delete the row from the data source
-        UIAlertView *confirmDel = [[UIAlertView alloc] initWithTitle:@"警告" message:@"确定要删除该楼中楼吗？\n删除操作不可逆！" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"删除", nil];
-        confirmDel.tag = indexPath.row;
-        [confirmDel show];
-    }else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        NSDictionary *info = data[indexPath.row];
+        [self showAlertWithTitle:@"警告" message:[NSString stringWithFormat:@"确定要删除该楼中楼吗？\n删除操作不可逆！\n\n作者：%@\n正文：%@", info[@"author"], info[@"text"]] confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
+            [hud showWithProgressMessage:@"正在删除"];
+            
+            NSDictionary *dict = @{
+                @"method" : @"delete",
+                @"fid" : self.fid,
+                @"id" : info[@"id"]
+            };
+            [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
+                if (err || result.count == 0) {
+                    [hud hideWithFailureMessage:@"删除失败"];
+                    return;
+                }
+                if ([[result.firstObject objectForKey:@"code"] integerValue]==0) {
+                    [hud hideWithSuccessMessage:@"删除成功"];
+                    NSMutableArray *temp = [NSMutableArray arrayWithArray:data];
+                    [temp removeObjectAtIndex:indexPath.row];
+                    data = [NSArray arrayWithArray:temp];
+                    [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+                    [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
+                } else {
+                    [hud hideWithFailureMessage:@"删除失败"];
+                    [self showAlertWithTitle:@"删除失败" message:[result.firstObject objectForKey:@"msg"]];
+                }
+            }];
+        }];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
         // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
     }
 }
 
 - (IBAction)buttonPost:(id)sender {
     if (self.textPost.text.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"楼中楼内容为空！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        [self.textPost becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"楼中楼内容为空！" cancelAction:^(UIAlertAction *action) {
+            [self.textPost becomeFirstResponder];
+        }];
         return;
     }
     if (self.textPost.text.length > 140) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"楼中楼内容太长！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        [self.textPost becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"楼中楼内容太长！" cancelAction:^(UIAlertAction *action) {
+            [self.textPost becomeFirstResponder];
+        }];
         return;
     }
     
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在发布";
-    [hud show:YES];
+    [hud showWithProgressMessage:@"正在发布"];
     
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:@"post", @"method", self.fid, @"fid", self.textPost.text, @"text", nil];
+    NSDictionary *dict = @{
+        @"method" : @"post",
+        @"fid" : self.fid,
+        @"text" : self.textPost.text
+    };
     [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"发布失败";
-        }else {
+            [hud hideWithFailureMessage:@"发布失败"];
+            return;
+        }
             if ([[[result firstObject] objectForKey:@"code"] integerValue]==0) {
-                hud.labelText = @"发布成功";
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
+                [hud hideWithSuccessMessage:@"发布成功"];
                 self.textPost.text = @"";
                 [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
-            }else {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"发布失败";
-                [[[UIAlertView alloc] initWithTitle:@"发布失败" message:[[result firstObject] objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            } else {
+                [hud hideWithFailureMessage:@"发布失败"];
+                [self showAlertWithTitle:@"发布失败" message:[[result firstObject] objectForKey:@"msg"]];
             }
-        }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
     }];
 }
 
@@ -355,9 +330,9 @@
     self.labelByte.text = [NSString stringWithFormat:@"%d/140", length];
     if (length <= 120) {
         [self.labelByte setTextColor:[UIColor darkGrayColor]];
-    }else if (length <= 140) {
+    } else if (length <= 140) {
         [self.labelByte setTextColor:[UIColor orangeColor]];
-    }else {
+    } else {
         [self.labelByte setTextColor:[UIColor redColor]];
     }
 }

@@ -7,9 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MBProgressHUD.h"
 
-@interface InternalLoginViewController : UIViewController{
+@interface InternalLoginViewController : CustomViewController {
     MBProgressHUD *hud;
     ActionPerformer *performer;
     ActionPerformer *performerLogout;

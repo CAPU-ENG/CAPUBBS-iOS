@@ -18,13 +18,17 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     if (self.iconData.length > 0) {
         [self refreshBackgroundView:YES];
     }
     
     if (self.shouldHideInfo == YES) {
         self.navigationItem.rightBarButtonItems = nil;
-    }else if (self.directTalk == YES) {
+    } else if (self.directTalk == YES) {
         self.navigationItem.rightBarButtonItems = @[self.buttonInfo];
     }
     performer = [[ActionPerformer alloc] init];
@@ -37,14 +41,15 @@
     if (self.ID.length == 0) {
         self.directTalk = YES;
         self.title = @"私信";
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"发送私信" message:@"请输入对方的用户名" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"开始", nil];
-        alert.alertViewStyle = UIAlertViewStylePlainTextInput;
-        [alert textFieldAtIndex:0].placeholder = @"用户名";
-        [alert show];
-    }else {
+        [self askForUserId];
+    } else {
         self.title = self.ID;
         [self loadChat];
     }
+    
+    // Auto height
+    self.tableView.estimatedRowHeight = 100;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     
@@ -52,13 +57,44 @@
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
 }
 
+- (void)askForUserId {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"发送私信"
+                                                                   message:@"请输入对方的用户名"
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = @"用户名";
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                              style:UIAlertActionStyleCancel
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"开始"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        NSString *userName = alert.textFields.firstObject.text;
+        if (userName.length == 0) {
+            [self showAlertWithTitle:@"错误" message:@"用户名不能为空" confirmTitle:@"重试" confirmAction:^(UIAlertAction *action) {
+                [self askForUserId];
+            } cancelTitle:@"取消" cancelAction:^(UIAlertAction *action) {
+                [self dismissViewControllerAnimated:YES completion:nil];
+            }];
+        } else {
+            self.ID = userName;
+            self.title = userName;
+            [self loadChat];
+        }
+    }]];
+    [self presentViewControllerSafe:alert];
+}
+
 - (void)refresh:(NSNotification *)noti {
-    if (self.iconData.length == 0) {
-        self.iconData = noti.userInfo[@"data"];
-        dispatch_main_async_safe(^{
+    dispatch_main_async_safe(^{
+        if (self.iconData.length == 0) {
+            self.iconData = noti.userInfo[@"data"];
             [self refreshBackgroundView:NO];
-        });
-    }
+        }
+    });
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {
@@ -88,42 +124,33 @@
 }
 
 - (void)loadChat {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
     if (shouldShowHud) {
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"正在加载";
-        [hud show:YES];
+        [hud showWithProgressMessage:@"正在加载"];
     }
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:@"chat", @"type", self.ID, @"chatter", nil];
+    NSDictionary *dict = @{
+        @"type" : @"chat",
+        @"chatter" : self.ID
+    };
     [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
         if (err || result.count == 0) {
             if (shouldShowHud) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"加载失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
+                [hud hideWithFailureMessage:@"加载失败"];
             }
             return ;
         }
         
         if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"尚未登录或登录超时" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
         }
         
         data = result;
         if (data.count == 1) {
             [self checkID:shouldShowHud];
-        }else if (shouldShowHud) {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"加载成功";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+        } else if (shouldShowHud) {
+            [hud hideWithSuccessMessage:@"加载成功"];
         }
         
         // NSLog(@"%@", data);
@@ -143,38 +170,25 @@
         }
         // NSLog(@"%@", result);
         if ([result[0][@"username"] length] == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"没有这个ID！" delegate:self cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+            [self showAlertWithTitle:@"错误" message:@"没有这个ID！" confirmTitle:@"重试" confirmAction:^(UIAlertAction *action) {
+                [self askForUserId];
+            } cancelTitle:@"取消" cancelAction:^(UIAlertAction *action) {
+                [self dismissViewControllerAnimated:YES completion:nil];
+            }];
+            
             if (hudVisible) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"加载失败";
+                [hud hideWithFailureMessage:@"加载失败"];
             }
-        }else {
+        } else {
             NSString *iconUrl = result[0][@"icon"];
             [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AsyncImageView transIconURL:iconUrl]] object:nil];
             AsyncImageView *icon = [[AsyncImageView alloc] init];
             [icon setUrl:iconUrl];
             if (hudVisible) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"加载成功";
+                [hud hideWithSuccessMessage:@"加载成功"];
             }
         }
-        if (hudVisible) {
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
-        }
     }];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        [self dismissViewControllerAnimated:YES completion:nil];
-        return;
-    }
-    if ([alertView.title isEqualToString:@"发送私信"]) {
-        self.ID = [alertView textFieldAtIndex:0].text;
-        self.title = self.ID;
-        [self loadChat];
-    }
 }
 
 - (void)scrollTableView {
@@ -196,20 +210,8 @@
     // Return the number of rows in the section.
     if (section == 0) {
         return data.count - 1;
-    }else {
+    } else {
         return 1;
-    }
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.section == 0) {
-        NSString *text = [data[indexPath.row + 1] objectForKey:@"text"];
-        //下句中(CELL_CONTENT_WIDTH - CELL_CONTENT_MARGIN 表示显示内容的label的长度 ，20000.0f 表示允许label的最大高度
-        CGSize constraint = CGSizeMake(self.view.frame.size.width - 170 - 10, 20000.0f);
-        CGSize size = [text boundingRectWithSize:constraint options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15]} context:nil].size;
-        return MAX(size.height, 18.0f) + 65;
-    }else {
-        return 100;
     }
 }
 
@@ -217,10 +219,10 @@
     if (section == 0) {
         if (data.count > 1) {
             return [NSString stringWithFormat:@"私信记录 共%d条", (int)data.count - 1];
-        }else {
+        } else {
             return @"私信记录 暂无";
         }
-    }else {
+    } else {
         return @"发送私信";
     }
 }
@@ -235,7 +237,7 @@
             [cell.imageChat setImage:[[UIImage imageNamed:@"balloon_green"] stretchableImageWithLeftCapWidth:15 topCapHeight:15]];
             [cell.imageIcon setUrl:dict[@"icon"]];
             cell.buttonIcon.userInteractionEnabled = (self.shouldHideInfo == NO);
-        }else {
+        } else {
             cell = [tableView dequeueReusableCellWithIdentifier:@"chatSelf" forIndexPath:indexPath];
             [cell.imageChat setImage:[[UIImage imageNamed:@"balloon_white_reverse"] stretchableImageWithLeftCapWidth:15 topCapHeight:15]];
             [cell.imageIcon setUrl:[USERINFO objectForKey:@"icon"]];
@@ -243,7 +245,7 @@
         
         cell.labelTime.text = [NSString stringWithFormat:@"  %@  ", dict[@"time"]];
         cell.textMessage.text = dict[@"text"];
-    }else {
+    } else {
         cell = [tableView dequeueReusableCellWithIdentifier:@"chatSend" forIndexPath:indexPath];
         self.textSend = cell.textSend;
     }
@@ -264,37 +266,29 @@
     ChatCell *cell = (ChatCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
     NSString *text = cell.textSend.text;
     if (text.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您未填写私信内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！" cancelAction:^(UIAlertAction *action) {
+            [cell.textSend becomeFirstResponder];
+        }];
         return;
     }
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在发送";
-    [hud show:YES];
+    [hud showWithProgressMessage:@"正在发送"];
     
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:self.ID, @"to", text, @"text", nil];
+    NSDictionary *dict = @{
+        @"to" : self.ID,
+        @"text" : text
+    };
     [performerSend performActionWithDictionary:dict toURL:@"sendmsg" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@",err);
-            hud.labelText = @"发送失败";
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"发送失败"];
             return;
         }
         // NSLog(@"%@", result);
         if ([[result.firstObject objectForKey:@"code"] integerValue] == 0) {
-            hud.labelText = @"发送成功";
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        }else {
-            hud.labelText = @"发送失败";
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
+            [hud hideWithSuccessMessage:@"发送成功"];
+        } else {
+            [hud hideWithFailureMessage:@"发送失败"];
         }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
         switch ([[result.firstObject objectForKey:@"code"] integerValue]) {
             case 0: {
                 cell.textSend.text = @"";
@@ -303,19 +297,19 @@
                 break;
             }
             case 1:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"您长时间未登录，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"您长时间未登录，请重新登录！"];
                 break;
             }
             case 3:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"留言的对象不存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"私信的对象不存在！"];
                 break;
             }
             case 4:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"数据库错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"数据库错误！"];
                 break;
             }
             default:{
-                [[[UIAlertView alloc] initWithTitle:@"发送失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+                [self showAlertWithTitle:@"发送失败" message:@"发生未知错误！"];
                 break;
             }
         }

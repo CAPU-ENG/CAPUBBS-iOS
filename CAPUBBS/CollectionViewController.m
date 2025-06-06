@@ -36,16 +36,18 @@
     self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchController.delegate = self;
     self.searchController.searchResultsUpdater = self;
-    self.searchController.dimsBackgroundDuringPresentation = NO;
-    if (IOS > 9.0) {
-        self.searchController.hidesNavigationBarDuringPresentation = NO;
-    }
+    self.searchController.obscuresBackgroundDuringPresentation = NO;
+    self.searchController.hidesNavigationBarDuringPresentation = NO;
     [self.searchController.searchBar sizeToFit];
     self.searchController.searchBar.searchBarStyle = UISearchBarStyleMinimal;
     self.searchController.searchBar.placeholder = @"搜索";
     self.searchController.searchBar.delegate = self;
     
     self.tableView.tableHeaderView = self.searchController.searchBar;
+    // Auto height
+    self.tableView.estimatedRowHeight = 90;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    
     self.definesPresentationContext = YES;
     // self.tableView.backgroundView = [[UIView alloc] init]; // 否则顶部颜色不一样
     
@@ -71,10 +73,10 @@
         [self.searchController setActive:YES];
     }
     
-    if (![[DEFAULTS objectForKey:@"FeatureCollection3.2"] boolValue]) {
-        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"在帖子里添加/删除个人收藏\n点右上角以管理个人收藏\niOS 9及更高可以在系统中搜索收藏" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureCollection3.2"];
-    }
+//    if (![[DEFAULTS objectForKey:@"FeatureCollection3.2"] boolValue]) {
+//        [self showAlertWithTitle:@"新功能！" message:@"在帖子里添加/删除个人收藏\n点右上角以管理个人收藏\niOS 9及更高可以在系统中搜索收藏" cancelTitle:@"我知道了"];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureCollection3.2"];
+//    }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -93,7 +95,7 @@
     self.searchController.searchBar.text = lastSearch;
     if (wasFirstResponder) {
         [searchController.searchBar becomeFirstResponder];
-    }else {
+    } else {
         [self updateSearchResultsForSearchController:searchController];
     }
 }
@@ -109,7 +111,7 @@
     
     if (self.searchController.isActive) {
         [self updateSearchResultsForSearchController:self.searchController];
-    }else {
+    } else {
         dispatch_main_async_safe(^{
             [self.tableView reloadData];
         });
@@ -188,23 +190,16 @@
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.barButtonItem = self.buttonOrganize;
-    [self presentViewController:action animated:YES completion:nil];
+    [self presentViewControllerSafe:action];
 }
 
 - (IBAction)clearAll:(id)sender {
-    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"确认删除所有个人收藏吗？\n删除操作不可逆" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title isEqualToString:@"警告"]) {
+    [self showAlertWithTitle:@"警告" message:@"确认删除所有个人收藏吗？\n删除操作不可逆" confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
         [DEFAULTS removeObjectForKey:@"collection"];
         [self.tableView setEditing:NO];
         [self.navigationController setToolbarHidden:YES animated:YES];
         [NOTIFICATION postNotificationName:@"collectionChanged" object:nil];
-    }
+    }];
 }
 
 #pragma mark - Table view data source
@@ -239,7 +234,7 @@
     if (self.searchController.searchBar.text.length > 0) {
         if (searchData.count == 0) {
             return @"没有搜索结果";
-        }else {
+        } else {
             return [NSString stringWithFormat:@"搜索到%d个结果", (int)searchData.count];
         }
     }
@@ -264,9 +259,9 @@
     NSDictionary *dict;
     if (self.searchController.searchBar.text.length > 0) {
         dict = [searchData objectAtIndex:indexPath.row];
-    }else if (sortType == SORT_BY_COLLECTION_DATE) {
+    } else if (sortType == SORT_BY_COLLECTION_DATE) {
         dict = data[indexPath.row];
-    }else if (sortType == SORT_BY_BOARD_INDEX || sortType == SORT_BY_AUTHOR) {
+    } else if (sortType == SORT_BY_BOARD_INDEX || sortType == SORT_BY_AUTHOR) {
         dict = [[sortData objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
     }
     cell.infoDict = dict;
@@ -282,7 +277,7 @@
     
     if ([dict[@"text"] length] == 0) {
         cell.labelInfo.text = @"查看楼主楼层后即可显示";
-    }else {
+    } else {
         cell.labelInfo.text = dict[@"text"];
     }
     
@@ -312,7 +307,7 @@
         
         if (!self.searchController.isActive && sectionCount != sortData.count) {
             [tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
-        }else {
+        } else {
             [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
         }
         [DEFAULTS setObject:data forKey:@"collection"];

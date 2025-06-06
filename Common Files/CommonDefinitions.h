@@ -9,14 +9,13 @@
 #ifndef CommonDefinitions_h
 #define CommonDefinitions_h
 
-//#define DEFAULT_SERVER_URL @"https://www.chexie.net"
-#define DEFAULT_SERVER_URL @"http://162.105.69.21" // 临时IP
+#define DEFAULT_SERVER_URL @"https://www.chexie.net"
 #define APP_GROUP_IDENTIFIER @"group.net.chexie.capubbs"
 
 #define REPORT_EMAIL @[@"beidachexie@163.com"]
-#define FEEDBACK_EMAIL @[@"goodman.capu@qq.com", @"beidachexie@163.com"]
-#define COPYRIGHT @"Copyright®  2001 - 2017\nPowered by：CAPU ver 3.0"
-#define EULA @"本论坛作为北京大学自行车协会内部以及自行车爱好者之间交流平台，不欢迎任何商业广告和无关话题。发言者对自己发表的任何言论、信息负责。"
+#define FEEDBACK_EMAIL @[@"goodman.capu@gmail.com", @"beidachexie@163.com"]
+#define COPYRIGHT @"Copyright®  2001 - 2025\nPowered by：CAPU ver 3.0"
+#define EULA @"本论坛作为北京大学自行车协会内部以及自行车爱好者之间交流平台，不欢迎任何商业广告和无关话题。\n用户对自己发布的所有言论、图片和信息内容承担全部法律和道德责任，禁止发布违法、虚假、侵权、骚扰、攻击性或其他不当内容。\n本平台对上述内容实行零容忍政策。管理员有权删除相关内容，并视情况禁言或封禁用户。\n您可以举报违规内容或行为，管理员会在24小时内处理举报请求。\n继续使用即表示您已阅读并同意遵守本协议。"
 
 #define NUMBERS @[@"1", @"2", @"3", @"4", @"5", @"6", @"7", @"9", @"28"]
 
@@ -41,9 +40,9 @@
 #define SUCCESSMARK [UIImage imageNamed:@"successmark"]
 #define FAILMARK [UIImage imageNamed:@"failmark"]
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
-#define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
+//#define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
-#define IS_CELLULAR ([[Reachability reachabilityForLocalWiFi] currentReachabilityStatus] == NotReachable && [[Reachability reachabilityForInternetConnection] currentReachabilityStatus] != NotReachable)
+#define IS_CELLULAR ([ReachabilityManager sharedManager].currentNetworkType == NetworkTypeCellular)
 
 #define MAX_ID_NUM 10
 #define MAX_HOT_NUM 40
@@ -51,21 +50,19 @@
 #define HOT_NUM [[DEFAULTS objectForKey:@"hotNum"] intValue]
 #define IS_SUPER_USER (ID_NUM == MAX_ID_NUM && HOT_NUM == MAX_HOT_NUM)
 
-#define dispatch_main_sync_safe(block)\
-if ([NSThread isMainThread]) {\
-block();\
-} else {\
-dispatch_sync(dispatch_get_main_queue(), block);\
+static inline void dispatch_main_async_safe(dispatch_block_t block) {
+    if ([NSThread isMainThread]) {
+        block();
+    } else {
+        dispatch_async(dispatch_get_main_queue(), block);
+    }
 }
 
-#define dispatch_main_async_safe(block)\
-if ([NSThread isMainThread]) {\
-block();\
-} else {\
-dispatch_async(dispatch_get_main_queue(), block);\
+static inline void dispatch_global_default_async(dispatch_block_t block) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
 }
 
-#define dispatch_global_default_async(block)\
-dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+#define WEB_VIEW_MAX_HEIGHT 100000
+#define JQUERY_MIN_JS [[NSBundle mainBundle] pathForResource:@"jquery.min" ofType:@"js"]
 
 #endif /* CommonDefinitions_h */

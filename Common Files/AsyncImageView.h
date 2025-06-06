@@ -8,7 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
-#import "FLAnimatedImage.h"
+#import <SDWebImage/SDAnimatedImage.h>
+#import <SDWebImage/SDAnimatedImageView.h>
 
 #define PLACEHOLDER [UIImage imageNamed:@"placeholder"]
 #define CACHE_PATH [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingString:@"/IconCache"]
@@ -17,7 +18,7 @@
 #define PNG_TYPE 1
 #define GIF_TYPE 2
 
-@interface AsyncImageView : FLAnimatedImageView
+@interface AsyncImageView : SDAnimatedImageView
 
 - (void)setRounded:(BOOL)isRounded;
 - (void)setBlurredImage:(UIImage *)image animated:(BOOL)animated;

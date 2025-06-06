@@ -30,9 +30,7 @@
     [self.webView.layer setMasksToBounds:YES];
     [self.webView.scrollView setScrollEnabled:NO];
     [self.webView setBackgroundColor:[UIColor whiteColor]];
-    if (IOS >= 9.0) {
-        [self.webView setAllowsLinkPreview:YES];
-    }
+    [self.webView setAllowsLinkPreview:YES];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated
@@ -40,6 +38,14 @@
     [super setSelected:selected animated:animated];
 
     // Configure the view for the selected state
+}
+
+- (void)prepareForReuse {
+    [super prepareForReuse];
+    [self.webView loadHTMLString:@"" baseURL:[NSURL URLWithString:CHEXIE]];
+    if (self.heightCheckTimer && [self.heightCheckTimer isValid]) {
+        [self.heightCheckTimer invalidate];
+    }
 }
 
 @end

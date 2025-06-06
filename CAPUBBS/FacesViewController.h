@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "FacesViewCell.h"
 
-@interface FacesViewController : UICollectionViewController {
+@interface FacesViewController : CustomCollectionViewController {
     AsyncImageView *previewImageView;
 }
 

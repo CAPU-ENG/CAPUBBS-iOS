@@ -19,11 +19,12 @@
     [self.webView setDelegate:self];
     [self.webView.scrollView setDelegate:self];
     [self.webView setScalesPageToFit:YES];
-    if (IOS >= 9.0) {
-        [self.webView setAllowsLinkPreview:YES];
-    }
+    [self.webView setAllowsLinkPreview:YES];
     self.buttonBack.enabled = NO;
     self.buttonForward.enabled = NO;
+    if (!([self.URL hasPrefix:@"http://"] || [self.URL hasPrefix:@"https://"])) {
+        self.URL = [@"https://" stringByAppendingString:self.URL];
+    }
     
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".web"]];
     activity.webpageURL = [NSURL URLWithString:self.URL];
@@ -34,8 +35,11 @@
         NSMutableDictionary *cookieProperties = [NSMutableDictionary dictionary]; // 设置cookie保留登录状态
         [cookieProperties setObject:@"token" forKey:NSHTTPCookieName];
         [cookieProperties setObject:TOKEN forKey:NSHTTPCookieValue];
-        [cookieProperties setObject:CHEXIE forKey:NSHTTPCookieDomain];
         [cookieProperties setObject:@"/" forKey:NSHTTPCookiePath];
+        NSString *domain = CHEXIE;
+        domain = [domain stringByReplacingOccurrencesOfString:@"https?://" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, domain.length)];
+        domain = [domain stringByReplacingOccurrencesOfString:@":[0-9]{1,5}$" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, domain.length)];
+        [cookieProperties setObject:domain forKey:NSHTTPCookieDomain];
         NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:cookieProperties];
         [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookie:cookie];
     }
@@ -75,7 +79,7 @@
     if (webView.request.URL.absoluteString.length > 0) {
         self.title = [webView stringByEvaluatingJavaScriptFromString:@"document.title"];
         self.URL = webView.request.URL.absoluteString;
-    }else {
+    } else {
         self.title = self.URL;
     }
     self.navigationItem.rightBarButtonItems = @[self.buttonRefresh];
@@ -87,7 +91,7 @@
 //        return;
 //    }
     if (error.code != -999) { // 999:主动终止加载
-        [[[UIAlertView alloc] initWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"加载错误" message:[NSString stringWithFormat:@"%@", [error localizedDescription]]];
     }
 }
 
@@ -118,14 +122,14 @@
 }
 
 - (IBAction)openInSafari:(id)sender {
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.URL]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.URL] options:@{} completionHandler:nil];
 }
 
 - (IBAction)share:(id)sender {
     UIActivityViewController *activityViewController =
     [[UIActivityViewController alloc] initWithActivityItems:@[self.title, [NSURL URLWithString:self.URL]] applicationActivities:nil];
     activityViewController.popoverPresentationController.barButtonItem = self.buttonShare;
-    [self.navigationController presentViewController:activityViewController animated:YES completion:nil];
+    [self presentViewControllerSafe:activityViewController];
 }
 
 // 开始拖拽视图
@@ -144,7 +148,7 @@
     if (isAtEnd == NO && scrollView.dragging) { // 拖拽
         if ((scrollView.contentOffset.y - contentOffsetY) > 5.0f) { // 向上拖拽
             [self.navigationController setToolbarHidden:YES animated:YES];
-        }else if ((contentOffsetY - scrollView.contentOffset.y) > 5.0f) { // 向下拖拽
+        } else if ((contentOffsetY - scrollView.contentOffset.y) > 5.0f) { // 向下拖拽
             [self.navigationController setToolbarHidden:NO animated:YES];
         }
     }

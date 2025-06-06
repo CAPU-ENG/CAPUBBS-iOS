@@ -9,9 +9,8 @@
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
 #import "AsyncImageView.h"
-#import "MBProgressHUD.h"
 
-@interface UserViewController : UITableViewController <UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
+@interface UserViewController : CustomTableViewController<UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     AsyncImageView *backgroundView;
@@ -26,7 +25,8 @@
     NSArray *property;
     NSMutableArray *heights;
     UIDocumentInteractionController *dic;
-    MFMailComposeViewController *mfc;
+    CustomMailComposeViewController *mail;
+    NSTimer *heightCheckTimer;
 }
 
 @property NSString *ID;
@@ -40,7 +40,7 @@
 @property (weak, nonatomic) IBOutlet UILabel *sign;
 @property (weak, nonatomic) IBOutlet UILabel *hobby;
 @property (weak, nonatomic) IBOutlet UILabel *qq;
-@property (weak, nonatomic) IBOutlet UIButton *mail;
+@property (weak, nonatomic) IBOutlet UIButton *mailBtn;
 @property (weak, nonatomic) IBOutlet UILabel *from;
 @property (weak, nonatomic) IBOutlet UILabel *regDate;
 @property (weak, nonatomic) IBOutlet UILabel *lastDate;
@@ -48,11 +48,11 @@
 @property (weak, nonatomic) IBOutlet UILabel *reply;
 @property (weak, nonatomic) IBOutlet UILabel *water;
 @property (weak, nonatomic) IBOutlet UILabel *extr;
+@property (weak, nonatomic) IBOutlet UIWebView *intro;
 @property (weak, nonatomic) IBOutlet UIWebView *sig1;
 @property (weak, nonatomic) IBOutlet UIWebView *sig2;
 @property (weak, nonatomic) IBOutlet UIWebView *sig3;
 @property (weak, nonatomic) IBOutlet AsyncImageView *icon;
-@property (weak, nonatomic) IBOutlet UITableViewCell *cellReport;
 @property (weak, nonatomic) IBOutlet UILabel *labelReport;
 
 @end

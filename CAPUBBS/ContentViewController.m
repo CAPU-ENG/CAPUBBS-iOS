@@ -13,6 +13,9 @@
 #import "UserViewController.h"
 #import "WebViewController.h"
 
+static const float kOtherViewHeight = 118;
+static const float kWebViewMinHeight = 40;
+
 @interface ContentViewController ()
 
 @end
@@ -24,17 +27,20 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     textSize = [[DEFAULTS objectForKey:@"textSize"] intValue];
     performer = [[ActionPerformer alloc] init];
     if ([self.floor integerValue] > 0) { // 进入时直接跳至指定页
         page = ceil([self.floor floatValue] / 12);
-    }else {
+    } else {
         page = 1;
     }
     selectedIndex = -1;
     isEdit = NO;
     heights = [[NSMutableArray alloc] init];
-    estimatedHeights = [[NSMutableArray alloc] init];
     HTMLStrings = [[NSMutableArray alloc] init];
     
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
@@ -58,20 +64,15 @@
     activity.title = self.title;
     [activity becomeCurrent];
     
-    //    if (![[DEFAULTS objectForKey:@"FeatureSize2.1"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"底栏中可以调整字体大小\n设置中还可选择默认大小" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSize2.1"];
-    //    }
+//    if (![[DEFAULTS objectForKey:@"FeatureSize2.1"] boolValue]) {
+//        [self showAlertWithTitle:@"新功能！" message:@"底栏中可以调整字体大小\n设置中还可选择默认大小" cancelTitle:@"我知道了"];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSize2.1"];
+//    }
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     [activity invalidate];
-}
-
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    [self reload];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -83,17 +84,11 @@
 #pragma mark - Web request
 
 - (void)jumpTo:(int)pageNum {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"加载中";
-    [hud show:YES];
+    [hud showWithProgressMessage:@"加载中"];
     int oldPage = page;
     if ((page = pageNum) == 1) {
         self.toolbarItems = @[self.buttonCollection, self.barFreeSpace, self.buttonJump, self.barFreeSpace, self.buttonAction, self.barFreeSpace, self.buttonCompose, self.barFreeSpace, self.buttonForward];
-    }else {
+    } else {
         self.toolbarItems = @[self.buttonBack, self.barFreeSpace, self.buttonJump, self.barFreeSpace, self.buttonAction, self.barFreeSpace, self.buttonCompose, self.barFreeSpace, self.buttonForward];
     }
     self.buttonBack.enabled = (page > 1);
@@ -104,7 +99,11 @@
     URL = [NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)page];
     activity.webpageURL = [NSURL URLWithString:URL];
     activity.title = self.title;
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%ld", (long)pageNum], @"p", self.bid, @"bid", self.tid, @"tid", nil];
+    NSDictionary *dict = @{
+        @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum],
+        @"bid" : self.bid,
+        @"tid" : self.tid
+    };
     [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
@@ -115,10 +114,7 @@
                 self.title = @"没有这个帖子";
             }
             self.buttonCollection.enabled = NO;
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"加载失败";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"加载失败"];
             NSLog(@"%@", err);
             if (err.code == 111) {
                 tempPath = [NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)page];
@@ -134,13 +130,9 @@
             if (code == 1 && page > 1) {
                 [self jumpTo:page - 1];
                 return;
-            } else {
-                [[[UIAlertView alloc] initWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"加载失败";
-                hud.mode = MBProgressHUDModeCustomView;
             }
-            [hud hide:YES afterDelay:0.5];
+            [self showAlertWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"]];
+            [hud hideWithFailureMessage:@"加载失败"];
             return ;
         }
         
@@ -148,10 +140,7 @@
             [self updateCollection];
         }
         
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.labelText = @"加载成功";
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
+        [hud hideWithSuccessMessage:@"加载成功"];
 
         NSString *titleText = [data.firstObject objectForKey:@"title"];
         self.title = [ActionPerformer removeRe:titleText];
@@ -160,38 +149,23 @@
         self.buttonLatest.enabled = !isLast;
         self.buttonJump.enabled = ([[[data lastObject] objectForKey:@"pages"] integerValue] > 1);
         self.buttonCompose.enabled = [ActionPerformer checkLogin:NO];
-        [heights removeAllObjects];
-        [HTMLStrings removeAllObjects];
-        [estimatedHeights removeAllObjects];
         if (data.count != 0) {
             for (NSDictionary *dict in data) {
                 if (self.exactFloor.length > 0 && [dict[@"floor"] isEqualToString:self.exactFloor]) {
                     selectedIndex = [data indexOfObject:dict];
                     [self performSegueWithIdentifier:@"lzl" sender:nil];
                 }
-                
-                [heights addObject:@0];
-                [estimatedHeights addObject:@0];
-                NSString *content = dict[@"text"];
-                if ([dict[@"sig"] length] > 0) { // 添加签名档
-                    content = [NSString stringWithFormat:@"%@<font color='gray' size=2><br><br>--------<br>%@</font>", content, dict[@"sig"]];
-                }
-                NSString *html = [ContentViewController htmlStringWithRespondString:content];
-                NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
-                html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
-                // NSLog(@"%@", html);
-                [HTMLStrings addObject:[NSString stringWithFormat:@"<div id=\"capu-content-wrapper\">%@</div>", html]];
             }
         }
         self.exactFloor = @"";
         
-        [self.tableView reloadData];
+        [self clearHeightsAndReloadData:true];
         if (data.count != 0) {
             if (self.willScroll) {
                 self.willScroll = NO;
                 // NSLog(@"Scroll To Index %lu", data.count-1); // Scroll问题目前没有很好地解决 不能等在WebView全加载完后再Scroll 之前又无法确定WebView的高度从而不知道滚动的终点 所以暂时取消这个机制
                 // [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:data.count-1 inSection:0] atScrollPosition:UITableViewScrollPositionBottom animated:YES];
-            }else {
+            } else {
                 [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
             }
         }
@@ -237,11 +211,39 @@
     [self.buttonCollection setImage:[UIImage imageNamed:(self.isCollection ? @"star-full" : @"star-empty")]];
 }
 
+- (void)clearHeightsAndReloadData:(BOOL)reload {
+    [heights removeAllObjects];
+    [HTMLStrings removeAllObjects];
+    for (int i = 0; i < data.count; i++) {
+        NSDictionary *dict = [data objectAtIndex:i];
+        [heights addObject:@0];
+        NSString *html = [ContentViewController htmlStringWithText:dict[@"text"] sig:dict[@"sig"] textSize:textSize];
+        NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
+        html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
+        // NSLog(@"%@", html);
+        [HTMLStrings addObject:html];
+        
+        if (reload) {
+            ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+            if (cell.webView.isLoading) {
+                [cell.webView stopLoading];
+            }
+            if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
+                [cell.heightCheckTimer invalidate];
+            }
+            [cell.webView loadHTMLString:@"" baseURL:[NSURL URLWithString:CHEXIE]];
+        }
+    }
+    if (reload) {
+        [self.tableView reloadData];
+    }
+}
+
 - (void)shouldRefresh:(NSNotification *)notification {
     self.willScroll = YES;
     if ([[notification.userInfo objectForKey:@"isEdit"] boolValue] == YES) {
         [self jumpTo:page];
-    }else {
+    } else {
         [self jumpTo:[[[data lastObject] objectForKey:@"pages"] intValue]];
     }
 }
@@ -256,10 +258,26 @@
 }
 
 - (IBAction)jump:(id)sender {
-    UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"跳转页面" message:[NSString stringWithFormat:@"请输入页码(1-%@)",[[data lastObject] objectForKey:@"pages"]] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"好", nil];
-    alert.alertViewStyle=UIAlertViewStylePlainTextInput;
-    [alert textFieldAtIndex:0].keyboardType=UIKeyboardTypeNumberPad;
-    [alert show];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"跳转页面" message:[NSString stringWithFormat:@"请输入页码(1-%@)",[[data lastObject] objectForKey:@"pages"]] preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = @"页码";
+        textField.keyboardType = UIKeyboardTypeNumberPad;
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"好"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        NSString *pageip = alert.textFields.firstObject.text;
+        int pagen = [pageip intValue];
+        if (pagen <= 0 || pagen > [[[data lastObject] objectForKey:@"pages"] integerValue]) {
+            [self showAlertWithTitle:@"错误" message:@"输入不合法"];
+            return;
+        }
+        [self jumpTo:pagen];
+    }]];
+    [self presentViewControllerSafe:alert];
 }
 
 - (IBAction)gotoLatest:(id)sender {
@@ -280,40 +298,82 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    float otherViewHeight = 115;
-    float minHeight = otherViewHeight + 40;
-    if ([[heights objectAtIndex:indexPath.row] floatValue] == 0) {
-        if ([[estimatedHeights objectAtIndex:indexPath.row] floatValue] == 0) { // 粗略预判WebView内容高度
-            NSString *text = [HTMLStrings objectAtIndex:indexPath.row];
-            if (text.length < 1000 && ![text containsString:@"<a href='pic:"]) { // 如果内容简短而且没有图片 无需预判高度
-                [estimatedHeights replaceObjectAtIndex:indexPath.row withObject:[NSNumber numberWithFloat:minHeight]];
-            }else {
-                text = [ContentViewController removeHTML:text];
-                text = [[NSRegularExpression regularExpressionWithPattern:@"(\\[img])(.+?)(\\[/img])" options:0 error:nil] stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"X"];
-                text = [text substringFromIndex:@"img{max-width:100%}".length];
-                //下句中(CELL_CONTENT_WIDTH - CELL_CONTENT_MARGIN 表示显示内容的label的长度 ，20000.0f 表示允许label的最大高度
-                CGSize constraint = CGSizeMake(self.view.frame.size.width - 32 - 16, 20000.0f);
-                CGSize size = [text boundingRectWithSize:constraint options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:(int)(14.0 * textSize / 100)]} context:nil].size;
-                [estimatedHeights replaceObjectAtIndex:indexPath.row withObject:[NSNumber numberWithFloat:MAX(size.height + otherViewHeight, minHeight)]];
-            }
-        }
-        return [[estimatedHeights objectAtIndex:indexPath.row] floatValue];
-    }else {
-        return MAX([[heights objectAtIndex:indexPath.row] floatValue] + otherViewHeight, minHeight);
+    float webViewHeight = 0;
+    if (heights.count >= indexPath.row && [[heights objectAtIndex:indexPath.row] floatValue] > 0) {
+        webViewHeight = [[heights objectAtIndex:indexPath.row] floatValue];
     }
+    return kOtherViewHeight + MIN(MAX(kWebViewMinHeight, webViewHeight), WEB_VIEW_MAX_HEIGHT);
 }
 
-- (void)webViewDidFinishLoad:(UIWebView *)webView {
-    [webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.getElementsByTagName('body')[0].style.webkitTextSizeAdjust= '%d%%'", textSize]];
+- (UITableViewCell *)getCellForView:(UIView *)view {
+    UIView *currentView = view;
+    while (currentView != nil) {
+        if ([currentView isKindOfClass:[UITableViewCell class]]) {
+            return (UITableViewCell *)currentView;
+        }
+        currentView = currentView.superview;
+    }
+    return nil;
+}
+
+- (void)updateWebViewHeight:(UIWebView *)webView {
+    NSUInteger row = webView.tag;
+    if (!self.isViewLoaded || !self.view.window ||
+        !self.tableView || !self.tableView.window ||
+        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        return;
+    }
     
-    if ([[heights objectAtIndex:webView.tag] intValue] <= 1) {
-        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight"];
-        [heights replaceObjectAtIndex:webView.tag withObject:height];
-        ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:webView.tag inSection:0]];
-        [cell.indicatorLoading stopAnimating];
+    UITableViewCell *cell = [self getCellForView:webView];
+    if (!cell || [self.tableView indexPathForCell:cell].row != row) {
+        return;
+    }
+    
+    [webView stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.body.style.webkitTextSizeAdjust= '%d%%'", textSize]];
+    
+    NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-wrapper').scrollHeight"];
+    if (height.length &&
+        [height floatValue] - [[heights objectAtIndex:row] floatValue] >= 1) {
+        [heights replaceObjectAtIndex:row withObject:height];
         [self.tableView beginUpdates];
         [self.tableView endUpdates];
     }
+}
+
+- (void)timerFiredUpdateWebViewHeight:(NSTimer *)timer {
+    [self updateWebViewHeight:timer.userInfo];
+}
+
+- (void)webViewDidStartLoad:(UIWebView *)webView {
+    NSUInteger row = webView.tag;
+    if (!self.isViewLoaded || !self.view.window ||
+        !self.tableView || !self.tableView.window ||
+        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        return;
+    }
+    ContentCell *cell = (ContentCell *)[self getCellForView:webView];
+    if (!cell || [self.tableView indexPathForCell:cell].row != row) {
+        return;
+    }
+    if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
+        [cell.heightCheckTimer invalidate];
+    }
+    // Do not trigger immediately, the webview might still be showing the previous content.
+    cell.heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(timerFiredUpdateWebViewHeight:) userInfo:webView repeats:YES];
+}
+
+- (void)webViewDidFinishLoad:(UIWebView *)webView {
+    NSUInteger row = webView.tag;
+    if (!self.isViewLoaded || !self.view.window ||
+        !self.tableView || !self.tableView.window ||
+        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        return;
+    }
+    ContentCell *cell = (ContentCell *)[self getCellForView:webView];
+    if (!cell || [self.tableView indexPathForCell:cell].row != row) {
+        return;
+    }
+    [cell.indicatorLoading stopAnimating];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -330,9 +390,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     // NSLog(@"Cell in row %d", (int)indexPath.row);
     ContentCell *cell = [tableView dequeueReusableCellWithIdentifier:@"content" forIndexPath:indexPath];
-    if ([cell.webView isLoading]) {
-        [cell.webView stopLoading];
-    }
+    
     cell.buttonAction.tag = indexPath.row;
     cell.buttonLzl.tag = indexPath.row;
     cell.buttonIcon.tag = indexPath.row;
@@ -370,7 +428,7 @@
     [cell.buttonLzl setTitle:[NSString stringWithFormat:@"评论 (%@)",dict[@"lzl"]] forState:UIControlStateNormal];
     if ([dict[@"lzl"] isEqualToString:@"0"]) {
         [cell.buttonLzl setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-    }else {
+    } else {
         [cell.buttonLzl setTitleColor:BLUE forState:UIControlStateNormal];
     }
     
@@ -379,10 +437,10 @@
             cell.labelDate.text = [cell.labelDate.text stringByAppendingString:[NSString stringWithFormat:@"\n%@", dict[@"edittime"]]];
         }
         if ([dict[@"type"] isEqualToString:@"web"]) {
-            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:(IOS < 9.1) ? @"\n💻" : @"\n🖥"];
-        }else if ([dict[@"type"] isEqualToString:@"android"]) {
+            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n🖥"];
+        } else if ([dict[@"type"] isEqualToString:@"android"]) {
             cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n📱"];
-        }else if ([dict[@"type"] isEqualToString:@"ios"]) {
+        } else if ([dict[@"type"] isEqualToString:@"ios"]) {
             cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n📱"];
         }
     }
@@ -390,12 +448,12 @@
     [cell.icon setUrl:dict[@"icon"]];
     
     [cell.webView setDelegate:self];
-    [cell.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
+    [cell.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     
     
-    if (([[heights objectAtIndex:indexPath.row] floatValue] > 1)) {
+    if (([[heights objectAtIndex:indexPath.row] floatValue] > 0)) {
         [cell.indicatorLoading stopAnimating];
-    }else {
+    } else {
         [cell.indicatorLoading startAnimating];
     }
     
@@ -407,17 +465,6 @@
     }
     
     return cell;
-}
-
-- (void)reload {
-    for (int i = 0; i < heights.count; i++) {
-        NSNumber *height = [heights objectAtIndex:i];
-        if ([height floatValue] > 0) {
-            [heights replaceObjectAtIndex:i withObject:@1];
-        }
-        [estimatedHeights replaceObjectAtIndex:i withObject:@0];
-    }
-    [self.tableView reloadData];
 }
 
 #pragma mark - Content view
@@ -432,7 +479,7 @@
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     // NSLog(@"scrollView.contentOffset:%f, %f", scrollView.contentOffset.x, scrollView.contentOffset.y);
     if (isAtEnd == NO && scrollView.contentOffset.y >= scrollView.contentSize.height - scrollView.frame.size.height) {
-        if (heights.count > 0 && [[heights lastObject] floatValue] > 1.0) {
+        if (heights.count > 0 && [[heights lastObject] floatValue] > 0) {
             [self.navigationController setToolbarHidden:NO animated:YES];
             isAtEnd = YES;
         }
@@ -440,37 +487,32 @@
     if (isAtEnd == NO && scrollView.dragging) { // 拖拽
         if ((scrollView.contentOffset.y - contentOffsetY) > 5.0f) { // 向上拖拽
             [self.navigationController setToolbarHidden:YES animated:YES];
-        }else if ((contentOffsetY - scrollView.contentOffset.y) > 5.0f) { // 向下拖拽
+        } else if ((contentOffsetY - scrollView.contentOffset.y) > 5.0f) { // 向下拖拽
             [self.navigationController setToolbarHidden:NO animated:YES];
         }
     }
 }
 
 - (void)showPic:(NSURL *)url {
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在载入";
-    [hud show:YES];
+    [hud showWithProgressMessage:@"正在载入"];
     [self performSelectorInBackground:@selector(showPicThread:) withObject:url];
 }
 - (void)showPicThread:(NSURL *)url {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse * _Nullable response, NSData * _Nullable idata, NSError * _Nullable connectionError) {
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         if (idata) {
             imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
         }
         [self performSelectorOnMainThread:@selector(presentImage:) withObject:idata waitUntilDone:NO];
     }];
+    [task resume];
 }
 - (void)presentImage:(NSData *)image {
-    hud.mode = MBProgressHUDModeCustomView;
-    [hud hide:YES afterDelay:0.5];
     if (!image || ![UIImage imageWithData:image]) {
-        hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        hud.labelText = @"载入失败";
+        [hud hideWithFailureMessage:@"载入失败"];
         return;
-    }else {
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.labelText = @"载入成功";
+    } else {
+        [hud hideWithSuccessMessage:@"载入成功"];
     }
     [image writeToFile:imgPath atomically:YES];
     dic = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:imgPath]];
@@ -489,7 +531,7 @@
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType { // 处理帖子中的URL
-    // NSLog(@"type=%d,path=%@",(int)navigationType,request.URL.absoluteString);
+//     NSLog(@"type=%d,path=%@",(int)navigationType,request.URL.absoluteString);
     if (navigationType == UIWebViewNavigationTypeLinkClicked) {
         NSString *path = request.URL.absoluteString;
         
@@ -501,29 +543,36 @@
             NSString *piclink = [path substringFromIndex:@"pic:".length];
             NSURL *picurl = [NSURL URLWithString:piclink];
             if (![piclink hasPrefix:@"http://"] && ![piclink hasPrefix:@"https://"] && ![piclink hasPrefix:@"ftp://"]) {
-                picurl = [NSURL URLWithString:piclink relativeToURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/index.php", CHEXIE]]];
+                picurl = [NSURL URLWithString:piclink relativeToURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
             }
             [self showPic:picurl];
             return NO;
         }
         
         if ([path hasPrefix:@"mailto:"]) {
-            path = [path substringFromIndex:@"mailto:".length];
-            mail = [[MFMailComposeViewController alloc] init];
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setToRecipients:@[path]];
-            mail.mailComposeDelegate = self;
-            [self presentViewController:mail animated:YES completion:nil];
+            if ([CustomMailComposeViewController canSendMail]) {
+                path = [path substringFromIndex:@"mailto:".length];
+                mail = [[CustomMailComposeViewController alloc] init];
+                [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
+                [mail.navigationBar setTintColor:[UIColor whiteColor]];
+                [mail setToRecipients:@[path]];
+                mail.mailComposeDelegate = self;
+                [self presentViewControllerSafe:mail];
+            }
+            return NO;
+        }
+        if ([path hasPrefix:@"tel:"]) {
+            // Directly open
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:nil];
             return NO;
         }
         
-        NSRegularExpression *regular = [NSRegularExpression regularExpressionWithPattern:@"((http://)?/bbs/user)" options:0 error:nil];
+        NSRegularExpression *regular = [NSRegularExpression regularExpressionWithPattern:@"((http://|https://)?/bbs/user)" options:0 error:nil];
         NSArray *matchs = [regular matchesInString:path options:0 range:NSMakeRange(0, path.length)];
         if (matchs.count != 0) {
             NSRange range = [path rangeOfString:@"name="];
             NSString *uid = [path substringFromIndex:range.location+range.length];
-            uid = [uid stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+            uid = [uid stringByRemovingPercentEncoding];
             [self performSegueWithIdentifier:@"userInfo" sender:uid];
             return NO;
         }
@@ -540,123 +589,99 @@
         }
         
         tempPath = path;
-        if ([path hasPrefix:@"tel:"]) {
-            [[[UIAlertView alloc] initWithTitle:@"确认呼叫？" message:[path substringFromIndex:@"tel:".length] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
-        }else {
-            [self performSegueWithIdentifier:@"web" sender:nil];
-        }
+        [self performSegueWithIdentifier:@"web" sender:nil];
         return NO;
-    }else {
+    } else {
         return YES;
     }
 }
 
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
-    if (buttonIndex == alertView.cancelButtonIndex) {
+- (void)deletePost {
+    if (![ActionPerformer checkLogin:YES]) {
         return;
     }
-    if ([alertView.title isEqualToString:@"警告"]) {
-        if (![ActionPerformer checkLogin:YES]) {
+    [hud showWithProgressMessage:@"正在删除"];
+    NSDictionary *dict = @{
+        @"bid" : self.bid,
+        @"tid" : self.tid,
+        @"pid" : data[selectedIndex][@"floor"]
+    };
+    [performer performActionWithDictionary:dict toURL:@"delete" withBlock:^(NSArray *result, NSError *err) {
+        if (err || result.count == 0) {
+            [hud hideWithFailureMessage:@"删除失败"];
+            [self showAlertWithTitle:@"错误" message:err.localizedDescription];
             return;
         }
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"正在删除";
-        [hud show:YES];
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:self.bid,@"bid",self.tid,@"tid",[data[selectedIndex] objectForKey:@"floor"],@"pid",nil];
-        [performer performActionWithDictionary:dict toURL:@"delete" withBlock:^(NSArray *result, NSError *err) {
-            if (err || result.count == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"删除失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hide:YES afterDelay:0.5];
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:err.localizedDescription delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        NSInteger back=[[[result firstObject] objectForKey:@"code"] integerValue];
+        if (back == 0) {
+            [hud hideWithSuccessMessage:@"删除成功"];
+        } else {
+            [hud hideWithFailureMessage:@"删除失败"];
+        }
+        switch (back) {
+            case 0:{
+                [self.tableView setEditing:NO];
+                [data removeObjectAtIndex:selectedIndex];
+                [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:selectedIndex inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
+                if ([self.tableView numberOfRowsInSection:0] == 0) {
+                    if (page > 1) {
+                        page--;
+                        [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+                    } else {
+                        [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:[NSNumber numberWithBool:YES] afterDelay:0.5];
+                        [NOTIFICATION postNotificationName:@"refreshList" object:nil];
+                    }
+                } else {
+                    [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+                }
+            }
+                break;
+            case 1:{
+                [self showAlertWithTitle:@"错误" message:@"密码错误，请重新登录！"];
                 return;
             }
-            NSInteger back=[[[result firstObject] objectForKey:@"code"] integerValue];
-            if (back == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.labelText = @"删除成功";
-            }else {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"删除失败";
+                break;
+            case 2:{
+                [self showAlertWithTitle:@"错误" message:@"用户不存在，请重新登录！"];
+                return;
             }
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
-            switch (back) {
-                case 0:{
-                    [self.tableView setEditing:NO];
-                    [data removeObjectAtIndex:selectedIndex];
-                    [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:selectedIndex inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
-                    if ([self.tableView numberOfRowsInSection:0] == 0) {
-                        if (page > 1) {
-                            page--;
-                            [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
-                        }else {
-                            [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:[NSNumber numberWithBool:YES] afterDelay:0.5];
-                            [NOTIFICATION postNotificationName:@"refreshList" object:nil];
-                        }
-                    }else {
-                        [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
-                    }
-                }
-                    break;
-                case 1:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码错误，您可能在登录后修改过密码，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case 2:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不存在，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case 3:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的账号被封禁，请联系管理员！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case 4:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的操作过频繁，请稍后再试！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case 5:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"文章被锁定，无法操作！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case 6:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"帖子不存在或服务器错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case 10:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您的权限不够，无法操作！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                case -25:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您长时间未登录，请重新登录！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
-                    break;
-                default:{
-                    [[[UIAlertView alloc] initWithTitle:@"错误" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-                    return;
-                }
+                break;
+            case 3:{
+                [self showAlertWithTitle:@"错误" message:@"您的账号被封禁，请联系管理员！"];
+                return;
             }
-        }];
-    }else if ([alertView.title isEqualToString:@"跳转页面"]) {
-        NSString *pageip = [alertView textFieldAtIndex:0].text;
-        int pagen = [pageip intValue];
-        if (pagen <= 0 || pagen > [[[data lastObject] objectForKey:@"pages"] integerValue]) {
-            [[[UIAlertView alloc] initWithTitle:@"错误" message:@"输入不合法" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            return;
+                break;
+            case 4:{
+                [self showAlertWithTitle:@"错误" message:@"您的操作过频繁，请稍后再试！"];
+                return;
+            }
+                break;
+            case 5:{
+                [self showAlertWithTitle:@"错误" message:@"文章被锁定，无法操作！"];
+                return;
+            }
+                break;
+            case 6:{
+                [self showAlertWithTitle:@"错误" message:@"帖子不存在或服务器错误！"];
+                return;
+            }
+                break;
+            case 10:{
+                [self showAlertWithTitle:@"错误" message:@"您的权限不够，无法操作！"];
+                return;
+            }
+                break;
+            case -25: {
+                [self showAlertWithTitle:@"错误" message:@"您长时间未登录，请重新登录！"];
+                return;
+            }
+                break;
+            default:{
+                [self showAlertWithTitle:@"错误" message:@"发生未知错误！"];
+                return;
+            }
         }
-        [self jumpTo:pagen];
-    }else if ([alertView.title isEqualToString:@"确认呼叫？"]) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:tempPath]];
-    }
+    }];
 }
 
 - (IBAction)changeCollection:(id)sender {
@@ -667,25 +692,26 @@
             if ([self.bid isEqualToString:[mdic objectForKey:@"bid"]] && [self.tid isEqualToString:[mdic objectForKey:@"tid"]]) {
                 [array removeObject:mdic];
                 self.isCollection = NO;
-                hud.labelText = @"取消收藏";
+                [hud showAndHideWithSuccessMessage:@"取消收藏"];
                 break;
             }
         }
-    }else {
-        mdic = [NSMutableDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%ld", (long)[[NSDate date] timeIntervalSince1970]], @"collectionTime", self.bid, @"bid", self.tid, @"tid", [ActionPerformer removeRe:self.title], @"title", nil];
+    } else {
+        mdic = [NSMutableDictionary dictionaryWithDictionary:@{
+            @"collectionTime" : [NSString stringWithFormat:@"%ld", (long)[[NSDate date] timeIntervalSince1970]],
+            @"bid" : self.bid,
+            @"tid" : self.tid,
+            @"title" : [ActionPerformer removeRe:self.title]
+        }];
         [array addObject:mdic];
         self.isCollection = YES;
-        hud.labelText = @"收藏完成";
+        [hud showAndHideWithSuccessMessage:@"收藏完成"];
     }
     [DEFAULTS setObject:array forKey:@"collection"];
     if (self.isCollection == NO) {
         NSLog(@"Delete Collection");
         [NOTIFICATION postNotificationName:@"collectionChanged" object:nil];
     }
-    [hud show:YES];
-    hud.mode = MBProgressHUDModeCustomView;
-    hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-    [hud hide:YES afterDelay:0.5];
     [self updateCollection];
     if ([[self.tableView visibleCells] containsObject:[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]]]) {
         [self.tableView reloadData];
@@ -703,14 +729,18 @@
 - (IBAction)action:(id)sender {
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"更多操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"举报" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        mail = [[MFMailComposeViewController alloc] init];
-        mail.mailComposeDelegate = self;
-        [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-        [mail.navigationBar setTintColor:[UIColor whiteColor]];
-        [mail setSubject:@"CAPUBBS 举报违规帖子"];
-        [mail setToRecipients:REPORT_EMAIL];
-        [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我在帖子 <a href=\"%@\">%@</a> 中发现了违规内容，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", URL, self.title] isHTML:YES];
-        [self presentViewController:mail animated:YES completion:nil];
+        if ([CustomMailComposeViewController canSendMail]) {
+            mail = [[CustomMailComposeViewController alloc] init];
+            mail.mailComposeDelegate = self;
+            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
+            [mail.navigationBar setTintColor:[UIColor whiteColor]];
+            [mail setSubject:@"CAPUBBS 举报违规帖子"];
+            [mail setToRecipients:REPORT_EMAIL];
+            [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我在帖子 <a href=\"%@\">%@</a> 中发现了违规内容，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", URL, self.title] isHTML:YES];
+            [self presentViewControllerSafe:mail];
+        } else {
+            [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
+        }
     }]];
     [action addAction:[UIAlertAction actionWithTitle:self.isCollection ? @"取消收藏" : @"收藏" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         [self changeCollection:nil];
@@ -721,39 +751,40 @@
         UIActivityViewController *activityViewController =
         [[UIActivityViewController alloc] initWithActivityItems:@[title, shareURL] applicationActivities:nil];
         activityViewController.popoverPresentationController.barButtonItem = self.buttonAction;
-        [self.navigationController presentViewController:activityViewController animated:YES completion:nil];
+        [self presentViewControllerSafe:activityViewController];
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"打开网页版" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:dest];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = URL;
         [navi setToolbarHidden:NO];
-        [self presentViewController:navi animated:YES completion:nil];
+        navi.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewControllerSafe:navi];
     }]];
-    if (textSize + 10 != 100 && textSize + 10 < 200) {
+    if (textSize + 10 != 100 && textSize < 200) {
         [action addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"增大字体至%d%%", textSize + 10] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize += 10;
-            [self reload];
+            [self clearHeightsAndReloadData:false];
         }]];
     }
-    if (textSize - 10 != 100 & textSize - 10 > 0) {
+    if (textSize - 10 != 100 & textSize > 50) {
         [action addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"减小字体至%d%%", textSize - 10] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize -= 10;
-            [self reload];
+            [self clearHeightsAndReloadData:false];
         }]];
     }
     if (textSize != 100) {
         [action addAction:[UIAlertAction actionWithTitle:@"恢复字体至100%" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize = 100;
-            [self reload];
+            [self clearHeightsAndReloadData:false];
         }]];
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.barButtonItem = self.buttonAction;
-    [self presentViewController:action animated:YES completion:nil];
+    [self presentViewControllerSafe:action];
 }
 
-- (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
+- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
     [mail dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -783,7 +814,7 @@
         [cell.buttonLzl setTitle:[NSString stringWithFormat:@"评论 (%@)", num] forState:UIControlStateNormal];
         if ([num isEqualToString:@"0"]) {
             [cell.buttonLzl setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-        }else {
+        } else {
             [cell.buttonLzl setTitleColor:BLUE forState:UIControlStateNormal];
         }
     }
@@ -797,19 +828,15 @@
             return ;
         }
         ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:indexPath];
-        hud.mode = MBProgressHUDModeCustomView;
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud show:YES];
         if (cell.webView.scrollView.isScrollEnabled == NO) {
-            hud.labelText = @"高级查看";
+            [hud showAndHideWithSuccessMessage:@"透视模式"];
             cell.webView.scrollView.scrollEnabled = YES;
-            [cell.webView setBackgroundColor:[UIColor lightGrayColor]];
-        }else {
-            hud.labelText = @"恢复默认";
+            [cell.webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-mask').style.backgroundColor = 'rgba(127, 127, 127, 0.75)'"];
+        } else {
+            [hud showAndHideWithSuccessMessage:@"恢复默认"];
             cell.webView.scrollView.scrollEnabled = NO;
-            [cell.webView setBackgroundColor:[UIColor whiteColor]];
+            [cell.webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-mask').style.backgroundColor = ''"];
         }
-        [hud hide:YES afterDelay:0.5];
     }
 }
 
@@ -819,82 +846,103 @@
 }
 
 - (void)showMoreAction:(UIView *)view {
+    NSDictionary *item = data[selectedIndex];
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"更多操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"引用" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         if ([ActionPerformer checkLogin:YES]) {
-            NSString *content = [data[selectedIndex] objectForKey:@"text"];
+            NSString *content = item[@"text"];
             content = [self getValidQuote:content];
             content = [ContentViewController restoreFormat:content];
-            defaultContent = [NSString stringWithFormat:@"[quote=%@]%@[/quote]\n",[data[selectedIndex] objectForKey:@"author"],content];
+            defaultContent = [NSString stringWithFormat:@"[quote=%@]%@[/quote]\n", item[@"author"], content];
             [self performSegueWithIdentifier:@"compose" sender:self.buttonCompose];
         }
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"复制" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        hud.mode = MBProgressHUDModeIndeterminate;
-        [hud setLabelText:@"正在复制"];
-        [hud show:YES];
-        NSString *content = [data[selectedIndex] objectForKey:@"text"];
+        NSString *content = item[@"text"];
         content = [ContentViewController restoreFormat:content];
         content = [ContentViewController removeHTML:content];
         [[UIPasteboard generalPasteboard] setString:content];
-        hud.labelText = @"复制完成";
-        hud.mode = MBProgressHUDModeCustomView;
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud hide:YES afterDelay:0.5];
+        [hud showAndHideWithSuccessMessage:@"复制完成"];
     }]];
-    if ([ActionPerformer checkRight] > 1 || [[data[selectedIndex] objectForKey:@"author"] isEqualToString:UID]) {
+    if ([ActionPerformer checkRight] > 1 || [item[@"author"] isEqualToString:UID]) {
         [action addAction:[UIAlertAction actionWithTitle:@"编辑" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                NSDictionary *dict = data[selectedIndex];
-            defaultTitle = [dict[@"floor"] isEqualToString:@"1"]?self.title:[NSString stringWithFormat:@"Re: %@",self.title];
+            defaultTitle = [item[@"floor"] isEqualToString:@"1"]?self.title:[NSString stringWithFormat:@"Re: %@",self.title];
             isEdit = YES;
-            NSString *content = dict[@"text"];
-            hud.mode = MBProgressHUDModeIndeterminate;
-            [hud setLabelText:@"正在准备"];
-            [hud show:YES];
+            NSString *content = item[@"text"];
             // NSLog(@"%@", content);
-            [self performSelectorInBackground:@selector(prepareCompose:) withObject:content];
+            content = [ContentViewController restoreFormat:content];
+            content = [ContentViewController transFromHTML:content];
+            defaultContent = content;
+            [self performSegueWithIdentifier:@"compose" sender:nil];
         }]];
         [action addAction:[UIAlertAction actionWithTitle:@"删除" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
             if ([ActionPerformer checkLogin:YES]) {
-                [[[UIAlertView alloc] initWithTitle:@"警告" message:@"确定要删除该楼层吗？\n删除操作不可逆！" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"删除", nil] show];
+                NSString *content = item[@"text"];
+                content = [self getCollectionText:item[@"text"]];
+                if (content.length > 50) {
+                    content = [[content substringToIndex:49] stringByAppendingString:@"..."];
+                }
+                [self showAlertWithTitle:@"警告" message:[NSString stringWithFormat:@"确定要删除该楼层吗？\n删除操作不可逆！\n\n作者：%@\n正文：%@", item[@"author"], content] confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
+                    [self deletePost];
+                }];
             }
         }]];
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.sourceView = view;
     action.popoverPresentationController.sourceRect = view.bounds;
-    [self presentViewController:action animated:YES completion:nil];
-}
-
-- (void)prepareCompose:(NSString *)content {
-    content = [ContentViewController restoreFormat:content];
-    content = [ContentViewController transFromHTML:content];
-    defaultContent = content;
-    [self performSelectorOnMainThread:@selector(hudSuccess) withObject:nil waitUntilDone:NO];
-    [self performSegueWithIdentifier:@"compose" sender:nil];
-}
-
-- (void)hudSuccess {
-    hud.labelText = @"准备完成";
-    hud.mode = MBProgressHUDModeCustomView;
-    hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-    [hud hide:YES afterDelay:0.5];
+    [self presentViewControllerSafe:action];
 }
 
 #pragma mark - HTML processing
 
-+ (NSString *)htmlStringWithRespondString:(NSString*)respondString {
-    if ([[DEFAULTS objectForKey:@"picOnlyInWifi"] boolValue] && IS_CELLULAR) {
-        NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
-        respondString = [regexp stringByReplacingMatchesInString:respondString options:0 range:NSMakeRange(0, respondString.length) withTemplate:@"<a href='pic:$2'>🚫</a>"];
++ (NSString *)htmlStringWithText:(NSString *)text sig:(NSString *)sig textSize:(int)textSize {
+    NSString *body = @"";
+    if (text) {
+        body = [NSString stringWithFormat:@"<div class='textblock'>%@</div>", text];
+    }
+    if (sig && sig.length > 0) {
+        body = [NSString stringWithFormat:@"%@<div class='sigblock'>%@"
+                "<div class='sig'>%@</div></div>", body, text ? @"<span class='sigtip'>--------</span>" : @"", sig];
     }
     
-    return [NSString stringWithFormat:@"<style type='text/css'>img{max-width:100%%}</style><div style='word-wrap:break-word;'>%@</div>", respondString];
+    if ([[DEFAULTS objectForKey:@"picOnlyInWifi"] boolValue] && IS_CELLULAR) {
+        NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
+        body = [regexp stringByReplacingMatchesInString:body options:0 range:NSMakeRange(0, body.length) withTemplate:@"<a href='pic:$2'>🚫</a>"];
+    }
+    
+    NSString *jQueryScript = @"";
+    if ([body containsString:@"<script"] && [body containsString:@"/script>"]) {
+        NSError *error = nil;
+        NSString *jQueryContent = [NSString stringWithContentsOfFile:JQUERY_MIN_JS encoding:NSUTF8StringEncoding error:&error];
+        if (!error) {
+            jQueryScript = [NSString stringWithFormat:@"<script>%@</script>", jQueryContent];
+        }
+    }
+    
+    NSString *sigBlockStyle = text ? @".sigblock{color:gray;font-size:small;margin-top:1em;}" : @"";
+    NSString *bodyBackground = text ? @"rgba(255,255,255,0.75)" : @"transparent";
+    
+    return [NSString stringWithFormat:@"<html>"
+            "<head>"
+            "%@"
+            "<style type='text/css'>"
+            "img{max-width:min(100%%,700px);}"
+            "body{word-wrap:break-word;-webkit-overflow-scrolling:touch;-webkit-text-size-adjust:%d%%;}"
+            "#body-mask{position:absolute;top:0;bottom:0;left:0;right:0;z-index:-1;background-color:%@;transition:background-color 0.2s linear;}"
+            ".textblock,.sig{overflow-x:scroll;}"
+            ".textblock{min-height:3em;}"
+            "%@"
+            ".sig{max-height:400px;overflow-y:scroll;}"
+            "</style>"
+            "</head>"
+            "<body><div id='body-mask'></div><div id='body-wrapper'>%@</div></body>"
+            "</html>", jQueryScript, textSize, bodyBackground, sigBlockStyle, body];
 }
 
 + (NSDictionary *)getLink:(NSString *)path {
     NSString *bid = @"", *tid = @"", *p = @"", *floor = @"";
-    NSRegularExpression *regular = [NSRegularExpression regularExpressionWithPattern:@"((http://)?/bbs|\\.\\.)(/content(/|/index.php)?\\?)(.+)" options:0 error:nil];
+    NSRegularExpression *regular = [NSRegularExpression regularExpressionWithPattern:@"((http://|https://)?/bbs|\\.\\.)(/content(/|/index.php)?\\?)(.+)" options:0 error:nil];
     NSArray *matchs = [regular matchesInString:path options:0 range:NSMakeRange(0, path.length)];
     if (matchs.count != 0) {
         NSTextCheckingResult *result = matchs.firstObject;
@@ -907,7 +955,7 @@
         }
     }
     
-    regular = [NSRegularExpression regularExpressionWithPattern:@"((http://)?/cgi-bin/bbs.pl\\?)(.+)" options:0 error:nil];
+    regular = [NSRegularExpression regularExpressionWithPattern:@"((http://|https://)?/cgi-bin/bbs.pl\\?)(.+)" options:0 error:nil];
     matchs = [regular matchesInString:path options:0 range:NSMakeRange(0, path.length)];
     if (matchs.count != 0) {
         NSTextCheckingResult *result = matchs.firstObject;
@@ -934,8 +982,12 @@
     if ([p isEqualToString:@""]) {
         p = @"1";
     }
-    
-    return [NSDictionary dictionaryWithObjectsAndKeys:bid, @"bid", tid, @"tid", p, @"p", floor, @"floor", nil];
+    return @{
+        @"bid" : bid,
+        @"tid" : tid,
+        @"p" : p,
+        @"floor" : floor
+    };
 }
 
 + (NSString *)restoreFormat:(NSString *)text { // 恢复正确的格式
@@ -1033,8 +1085,12 @@
                 if ([[text substringWithRange:NSMakeRange(index, 1)] isEqualToString:@">"]) {
                     break;
                 }
-                if (index + 3 < text.length && [[text substringWithRange:NSMakeRange(index, 4)] isEqualToString:@"<br>"]) { // 防止出现嵌套的情况比如 <span style=...<br>...>
+                // 防止出现嵌套的情况比如 <span style=...<br>...>
+                if (index + 3 < text.length && [[text substringWithRange:NSMakeRange(index, 4)] isEqualToString:@"<br>"]) {
                     text = [text stringByReplacingCharactersInRange:NSMakeRange(index, 4) withString:@""];
+                }
+                if (index + 5 < text.length && [[text substringWithRange:NSMakeRange(index, 6)] isEqualToString:@"<br />"]) {
+                    text = [text stringByReplacingCharactersInRange:NSMakeRange(index, 6) withString:@""];
                 }
                 index++;
             }
@@ -1117,11 +1173,11 @@
             if (count > maxLength || count * index >= maxCountXIndex) {
                 // NSLog(@"Quote Count:%d Index:%d", count, index);
                 break;
-            }else {
+            } else {
                 index++;
                 continue;
             }
-        }else {
+        } else {
             int tempIndex = index + 1;
             BOOL isRemove = NO;
             if ([[text substringWithRange:NSMakeRange(tempIndex, 1)] isEqualToString:@"/"]) {
@@ -1145,7 +1201,7 @@
                                     break;
                                 }
                             }
-                        }else {
+                        } else {
                             [htmlLabel addObject:label];
                         }
                     }
@@ -1163,7 +1219,7 @@
     }
     if (index + 1 < text.length) {
         text = [[text substringToIndex:index] stringByAppendingString:@"..."];
-    }else {
+    } else {
         text = [text substringToIndex:index];
     }
     if (htmlLabel.count != 0) {
@@ -1212,7 +1268,7 @@
         defaultContent = nil;
         selectedIndex = -1;
         isEdit = NO;
-    }else if ([segue.identifier isEqualToString:@"lzl"]) {
+    } else if ([segue.identifier isEqualToString:@"lzl"]) {
         LzlViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
         if (sender) {
             UIButton *button = sender;
@@ -1223,7 +1279,7 @@
         }
         dest.fid = [data[selectedIndex] objectForKey:@"fid"];
         dest.URL = [NSURL URLWithString:[NSString stringWithFormat:@"%@#%@", URL, [data[selectedIndex] objectForKey:@"floor"]]];
-    }else if ([segue.identifier isEqualToString:@"userInfo"]) {
+    } else if ([segue.identifier isEqualToString:@"userInfo"]) {
         UserViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
         if ([sender isKindOfClass:[UIButton class]]) {
             UIButton *button = sender;
@@ -1235,10 +1291,10 @@
             if (![cell.icon.image isEqual:PLACEHOLDER]) {
                 dest.iconData = UIImagePNGRepresentation(cell.icon.image);
             }
-        }else if ([sender isKindOfClass:[NSString class]]) {
+        } else if ([sender isKindOfClass:[NSString class]]) {
             dest.ID = sender;
         }
-    }else if ([segue.identifier isEqualToString:@"web"]) {
+    } else if ([segue.identifier isEqualToString:@"web"]) {
         WebViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
         dest.URL = tempPath;
     }

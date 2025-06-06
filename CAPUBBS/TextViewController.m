@@ -17,6 +17,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     [self.labelPreview.layer setCornerRadius:10.0];
     [self.labelPreview.layer setMasksToBounds:YES];
     [self.textInput.layer setCornerRadius:10.0];
@@ -43,7 +47,7 @@
 - (void)textViewDidChange:(UITextView *)textView {
     if (textView.text.length > 0) {
         self.labelPreview.text = textView.text;
-    }else {
+    } else {
         self.labelPreview.text = @"北大车协 CAPU";
     }
     [self updateLabel];
@@ -59,7 +63,7 @@
     [textPreview addAttribute:NSForegroundColorAttributeName value:[colors objectAtIndex:color] range:range];
     if ([[colorNames objectAtIndex:color] isEqualToString:@"white"]) {
         [self.labelPreview setBackgroundColor:[UIColor lightGrayColor]];
-    }else {
+    } else {
         [self.labelPreview setBackgroundColor:[UIColor whiteColor]];
     }
     UIFontDescriptor *desc = [UIFontDescriptor fontDescriptorWithName:[fontNames objectAtIndex:isBold] size:size];
@@ -135,11 +139,18 @@
 
 - (IBAction)addText:(id)sender {
     if (self.textInput.text.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您还未输入正文内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        [self.textInput becomeFirstResponder];
-    }else {
+        [self showAlertWithTitle:@"错误" message:@"您还未输入正文内容！" cancelAction:^(UIAlertAction *action) {
+            [self.textInput becomeFirstResponder];
+        }];
+    } else {
         [self postText];
-        [[[UIAlertView alloc] initWithTitle:@"插入成功" message:@"请选择操作" delegate:self cancelButtonTitle:@"继续插入" otherButtonTitles:@"返回发帖", nil] show];
+        [self showAlertWithTitle:@"插入成功" message:@"请选择下一步操作" confirmTitle:@"继续插入" confirmAction:^(UIAlertAction *action) {
+            [self showAlertWithTitle:@"继续插入" message:@"是否清空已输入内容？" confirmTitle:@"清空" confirmAction:^(UIAlertAction *action) {
+                self.textInput.text = @"";
+            }];
+        } cancelTitle:@"返回发帖" cancelAction:^(UIAlertAction *action) {
+            [self.navigationController popViewControllerAnimated:YES];
+        }];
     }
 }
 
@@ -158,21 +169,7 @@
     if (isDelete) {
         text = [NSString stringWithFormat:@"<strike>%@</strike>", text];
     }
-    [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:text, @"HTML", nil]];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        if ([alertView.title isEqualToString:@"插入成功"]) {
-            [[[UIAlertView alloc] initWithTitle:@"继续插入" message:@"是否清空已输入内容？" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"清空", nil] show];
-        }
-        return;
-    }
-    if ([alertView.title isEqualToString:@"插入成功"]) {
-        [self.navigationController popViewControllerAnimated:YES];
-    }else if ([alertView.title isEqualToString:@"继续插入"]) {
-        self.textInput.text = @"";
-    }
+    [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:@{ @"HTML" : text }];
 }
 
 #pragma mark - Table view data source
@@ -181,15 +178,7 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 1) {
         [self setDefault];
-        if (!hud && self.navigationController) {
-            hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-            [self.navigationController.view addSubview:hud];
-        }
-        hud.labelText = @"恢复默认";
-        [hud show:YES];
-        hud.mode = MBProgressHUDModeCustomView;
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud hide:YES afterDelay:0.5];
+        [hud showAndHideWithSuccessMessage:@"恢复默认"];
     }
 }
 

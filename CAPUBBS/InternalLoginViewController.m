@@ -18,6 +18,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     performer = [[ActionPerformer alloc] init];
     performerLogout = [[ActionPerformer alloc] init];
     self.textUid.text = self.defaultUid;
@@ -35,7 +39,7 @@
         if (self.textUid.text.length > 0 && self.textPass.text.length > 0) {
             [self login:nil];
         }
-    }else {
+    } else {
         [self.navigationController popViewControllerAnimated:YES];
     }
 }
@@ -54,51 +58,48 @@
     NSString *uid = self.textUid.text;
     NSString *pass = self.textPass.text;
     if (uid.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        [self.textUid becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"用户名不能为空" cancelAction:^(UIAlertAction *action) {
+            [self.textUid becomeFirstResponder];
+        }];
         return;
     }
     if (pass.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        [self.textPass becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"密码不能为空" cancelAction:^(UIAlertAction *action) {
+            [self.textPass becomeFirstResponder];
+        }];
         return;
     }
     shouldPop = NO;
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在登录";
-    [hud show:YES];
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid,@"username",[ActionPerformer md5:pass],@"password",@"ios",@"os",[ActionPerformer doDevicePlatform],@"device",[[UIDevice currentDevice] systemVersion],@"version",nil];
+    [hud showWithProgressMessage:@"正在登录"];
+    NSDictionary *dict = @{
+        @"username" : uid,
+        @"password" : [ActionPerformer md5:pass],
+        @"os" : @"ios",
+        @"device" : [ActionPerformer doDevicePlatform],
+        @"version" : [[UIDevice currentDevice] systemVersion]
+    };
     [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"登录失败";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
-            // [[[UIAlertView alloc] initWithTitle:@"登录失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [hud hideWithFailureMessage:@"登录失败"];
+//            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"登录成功";
-        }else {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"登录失败";
+            [hud hideWithSuccessMessage:@"登录成功"];
+        } else {
+            [hud hideWithFailureMessage:@"登录失败"];
         }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"密码错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            [self.textPass becomeFirstResponder];
+            [self showAlertWithTitle:@"登录失败" message:@"密码错误！" cancelAction:^(UIAlertAction *action) {
+                [self.textPass becomeFirstResponder];
+            }];
             return ;
-        }else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"用户名不存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            [self.textUid becomeFirstResponder];
+        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
+            [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！" cancelAction:^(UIAlertAction *action) {
+                [self.textUid becomeFirstResponder];
+            }];
             return ;
-        }else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
             if ([UID length] > 0 && ![uid isEqualToString:UID]) { // 注销之前的账号
                 [performerLogout performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
                 NSLog(@"Logout - %@", UID);
@@ -114,8 +115,8 @@
             [ActionPerformer checkPasswordLength];
             shouldPop = YES;
             [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:[NSNumber numberWithBool:YES] afterDelay:0.5];
-        }else {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+        } else {
+            [self showAlertWithTitle:@"登录失败" message:@"发生未知错误！"];
         }
     }];
 }

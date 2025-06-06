@@ -8,9 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import "IndexViewCell.h"
-#import "MBProgressHUD.h"
 
-@interface IndexViewController : UIViewController<UICollectionViewDelegate>{
+@interface IndexViewController : CustomViewController<UICollectionViewDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     BOOL shouldVibrate;

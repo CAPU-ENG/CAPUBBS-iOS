@@ -8,9 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import "LzlCell.h"
-#import "MBProgressHUD.h"
 
-@interface LzlViewController : UITableViewController<UIAlertViewDelegate, UITextViewDelegate> {
+@interface LzlViewController : CustomTableViewController<UITextViewDelegate> {
     ActionPerformer *performer;
     UIImageView *backgroundView;
     NSUserActivity *activity;

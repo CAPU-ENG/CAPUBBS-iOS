@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CollectionViewController : UITableViewController <UISearchControllerDelegate, UISearchResultsUpdating, UIAlertViewDelegate, UISearchBarDelegate> {
+@interface CollectionViewController : CustomTableViewController<UISearchControllerDelegate, UISearchResultsUpdating, UISearchBarDelegate> {
     NSMutableArray *data;
     NSMutableArray *searchData;
     NSMutableArray *sortData;

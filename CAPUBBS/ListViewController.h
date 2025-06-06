@@ -8,12 +8,12 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
-#import "MBProgressHUD.h"
 
-@interface ListViewController : UITableViewController<UIAlertViewDelegate>{
+@interface ListViewController : CustomTableViewController {
     ActionPerformer *performer;
     ActionPerformer *performerReply;
     NSMutableArray *data;
+    NSInteger globalTopCount;
     NSArray *numberEmoji;
     MBProgressHUD *hud;
     MBProgressHUD *hudSofa;

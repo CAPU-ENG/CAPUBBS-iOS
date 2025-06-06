@@ -21,6 +21,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
     
     cellWidth = cellHeight = 0;
     [NOTIFICATION addObserver:self selector:@selector(setVibrate) name:@"userChanged" object:nil];
@@ -37,12 +40,12 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    //    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
-    //        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
-    //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
-    //    }
+//    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
+//        [self showAlertWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" cancelTitle:@"我知道了"];
+//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
+//    }
 //    if (![[DEFAULTS objectForKey:@"FeaturePersonalCenter3.0"] boolValue]) {
-//        [[[UIAlertView alloc] initWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" delegate:nil cancelButtonTitle:@"我知道了" otherButtonTitles:nil, nil] show];
+//        [self showAlertWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" cancelTitle:@"我知道了"];
 //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePersonalCenter3.0"];
 //    }
 }
@@ -67,7 +70,7 @@
                 NSLog(@"Vibreate");
             }
             shouldVibrate = NO;
-        }else {
+        } else {
             [self.buttonUser setImage:[UIImage imageNamed:@"user"]];
         }
     });
@@ -89,7 +92,7 @@
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"indexcell" forIndexPath:indexPath];
         cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:[NUMBERS objectAtIndex:indexPath.row]]];
         cell.text.text = [ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:indexPath.row]];
-    }else {
+    } else {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"collectioncell" forIndexPath:indexPath];
     }
     cell.text.font = [UIFont systemFontOfSize:fontSize];
@@ -150,70 +153,63 @@
 }
 
 - (IBAction)smart:(id)sender {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"快速访问" message:[NSString stringWithFormat: @"输入带有帖子链接的文本进行快速访问\n\n高级功能\n输入要连接的论坛地址\n目前地址：%@\n链接会被自动判别", CHEXIE] delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
-    alert.alertViewStyle = UIAlertViewStylePlainTextInput;
-    [alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeURL;
-    [alert textFieldAtIndex:0].text = @"https://www.chexie.net";
-    [alert textFieldAtIndex:0].placeholder = @"地址链接";
-    [alert show];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"快速访问" message:[NSString stringWithFormat: @"输入带有帖子链接的文本进行快速访问\n\n高级功能\n输入要连接的论坛地址\n目前地址：%@\n链接会被自动判别", CHEXIE] preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.keyboardType = UIKeyboardTypeURL;
+        textField.text = @"https://www.chexie.net";
+        textField.placeholder = @"地址链接";
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确认"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        [self multiAction:alert.textFields.firstObject.text];
+    }]];
+    [self presentViewControllerSafe:alert];
 }
 
 - (IBAction)back:(id)sender {
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
-    if (buttonIndex == alertView.cancelButtonIndex) {
+- (void)multiAction:(NSString *)text {
+    NSString *oriURL = CHEXIE;
+    if ([text containsString:@"filesize"]) {
+        NSString *result = [self folderInfo:NSHomeDirectory() showAll:[text containsString:@"all"]];
+        [self showAlertWithTitle:@"空间用量\n内容已复制到剪贴板" message:result];
+        [[UIPasteboard generalPasteboard] setString:result];
         return;
     }
-    if ([alertView.title isEqualToString:@"快速访问"]) {
-        NSString *oriURL = CHEXIE;
-        NSString *text = [alertView textFieldAtIndex:0].text;
-        
-        if ([text containsString:@"filesize"]) {
-            NSString *result = [self folderInfo:NSHomeDirectory() showAll:[text containsString:@"all"]];
-            [[[UIAlertView alloc] initWithTitle:@"空间用量\n内容已复制到剪贴板" message:result delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-            [[UIPasteboard generalPasteboard] setString:result];
-            return;
-        }
-        
-        NSDictionary *dict = [ContentViewController getLink:text];
-        if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
-            ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
-            next.bid = dict[@"bid"];
-            next.tid = dict[@"tid"];
-            next.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
-            next.title=@"帖子跳转中";
-            [self.navigationController pushViewController:next animated:YES];
-            return;
-        }
-        
-        if (!hud && self.navigationController) {
-            hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-            [self.navigationController.view addSubview:hud];
-        }
-        [hud show:YES];
-        hud.mode = MBProgressHUDModeCustomView;
-        if (
-            (([text containsString:@"15"] && [text containsString:@"骑行团"]) || [text containsString:@"I2"] || [text containsString:@"维茨C"] || [text containsString:@"好男人"] || [text containsString:@"老蒋"] || [text containsString:@"猿"] || [text containsString:@"小猴子"] || [text containsString:@"熊典"] || [text containsString:@"陈章"] || [text containsString:@"范志康"] || [text containsString:@"蒋雨蒙"] || [text containsString:@"扈煊"] || [text containsString:@"侯书漪"])
-            && ([text containsString:@"赞"] || [text containsString:@"棒"] || [text containsString:@"给力"] || [text containsString:@"威武"] || [text containsString:@"牛"] || [text containsString:@"厉害"] || [text containsString:@"帅"] || [text containsString:@"爱"] || [text containsString:@"V5"] || [text containsString:@"么么哒"] || [text containsString:@"漂亮"])
-            && ![text containsString:@"不"]
-            ) {
-            hud.labelText = @"~\(≧▽≦)/~"; // (>^ω^<)
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            [hud hide:YES afterDelay:1];
+    
+    NSDictionary *dict = [ContentViewController getLink:text];
+    if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
+        ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
+        next.bid = dict[@"bid"];
+        next.tid = dict[@"tid"];
+        next.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+        next.title=@"帖子跳转中";
+        [self.navigationController pushViewController:next animated:YES];
+        return;
+    }
+    
+    if (
+        ([text containsString:@"15骑行团"] || [text containsString:@"I2"] || [text containsString:@"维茨C"] || [text containsString:@"好男人"] || [text containsString:@"老蒋"] || [text containsString:@"猿"] || [text containsString:@"小猴子"] || [text containsString:@"熊典"] || [text containsString:@"陈章"] || [text containsString:@"范志康"] || [text containsString:@"蒋雨蒙"] || [text containsString:@"扈煊"] || [text containsString:@"侯书漪"])
+        && ([text containsString:@"赞"] || [text containsString:@"棒"] || [text containsString:@"给力"] || [text containsString:@"威武"] || [text containsString:@"牛"] || [text containsString:@"厉害"] || [text containsString:@"帅"] || [text containsString:@"爱"] || [text containsString:@"V5"] || [text containsString:@"么么哒"] || [text containsString:@"漂亮"])
+        && ![text containsString:@"不"]
+        ) {
+            [hud showAndHideWithSuccessMessage:@"~\(≧▽≦)/~" delay:1]; // (>^ω^<)
             [DEFAULTS setObject:[NSNumber numberWithInt:MAX_ID_NUM] forKey:@"IDNum"];
             [DEFAULTS setObject:[NSNumber numberWithInt:MAX_HOT_NUM] forKey:@"hotNum"];
-        }else {
-            [DEFAULTS removeObjectForKey:@"IDNum"];
-            [DEFAULTS removeObjectForKey:@"hotNum"];
+        } else {
             if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"] || [text rangeOfString:@"[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" options:NSRegularExpressionSearch].location != NSNotFound)) {
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"不是有效的链接" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-                hud.labelText = @"设置失败";
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            }else {
-                hud.labelText = @"设置成功";
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
+                [DEFAULTS removeObjectForKey:@"IDNum"];
+                [DEFAULTS removeObjectForKey:@"hotNum"];
+                [self showAlertWithTitle:@"错误" message:@"不是有效的链接"];
+            } else {
+                [hud showAndHideWithSuccessMessage:@"设置成功"];
                 [GROUP_DEFAULTS setObject:text forKey:@"URL"];
                 if (![text isEqualToString:oriURL]) {
                     [GROUP_DEFAULTS removeObjectForKey:@"token"];
@@ -222,9 +218,7 @@
                     });
                 }
             }
-            [hud hide:YES afterDelay:0.5];
         }
-    }
 }
 
 - (NSString *)folderInfo:(NSString *)rootFolder showAll:(BOOL)all {

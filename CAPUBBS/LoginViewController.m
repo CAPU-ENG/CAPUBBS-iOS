@@ -24,15 +24,24 @@
     [self.buttonLogin.layer setCornerRadius:10.0];
     [self.iconUser setRounded:YES];
     
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     performer = [[ActionPerformer alloc] init];
     performerInfo = [[ActionPerformer alloc] init];
     performerUser = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(userChanged) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(refreshIcon) name:@"infoRefreshed" object:nil];
     userInfoRefreshing = NO;
+    newsRefreshing = NO;
+    news = [NSArray arrayWithArray:[DEFAULTS objectForKey:@"newsCache"]];
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableview addSubview:control];
+    // Auto height
+    self.tableview.estimatedRowHeight = 40;
+    self.tableview.rowHeight = UITableViewAutomaticDimension;
     
     [self userChanged];
     // Uncomment the following line to preserve selection between presentations.
@@ -44,12 +53,10 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    if (![[DEFAULTS objectForKey:@"hasShownEULA"] boolValue]) {
-        [[[UIAlertView alloc] initWithTitle:@"最终用户许可协议" message:EULA delegate:self cancelButtonTitle:@"我同意以上协议" otherButtonTitles:@"我拒绝以上协议", nil] show];
-    }
+    [self showEULA];
     if (self.textUid.text.length == 0) {
         [self.textUid becomeFirstResponder];
-    }else if (self.textPass.text.length == 0) {
+    } else if (self.textPass.text.length == 0) {
         [self.textPass becomeFirstResponder];
     }
 }
@@ -60,12 +67,18 @@
     [self.textPass resignFirstResponder];
 }
 
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    if (@available(iOS 13.0, *)) {
+        return UIStatusBarStyleDarkContent;
+    } else {
+        return UIStatusBarStyleDefault;
+    }
+}
+
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
     control.attributedTitle = [[NSAttributedString alloc] initWithString:@"刷新"];
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在刷新";
-    [hud show:YES];
-    [self getInformation];
+    [hud showWithProgressMessage:@"正在刷新"];
+    [self getNewsAndInfo];
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
@@ -92,13 +105,20 @@
         if ([url hasPrefix:@"javascript"] || url.length == 0) {
             cell = [self.tableview dequeueReusableCellWithIdentifier:@"noLinkCell"];
             cell.tag = -1;
-        }else {
+        } else {
             cell = [self.tableview dequeueReusableCellWithIdentifier:@"webCell"];
         }
-    }else {
+    } else {
         cell = [self.tableview dequeueReusableCellWithIdentifier:@"postCell"];
     }
-    cell.textLabel.text = dict[@"text"];
+    NSString *text = dict[@"text"];
+    if (![text hasPrefix:@"📣 "]) {
+        int interval = [[NSDate date] timeIntervalSince1970] - [dict[@"time"] intValue];
+        if (interval <= 7 * 24 * 3600) { // 一周内的公告
+            text = [@"📣 " stringByAppendingString:text];
+        }
+    }
+    cell.textLabel.text = text;
     cell.textLabel.textColor = BLUE;
     cell.backgroundColor = [UIColor colorWithWhite:1 alpha:(0.6 - indexPath.row / (2.0 * news.count))]; // 渐变色效果 alpha ∈ [0.6, 0.1)递减
     
@@ -106,33 +126,11 @@
     return cell;
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(nonnull NSIndexPath *)indexPath {
-    NSMutableDictionary *dict = [news objectAtIndex:indexPath.row];
-    NSString *text = dict[@"text"];
-    
-    if (![text hasPrefix:@"📣 "]) {
-        int interval = [[NSDate date] timeIntervalSince1970] - [dict[@"time"] intValue];
-        if (interval <= 7 * 24 * 3600) { // 一周内的公告
-            text = [@"📣 " stringByAppendingString:text];
-            [dict setObject:text forKey:@"text"];
-            
-            NSMutableArray *tempNews = [NSMutableArray arrayWithArray:news];
-            [tempNews replaceObjectAtIndex:indexPath.row withObject:dict];
-            news = [NSArray arrayWithArray:tempNews];
-        }
-    }
-
-    //下句中(CELL_CONTENT_WIDTH - CELL_CONTENT_MARGIN 表示显示内容的label的长度 ，20000.0f 表示允许label的最大高度
-    CGSize constraint = CGSizeMake(self.tableview.frame.size.width - 15 - 15, 20000.0f);
-    CGSize size = [text boundingRectWithSize:constraint options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16]} context:nil].size;
-    return MAX(size.height, 18.0f) + 26;
-}
-
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     UITableViewCell *cell = [self.tableview cellForRowAtIndexPath:indexPath];
     if (cell.tag == -1) {
-        [[[UIAlertView alloc] initWithTitle:@"无法打开" message:@"不是论坛链接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil , nil] show];
+        [self showAlertWithTitle:@"无法打开" message:@"不是论坛链接！"];
     }
 }
 
@@ -148,22 +146,81 @@
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         // Delete the row from the data source
-        UIAlertView *confirmDel = [[UIAlertView alloc] initWithTitle:@"警告" message:@"确定要删除该公告吗？\n删除操作不可逆！" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"删除", nil];
-        confirmDel.tag = indexPath.row;
-        [confirmDel show];
-    }else if (editingStyle == UITableViewCellEditingStyleInsert) {
+        NSDictionary *item = [news objectAtIndex:indexPath.row];
+        [self showAlertWithTitle:@"警告" message:[NSString stringWithFormat:@"确定要删除该公告吗？\n删除操作不可逆！\n\n标题：%@", item[@"text"]] confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
+            [hud showWithProgressMessage:@"正在操作"];
+            NSDictionary *dict = @{
+                @"method" : @"delete",
+                @"time" : item[@"time"]
+            };
+            [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
+                if (err || result.count == 0) {
+                    [hud hideWithFailureMessage:@"操作失败"];
+                } else {
+                    if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+                        [hud hideWithSuccessMessage:@"操作成功"];
+                        NSMutableArray *temp = [NSMutableArray arrayWithArray:news];
+                        [temp removeObjectAtIndex:indexPath.row];
+                        news = [NSArray arrayWithArray:temp];
+                        [self.tableview deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+                    } else {
+                        [hud hideWithFailureMessage:@"操作失败"];
+                        [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
+                    }
+                }
+                [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
+            }];
+        }];
+    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
         // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
     }
 }
 
 - (IBAction)addNews:(id)sender {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"添加公告" message:@"请填写公告的标题和链接\n链接可以为空" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"添加", nil];
-    alert.alertViewStyle=UIAlertViewStyleLoginAndPasswordInput;
-    [alert textFieldAtIndex:0].placeholder = @"标题";
-    [alert textFieldAtIndex:1].placeholder = @"链接";
-    [alert textFieldAtIndex:1].secureTextEntry = NO;
-    [alert textFieldAtIndex:1].keyboardType = UIKeyboardTypeURL;
-    [alert show];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"添加公告"
+                                                                   message:@"请填写公告的标题和链接\n链接可以为空"
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.placeholder = @"标题";
+    }];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.placeholder = @"链接";
+        textField.keyboardType = UIKeyboardTypeURL;
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"添加"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        NSString *text = alert.textFields[0].text;
+        NSString *url = alert.textFields[1].text;
+        if (text.length == 0) {
+            [self showAlertWithTitle:@"错误" message:@"您未填写公告的内容"];
+            return;
+        }
+        
+        [hud showWithProgressMessage:@"正在操作"];
+        NSDictionary *dict = @{
+            @"method" : @"add",
+            @"text" : text,
+            @"url" : url
+        };
+        [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
+            if (err || result.count == 0) {
+                [hud hideWithFailureMessage:@"操作失败"];
+            } else {
+                if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+                    [hud hideWithSuccessMessage:@"操作成功"];
+                } else {
+                    [hud hideWithFailureMessage:@"操作失败"];
+                    [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
+                }
+            }
+            [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
+        }];
+    }]];
+    [self presentViewControllerSafe:alert];
 }
 
 - (void)userChanged {
@@ -173,10 +230,12 @@
         if (username.length == 0) {
             [self.iconUser setImage:PLACEHOLDER];
             [self.buttonAddNews setHidden:YES];
-        }else {
+        } else {
+            [self refreshIcon];
             if (userInfoRefreshing == NO) {
                 userInfoRefreshing = YES;
                 [performerUser performActionWithDictionary:@{@"uid": UID} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+                    userInfoRefreshing = NO;
                     if (!err && result.count > 0) {
                         [GROUP_DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:result[0]] forKey:@"userInfo"];
                         NSMutableArray *data = [NSMutableArray arrayWithArray:[DEFAULTS objectForKey:@"ID"]];
@@ -193,8 +252,6 @@
                             [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
                         });
                     }
-                    [self.buttonAddNews setHidden:([ActionPerformer checkRight] < 1)];
-                    userInfoRefreshing = NO;
                 }];
             }
         }
@@ -206,9 +263,10 @@
     dispatch_main_async_safe(^{
         if (![USERINFO isEqual:@""]) {
             [self.iconUser setUrl:[USERINFO objectForKey:@"icon"]];
-        }else {
+        } else {
             [self.iconUser setImage:PLACEHOLDER];
         }
+        [self.buttonAddNews setHidden:([ActionPerformer checkRight] < 1)];
     });
 }
 
@@ -226,8 +284,8 @@
             NSLog(@"Autolog in Login Page");
             [self login:nil];
             [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"enterLogin"];
-        }else {
-            [self getInformation];
+        } else {
+            [self getNewsAndInfo];
             if ([ActionPerformer checkLogin:NO]) {
                 self.textUid.text = [username stringByAppendingString:@" ✅"];
                 NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:@"已登录"];
@@ -240,8 +298,8 @@
                 self.textPass.userInteractionEnabled = NO;
             }
         }
-    }else {
-        [self getInformation];
+    } else {
+        [self getNewsAndInfo];
     }
 }
 
@@ -251,54 +309,50 @@
     NSString *uid = self.textUid.text;
     NSString *pass = self.textPass.text;
     if (uid.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"用户名不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        [self.textUid becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"用户名不能为空" cancelAction:^(UIAlertAction *action) {
+            [self.textUid becomeFirstResponder];
+        }];
         return;
     }
     if (pass.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"错误" message:@"密码不能为空" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-        [self.textPass becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"密码不能为空" cancelAction:^(UIAlertAction *action) {
+            [self.textPass becomeFirstResponder];
+        }];
         return;
     }
-    if (!hud) {
-    hud = [[MBProgressHUD alloc] initWithView:self.view];
-    [self.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在登录";
-    [hud show:YES];
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid,@"username",[ActionPerformer md5:pass],@"password",[ActionPerformer doDevicePlatform],@"device",[[UIDevice currentDevice] systemVersion],@"version", nil];
+    [hud showWithProgressMessage:@"正在登录"];
+    NSDictionary *dict = @{
+        @"username" : uid,
+        @"password" : [ActionPerformer md5:pass],
+        @"device" : [ActionPerformer doDevicePlatform],
+        @"version" : [[UIDevice currentDevice] systemVersion]
+    };
     [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
         //NSLog(@"%@",result);
         if (err || result.count == 0) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"登录失败";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
-            [self getInformation];
-            // [[[UIAlertView alloc] initWithTitle:@"登录失败" message:[err localizedDescription] delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
+            [hud hideWithFailureMessage:@"登录失败"];
+            [self getNewsAndInfo];
+//            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"登录成功";
-        }else {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"登录失败";
+            [hud hideWithSuccessMessage:@"登录成功"];
+        } else {
+            [hud hideWithFailureMessage:@"登录失败"];
         }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"密码错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            [self.textPass becomeFirstResponder];
-            [self getInformation];
+            [self showAlertWithTitle:@"登录失败" message:@"密码错误！" cancelAction:^(UIAlertAction *action) {
+                [self.textPass becomeFirstResponder];
+            }];
+            [self getNewsAndInfo];
             return ;
-        }else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"用户名不存在！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            [self.textUid becomeFirstResponder];
-            [self getInformation];
+        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
+            [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！" cancelAction:^(UIAlertAction *action) {
+                [self.textUid becomeFirstResponder];
+            }];
+            [self getNewsAndInfo];
             return ;
-        }else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
             [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
             [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
             [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
@@ -308,9 +362,9 @@
                 [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
             });
             [ActionPerformer checkPasswordLength];
-        }else {
-            [[[UIAlertView alloc] initWithTitle:@"登录失败" message:@"发生未知错误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles: nil] show];
-            [self getInformation];
+        } else {
+            [self showAlertWithTitle:@"登录失败" message:@"发生未知错误！"];
+            [self getNewsAndInfo];
             return ;
         }
     }];
@@ -318,7 +372,10 @@
 
 + (void)updateIDSaves {
     NSMutableArray *data = [NSMutableArray arrayWithArray:[DEFAULTS objectForKey:@"ID"]];
-    NSDictionary *nowDict = [NSDictionary dictionaryWithObjectsAndKeys:UID, @"id", PASS, @"pass", nil];
+    NSDictionary *nowDict = @{
+        @"id" : UID,
+        @"pass" : PASS
+    };
     BOOL findID = NO;
     for (int i = 0; i < data.count; i++) {
         NSDictionary *dict = data[i];
@@ -335,32 +392,30 @@
     [DEFAULTS setObject:data forKey:@"ID"];
 }
 
-- (void)getInformation {
+- (void)getNewsAndInfo {
+    if (newsRefreshing) {
+        return;
+    }
+    newsRefreshing = YES;
     [performerInfo performActionWithDictionary:@{@"more":@"YES"} toURL:@"main" withBlock:^(NSArray *result, NSError *err) {
+        newsRefreshing = NO;
         if (control.isRefreshing) {
             [control endRefreshing];
         }
         if (err || result.count == 0) {
-            if ([hud.labelText isEqualToString:@"正在刷新"]) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.mode = MBProgressHUDModeCustomView;
-                hud.labelText = @"刷新失败";
-                [hud hide:YES afterDelay:0.5];
-            }
+            [hud hideWithFailureMessage:@"刷新失败"];
             return ;
         }
-        if ([hud.labelText isEqualToString:@"正在刷新"]) {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.mode = MBProgressHUDModeCustomView;
-            hud.labelText = @"刷新成功";
-            [hud hide:YES afterDelay:0.5];
-        }
+        [hud hideWithSuccessMessage:@"刷新成功"];
         
         news = [result objectsAtIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(1, result.count-1)]]; // result的第一项是更新信息 不需要
         // NSLog(@"%@", news);
+        [DEFAULTS setObject:news forKey:@"newsCache"];
         [self.tableview reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd"];
+        NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
+        [formatter setTimeZone:beijingTimeZone];
         NSDate *currentDate = [NSDate date];
         NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkUpdate"]];
         NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
@@ -368,7 +423,7 @@
             NSLog(@"Check For Update");
             [self performSelectorInBackground:@selector(checkUpdate) withObject:nil];
             [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
-        }else {
+        } else {
             NSLog(@"Needn't Check Update");
         }
     }];
@@ -378,30 +433,47 @@
     NSDictionary *infoDic = [[NSBundle mainBundle] infoDictionary];
     //CFShow((__bridge CFTypeRef)(infoDic));
     NSString *currentVersion = [infoDic objectForKey:@"CFBundleVersion"];
-    //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
-    NSString *URL = @"https://itunes.apple.com/lookup?id=826386033";
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-    [request setURL:[NSURL URLWithString:URL]];
+    //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
+    [request setURL:[NSURL URLWithString:@"https://itunes.apple.com/lookup?id=826386033"]];
     [request setHTTPMethod:@"POST"];
-    NSHTTPURLResponse *urlResponse = nil;
-    NSError *error = nil;
-    NSData *recervedData = [NSURLConnection sendSynchronousRequest:request returningResponse:&urlResponse error:&error];
-    if (recervedData == nil) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        NSLog(@"Check Update Failed Error-%@", error);
-        return;
-    }
-    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:recervedData options:kNilOptions error:nil];
-    NSArray *infoArray = [dic objectForKey:@"results"];
-    if ([infoArray count]) {
+    
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession]
+                                  dataTaskWithRequest:request
+                                  completionHandler:^(NSData * _Nullable data,
+                                                      NSURLResponse * _Nullable response,
+                                                      NSError * _Nullable error) {
+        
+        if (error || !data) {
+            NSLog(@"Check Update Failed: %@", error.localizedDescription);
+            [self showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
+            return;
+        }
+        
+        NSError *jsonError = nil;
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        if (!json || jsonError) {
+            NSLog(@"JSON Parse Error: %@", jsonError.localizedDescription);
+            return;
+        }
+        
+        NSArray *infoArray = json[@"results"];
+        if (infoArray.count == 0) {
+            NSLog(@"No app info returned from App Store.");
+            return;
+        }
+        
         NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
         NSString *lastVersion = [releaseInfo objectForKey:@"version"];
-        NSLog(@"Latest Version:%@",lastVersion);
-        if ([currentVersion compare:lastVersion options:NSNumericSearch]==NSOrderedAscending) {
-            newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
-            [[[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"发现新版本%@",lastVersion] message:[NSString stringWithFormat:@"更新内容：\n%@", [releaseInfo objectForKey:@"releaseNotes"]] delegate:self cancelButtonTitle:@"暂不" otherButtonTitles:@"升级", nil] show];
+        NSLog(@"App Store latest version: %@",lastVersion);
+        if ([currentVersion compare:lastVersion options:NSNumericSearch] == NSOrderedAscending) {
+            NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
+            [self showAlertWithTitle:@"发现新版本%@" message:[NSString stringWithFormat:@"更新内容：\n%@", [releaseInfo objectForKey:@"releaseNotes"]] confirmTitle:@"升级" confirmAction:^(UIAlertAction *action) {
+                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
+            } cancelTitle:@"暂不"];
         }
-    }
+    }];
+    [task resume];
 }
 
 - (IBAction)didEndOnExit:(UITextField*)sender {
@@ -411,64 +483,6 @@
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
         [self performSegueWithIdentifier:@"main" sender:nil];
-    }
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if ([alertView.title isEqualToString:@"最终用户许可协议"]) {
-        if (buttonIndex == alertView.cancelButtonIndex) {
-            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"hasShownEULA"];
-        }else {
-            exit(0);
-        }
-    }
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title hasPrefix:@"发现新版本"]) {
-        [[UIApplication sharedApplication]openURL:[NSURL URLWithString:newVerURL]];
-    }else if ([alertView.title isEqualToString:@"警告"] || [alertView.title isEqualToString:@"添加公告"]) {
-        NSString *method;
-        NSString *text = [alertView textFieldAtIndex:0].text;
-        NSString *url = [alertView textFieldAtIndex:1].text;
-        if ([alertView.title isEqualToString:@"警告"]) {
-            method = @"delete";
-        }else {
-            method = @"add";
-            if (text.length == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"错误" message:@"您未填写公告的内容" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-                 return;
-            }
-        }
-        
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.labelText = @"正在操作";
-        [hud show:YES];
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:method, @"method", [[news objectAtIndex:alertView.tag] objectForKey:@"time"], @"time", text, @"text", url, @"url", nil];
-        [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
-            if (err || result.count == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.labelText = @"操作失败";
-            }else {
-                if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
-                    hud.labelText = @"操作成功";
-                    hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                    if ([method isEqualToString:@"delete"]) {
-                        NSMutableArray *temp = [NSMutableArray arrayWithArray:news];
-                        [temp removeObjectAtIndex:alertView.tag];
-                        news = [NSArray arrayWithArray:temp];
-                        [self.tableview deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:alertView.tag inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
-                    }
-                }else {
-                    hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                    hud.labelText = @"操作失败";
-                    [[[UIAlertView alloc] initWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"] delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-                }
-            }
-            [self performSelector:@selector(getInformation) withObject:nil afterDelay:0.5];
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
-        }];
     }
 }
 
@@ -500,6 +514,42 @@
 
 - (void)done {
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)showEULA {
+    if ([[DEFAULTS objectForKey:@"hasShownEULA"] boolValue]) {
+        return;
+    }
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"最终用户许可协议"
+                                                                   message:EULA
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"查看隐私政策"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
+        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+        dest.URL = [CHEXIE stringByAppendingString:@"/privacy"];
+        [navi setToolbarHidden:NO];
+        navi.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewControllerSafe:navi];
+        // Show again
+        [self showEULA];
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"我同意以上协议"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"hasShownEULA"];
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"我拒绝以上协议"
+                                              style:UIAlertActionStyleDestructive
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        exit(0);
+    }]];
+    
+    [self presentViewControllerSafe:alert];
 }
 
 @end

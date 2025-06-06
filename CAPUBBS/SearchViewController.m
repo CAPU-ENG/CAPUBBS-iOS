@@ -9,6 +9,8 @@
 #import "SearchViewController.h"
 #import "ContentViewController.h"
 
+#define MIN_DATE @"1995-10-25"
+
 @interface SearchViewController ()
 
 @end
@@ -18,6 +20,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
     
     [self refreshBackgroundView:YES];
     [self.inputType setTintColor:GREEN_DARK];
@@ -27,6 +32,9 @@
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableview addSubview:control];
+    // Auto height
+    self.tableview.estimatedRowHeight = 50;
+    self.tableview.rowHeight = UITableViewAutomaticDimension;
     performer = [[ActionPerformer alloc] init];
     // Do any additional setup after loading the view.
 }
@@ -66,24 +74,31 @@
 
 - (void)setDate { // 两个日期选择器
     NSDate *today = [NSDate date];
+    NSTimeInterval secondsInOneYear = 365 * 24 * 60 * 60;
+    NSDate *oneYearAgo = [today dateByAddingTimeInterval:-secondsInOneYear];
     formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyy-MM-dd"];
-    beginTime = @"2001-01-01";
-    endTime = [formatter stringFromDate:today];
-    NSDate *minDate = [formatter dateFromString:@"1995-10-25"];
+    NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
+    [formatter setTimeZone:beijingTimeZone];
+    NSDate *minDate = [formatter dateFromString:MIN_DATE];
     startDatePicker = [[UIDatePicker alloc] init];
     endDatePicker = [[UIDatePicker alloc] init];
     for (UIDatePicker *picker in @[startDatePicker, endDatePicker]) {
         picker.datePickerMode = UIDatePickerModeDate;
+        if (@available(iOS 13.4, *)) {
+            picker.preferredDatePickerStyle = UIDatePickerStyleWheels;
+        }
         picker.minimumDate = minDate;
         picker.maximumDate = today;
         [picker addTarget:self action:@selector(ValueChanged:) forControlEvents:UIControlEventValueChanged];
     }
-    [startDatePicker setDate:[formatter dateFromString:beginTime] animated:YES];
+    [startDatePicker setDate:oneYearAgo animated:YES];
     [endDatePicker setDate:today animated:YES];
     startDatePicker.tag = 0;
     endDatePicker.tag = 1;
+    self.inputStart.text = [formatter stringFromDate:oneYearAgo];
     self.inputStart.inputView = startDatePicker;
+    self.inputEnd.text = [formatter stringFromDate:today];
     self.inputEnd.inputView = endDatePicker;
     UIToolbar *toolbar1 = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 1000, 40)];
     UIToolbar *toolbar2 = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 1000, 40)];
@@ -130,11 +145,13 @@
     [self.inputEnd resignFirstResponder];
 }
 
-- (void)ValueChanged:(UIDatePicker *)datePicker{
-    if (datePicker.tag == 0)
-        self.inputStart.text = [formatter stringFromDate:datePicker.date];
-    else if (datePicker.tag == 1)
-        self.inputEnd.text = [formatter stringFromDate:datePicker.date];
+- (void)ValueChanged:(UIDatePicker *)datePicker {
+    NSString *date = [formatter stringFromDate:datePicker.date];
+    if (datePicker.tag == 0) {
+        self.inputStart.text = date;
+    } else if (datePicker.tag == 1) {
+        self.inputEnd.text = date;
+    }
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -150,7 +167,7 @@
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     if (searchResult.count > 0) {
         return @"搜索结果";
-    }else {
+    } else {
         return nil;
     }
 }
@@ -158,7 +175,7 @@
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (searchResult.count > 0) {
         return [NSString stringWithFormat:@"共有%d条结果", (int)searchResult.count];
-    }else {
+    } else {
         return nil;
     }
 }
@@ -170,7 +187,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     NSDictionary *dict = [searchResult objectAtIndex:indexPath.row];
     SearchViewCell *cell = [self.tableview dequeueReusableCellWithIdentifier:@"resultlist"];
-    NSString *titleText = dict[@"text"];
+    NSString *titleText = dict[@"title"] ? dict[@"title"] : dict[@"text"];
     titleText = [ActionPerformer removeRe:titleText];
     cell.titleText.text = titleText;
     cell.authorText.text = dict[@"author"];
@@ -187,20 +204,27 @@
     [self.view endEditing:YES];
     text = self.inputText.text;
     author = self.inputAuthor.text;
+    NSString *beginTime;
+    NSString *endTime;
     if (self.inputStart.text.length > 0) {
         beginTime = self.inputStart.text;
+    } else {
+        beginTime = MIN_DATE;
     }
     if (self.inputEnd.text.length > 0) {
         endTime = self.inputEnd.text;
+    } else {
+        endTime = [formatter stringFromDate:[NSDate date]];
     }
     if (self.inputType.selectedSegmentIndex == 0) {
         type = @"thread";
-    }else {
+    } else {
         type = @"post";
     }
     if (text.length == 0 && author.length == 0) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"没有输入搜索内容！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        [self.inputText becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"没有输入搜索内容！" cancelAction:^(UIAlertAction *action) {
+            [self.inputText becomeFirstResponder];
+        }];
         if (control.isRefreshing) {
             [control endRefreshing];
         }
@@ -215,43 +239,38 @@
     NSTimeInterval earlyDate = [begin timeIntervalSince1970]*1;
     NSTimeInterval lateDate = [end timeIntervalSince1970]*1;
     if (earlyDate - lateDate > 0) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"日期输入有误！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"错误" message:@"日期输入有误！"];
         if (control.isRefreshing) {
             [control endRefreshing];
         }
         return;
     }
     // NSLog(@"Search Text:%@, Type:%@, BT:%@, ET:%@, Author:%@ Bid:%@", text, type, beginTime, endTime, author, self.b);
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"正在搜索";
-    [hud show:YES];
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:type, @"type", self.bid, @"bid", text, @"text", beginTime, @"starttime", endTime, @"endtime", author, @"username", nil];
+    [hud showWithProgressMessage:@"正在搜索"];
+    NSDictionary *dict = @{
+        @"type" : type,
+        @"bid" : self.bid,
+        @"text" : text,
+        @"starttime" : beginTime,
+        @"endtime" : endTime,
+        @"username" : author
+    };
     [performer performActionWithDictionary:dict toURL:@"search" withBlock:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
         if (err || result.count == 0) {
             searchResult=nil;
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"搜索失败";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hide:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"搜索失败"];
             NSLog(@"%@",err);
             return;
         }
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.labelText = @"搜索成功";
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hide:YES afterDelay:0.5];
+        [hud hideWithSuccessMessage:@"搜索成功"];
         searchResult=[result subarrayWithRange:NSMakeRange(1, result.count-1)];
-        // NSLog(@"Search Result:%@", searchResult);
+//         NSLog(@"Search Result:%@", searchResult);
         if (searchResult.count == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"没有结果" message:@"请尝试更换关键词、日期或讨论区" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        }else {
+            [self showAlertWithTitle:@"没有结果" message:@"请尝试更换关键词、日期或讨论区"];
+        } else {
             [self.tableview reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
         }
     }];
@@ -262,8 +281,8 @@
     for (int i = 0; i < 9; i++) {
         [action addAction:[UIAlertAction actionWithTitle:[ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:i]] style:([self.bid isEqualToString:[NUMBERS objectAtIndex:i]]) ? UIAlertActionStyleDestructive : UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             if (![ActionPerformer checkLogin:NO] && i == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"警告" message:@"您未登录，不能搜索工作区！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-            }else {
+                [self showAlertWithTitle:@"错误" message:@"您未登录，不能搜索工作区！"];
+            } else {
                 self.bid = [NUMBERS objectAtIndex:i];
                 self.labelB.text = [ActionPerformer getBoardTitle:self.bid];
                 [self refreshBackgroundView:NO];
@@ -273,7 +292,7 @@
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.sourceView = self.labelB;
     action.popoverPresentationController.sourceRect = self.labelB.bounds;
-    [self presentViewController:action animated:YES completion:nil];
+    [self presentViewControllerSafe:action];
 }
 
 #pragma mark - Navigation
@@ -290,11 +309,7 @@
         if ([one objectForKey:@"floor"]) {
             dest.floor = [one objectForKey:@"floor"];
         }
-        if ([one objectForKey:@"title"]) {
-            dest.title = [one objectForKey:@"title"];
-        }else {
-            dest.title = [one objectForKey:@"text"];
-        }
+        dest.title = [one objectForKey:@"title"] ? [one objectForKey:@"title"] : [one objectForKey:@"text"];
         [self.navigationController setToolbarHidden:NO];
     }
 }

@@ -20,7 +20,7 @@
     self.view.backgroundColor = GRAY_PATTERN;
     if (self.iconData.length > 0) {
         [self refreshBackgroundView:YES];
-    }else {
+    } else {
         [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:self.iconUrl] object:nil];
     }
 
@@ -32,12 +32,12 @@
 }
 
 - (void)refresh:(NSNotification *)noti {
-    if (self.iconData.length == 0) {
-        self.iconData = noti.userInfo[@"data"];
-        dispatch_main_async_safe(^{
+    dispatch_main_async_safe(^{
+        if (self.iconData.length == 0) {
+            self.iconData = noti.userInfo[@"data"];
             [self refreshBackgroundView:NO];
-        });
-    }
+        }
+    });
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {
@@ -68,7 +68,7 @@
     if (self.data.count > 0) {
         cell.textLabel.text = [ActionPerformer removeRe:[[self.data objectAtIndex:indexPath.row] objectForKey:@"title"]];
         cell.detailTextLabel.text = [[self.data objectAtIndex:indexPath.row] objectForKey:@"time"];
-    }else {
+    } else {
         cell.textLabel.text = [@"暂无" stringByAppendingString:self.title];
         cell.detailTextLabel.text = @"";
         cell.accessoryType = UITableViewCellAccessoryNone;

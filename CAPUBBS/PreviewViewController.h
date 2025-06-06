@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface PreviewViewController : UIViewController<UIAlertViewDelegate, UIWebViewDelegate> {
+@interface PreviewViewController : CustomViewController<UIAlertViewDelegate, UIWebViewDelegate> {
 }
 
 @property (weak, nonatomic) IBOutlet UILabel *labelTitle;

@@ -8,9 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import "ChatCell.h"
-#import "MBProgressHUD.h"
 
-@interface ChatViewController : UITableViewController <UIAlertViewDelegate> {
+@interface ChatViewController : CustomTableViewController {
     ActionPerformer *performer;
     ActionPerformer *performerUser;
     ActionPerformer *performerSend;

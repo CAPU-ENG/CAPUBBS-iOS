@@ -21,12 +21,21 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     self.preferredContentSize = CGSizeMake(360, 0);
+    
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     if (!([ActionPerformer checkRight] > 0)) {
         self.navigationItem.rightBarButtonItems = @[self.buttonStat];
     }
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self viewOnline];
+    
+    // Auto height
+    self.tableView.estimatedRowHeight = 40;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
@@ -41,13 +50,7 @@
 }
 
 - (void)viewOnline {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"加载中";
-    [hud show:YES];
+    [hud showWithProgressMessage:@"加载中"];
     [self performSelectorInBackground:@selector(getData:) withObject:@"online"];
 }
 
@@ -58,96 +61,86 @@
     if (self.refreshControl.isRefreshing) {
         [self.refreshControl endRefreshing];
     }
-    if (HTMLString && [HTMLString containsString:@"当前在线"]) {
-        // NSLog(@"%@", HTMLString);
-        NSRange range = [HTMLString rangeOfString:@"<table((.|[\r\n])*?)</table>" options:NSRegularExpressionSearch];
-        if (range.location != NSNotFound) {
-            HTMLString = [HTMLString substringWithRange:range];
-            while (YES) {
-                range = [HTMLString rangeOfString:@"<tr bgcolor(.*?)</tr>" options:NSRegularExpressionSearch];
+    if (!HTMLString || ![HTMLString containsString:@"当前在线"]) {
+        [hud hideWithFailureMessage:@"加载失败"];
+//        [self showAlertWithTitle:@"网络错误" message:@"请检查您的网络连接！"];
+        return;
+    }
+    
+    // NSLog(@"%@", HTMLString);
+    NSRange range = [HTMLString rangeOfString:@"<table((.|[\r\n])*?)</table>" options:NSRegularExpressionSearch];
+    if (range.location != NSNotFound) {
+        HTMLString = [HTMLString substringWithRange:range];
+        while (YES) {
+            range = [HTMLString rangeOfString:@"<tr bgcolor(.*?)</tr>" options:NSRegularExpressionSearch];
+            if (range.location == NSNotFound) {
+                break;
+            }
+            NSString *tempCell = [HTMLString substringWithRange:range];
+            HTMLString = [HTMLString stringByReplacingCharactersInRange:range withString:@""];
+            NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+            for (int i = 0; i < keys.count; i++) {
+                range = [tempCell rangeOfString:@"<td>(.*?)</td>" options:NSRegularExpressionSearch];
                 if (range.location == NSNotFound) {
+                    fail = YES;
                     break;
                 }
-                NSString *tempCell = [HTMLString substringWithRange:range];
-                HTMLString = [HTMLString stringByReplacingCharactersInRange:range withString:@""];
-                NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
-                for (int i = 0; i < keys.count; i++) {
-                    range = [tempCell rangeOfString:@"<td>(.*?)</td>" options:NSRegularExpressionSearch];
+                NSString *tempInfo = [tempCell substringWithRange:range];
+                tempCell = [tempCell stringByReplacingCharactersInRange:range withString:@""];
+                tempInfo = [tempInfo substringWithRange:NSMakeRange(4, tempInfo.length - 9)];
+                if (i == 0) {
+                    range = [tempInfo rangeOfString:@">(.*?)<" options:NSRegularExpressionSearch];
                     if (range.location == NSNotFound) {
                         fail = YES;
                         break;
                     }
-                    NSString *tempInfo = [tempCell substringWithRange:range];
-                    tempCell = [tempCell stringByReplacingCharactersInRange:range withString:@""];
-                    tempInfo = [tempInfo substringWithRange:NSMakeRange(4, tempInfo.length - 9)];
-                    if (i == 0) {
-                        range = [tempInfo rangeOfString:@">(.*?)<" options:NSRegularExpressionSearch];
-                        if (range.location == NSNotFound) {
-                            fail = YES;
-                            break;
-                        }
-                        tempInfo = [tempInfo substringWithRange:range];
-                        tempInfo = [tempInfo substringWithRange:NSMakeRange(1, tempInfo.length - 2)];
-                    }
-                    [dict setObject:tempInfo forKey:[keys objectAtIndex:i]];
+                    tempInfo = [tempInfo substringWithRange:range];
+                    tempInfo = [tempInfo substringWithRange:NSMakeRange(1, tempInfo.length - 2)];
                 }
-                [data addObject:dict];
+                [dict setObject:tempInfo forKey:[keys objectAtIndex:i]];
             }
-        }else {
-            fail = YES;
+            [data addObject:dict];
         }
-        if (fail) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.labelText = @"加载失败";
-            // [[[UIAlertView alloc] initWithTitle:@"加载失败" message:@"当前功能暂不可用！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-        }else {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.labelText = @"加载成功";
-            if (data.count == 0) {
-                [[[UIAlertView alloc] initWithTitle:@"当前没有人在线！" message:nil delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-            }
-            // NSLog(@"%@", data);
-            [self.tableView reloadData];
-        }
-    }else {
-        hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        hud.labelText = @"加载失败";
-        // [[[UIAlertView alloc] initWithTitle:@"网络错误" message:@"请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+    } else {
+        fail = YES;
     }
-    hud.mode = MBProgressHUDModeCustomView;
-    [hud hide:YES afterDelay:0.5];
+    if (fail) {
+        [hud hideWithFailureMessage:@"加载失败"];
+//        [self showAlertWithTitle:@"加载失败" message:@"当前功能暂不可用！"];
+    } else {
+        [hud hideWithSuccessMessage:@"加载成功"];
+        if (data.count == 0) {
+            [self showAlertWithTitle:@"当前没有人在线！" message:nil];
+        }
+//        NSLog(@"%@", data);
+        [self.tableView reloadData];
+    }
 }
 
 - (IBAction)viewSign:(id)sender {
     self.buttonStat.enabled = NO;
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.labelText = @"加载中";
-    [hud show:YES];
+    [hud showWithProgressMessage:@"加载中"];
     [self performSelectorInBackground:@selector(getData:) withObject:@"sign"];
 }
 
 - (void)loadSign:(NSString *)HTMLString {
     self.navigationItem.rightBarButtonItem.enabled = YES;
     if (HTMLString && [HTMLString containsString:@"签到统计"]) {
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.labelText = @"加载成功";
+        [hud hideWithSuccessMessage:@"加载成功"];
         HTMLString = [[ContentViewController removeHTML:HTMLString] substringFromIndex:@"签到统计\n".length];
         HTMLString = [HTMLString stringByReplacingOccurrencesOfString:@"\n#" withString:@"\n"];
-        [[[UIAlertView alloc] initWithTitle:@"签到统计" message:HTMLString delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-    }else {
-        hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        hud.labelText = @"加载失败";
-        // [[[UIAlertView alloc] initWithTitle:@"网络错误" message:@"请检查您的网络连接！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
+        [self showAlertWithTitle:@"签到统计" message:HTMLString];
+    } else {
+        [hud hideWithFailureMessage:@"加载失败"];
+        // [self showAlertWithTitle:@"网络错误" message:@"请检查您的网络连接！"];
     }
-    hud.mode = MBProgressHUDModeCustomView;
-    [hud hide:YES afterDelay:0.5];
 }
 
 - (void)getData:(NSString *)type{
     NSString * HTMLString = [[NSString alloc] initWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/%@", CHEXIE, type]] encoding:NSUTF8StringEncoding error:nil];
     if ([type isEqualToString:@"online"]) {
         [self performSelectorOnMainThread:@selector(loadOnline:) withObject:HTMLString waitUntilDone:NO];
-    }else if ([type isEqualToString:@"sign"]) {
+    } else if ([type isEqualToString:@"sign"]) {
         [self performSelectorOnMainThread:@selector(loadSign:) withObject:HTMLString waitUntilDone:NO];
     }
 }
@@ -167,7 +160,7 @@
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     if (data.count > 0) {
         return [NSString stringWithFormat:@"当前共%d人在线", (int)data.count];
-    }else {
+    } else {
         return nil;
     }
 }
@@ -183,11 +176,11 @@
     }
     if ([dict[@"type"] isEqualToString:@"web版登录"]) {
         cell.labelType.text = @"💻";
-    }else if ([dict[@"type"] isEqualToString:@"Android客户端登录"]) {
+    } else if ([dict[@"type"] isEqualToString:@"Android客户端登录"]) {
         cell.labelType.text = @"📱";
-    }else if ([dict[@"type"] isEqualToString:@"iOS客户端登录"]) {
+    } else if ([dict[@"type"] isEqualToString:@"iOS客户端登录"]) {
         cell.labelType.text = @"📱";
-    }else {
+    } else {
         cell.labelType.text = @"❓";
     }
     // Configure the cell...

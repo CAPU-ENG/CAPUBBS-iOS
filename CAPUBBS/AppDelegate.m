@@ -21,10 +21,41 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
     
-    [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
-    [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
-    [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
-    [[UINavigationBar appearance] setTranslucent:NO];
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+        [appearance configureWithOpaqueBackground]; // solid background (no transparency)
+        appearance.backgroundColor = GREEN_DARK;
+        appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+        appearance.largeTitleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+        
+        UINavigationBar *navBarAppearance = [UINavigationBar appearance];
+        navBarAppearance.standardAppearance = appearance;
+        navBarAppearance.scrollEdgeAppearance = appearance;
+        navBarAppearance.tintColor = [UIColor whiteColor]; // buttons color
+    } else {
+        [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
+        [[UINavigationBar appearance] setBarStyle:UIBarStyleBlack];
+        [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
+        [[UINavigationBar appearance] setTranslucent:NO];
+    }
+    
+    if (@available(iOS 13.0, *)) {
+        UIToolbarAppearance *toolbarAppearance = [[UIToolbarAppearance alloc] init];
+        [toolbarAppearance configureWithOpaqueBackground];
+        toolbarAppearance.backgroundColor = [UIColor whiteColor];
+        
+        UIToolbar *toolbarAppearanceProxy = [UIToolbar appearance];
+        toolbarAppearanceProxy.tintColor = BLUE;
+        toolbarAppearanceProxy.standardAppearance = toolbarAppearance;
+        if (@available(iOS 15.0, *)) {
+            toolbarAppearanceProxy.scrollEdgeAppearance = toolbarAppearance;
+        }
+    } else {
+        [[UIToolbar appearance] setTintColor:BLUE];
+        [[UIToolbar appearance] setTranslucent:NO];
+    }
+    
+    
     [[UITextField appearance] setClearButtonMode:UITextFieldViewModeWhileEditing];
     [[UITextField appearance] setBackgroundColor:[UIColor lightTextColor]];
     [[UITextView appearance] setBackgroundColor:[UIColor lightTextColor]];
@@ -32,48 +63,44 @@
     [[UIStepper appearance] setTintColor:BLUE];
     [[UISwitch appearance] setOnTintColor:BLUE];
     [[UISwitch appearance] setTintColor:[UIColor whiteColor]];
-    [[UIToolbar appearance] setTintColor:BLUE];
     [[UITableViewCell appearance] setBackgroundColor:[UIColor clearColor]];
-
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-//                          @(2), @"proxy",
-//                          @"school", @"proxyPosition",
-                          @(YES), @"autoLogin",
-                          @(YES), @"enterLogin",
-                          @(NO), @"wakeLogin",
-                          @(YES), @"vibrate",
-                          @(NO), @"picOnlyInWifi",
-                          @(YES), @"autoSave",
-                          @(YES), @"oppositeSwipe",
-                          @(1), @"toolbarEditor",
-                          @(1), @"viewCollectionType",
-                          @(100), @"textSize",
-                          @(MAX_ID_NUM / 2), @"IDNum",
-                          @(MAX_HOT_NUM / 2), @"hotNum",
-                          @"2016-01-01", @"checkUpdate",
-                          @"2016-01-01", @"checkPass",
-                          nil];
-    NSDictionary *group = [NSDictionary dictionaryWithObjectsAndKeys:
-                           DEFAULT_SERVER_URL, @"URL",
-                           @"", @"token",
-                           @"", @"userInfo",
-                           @(NO), @"iconOnlyInWifi",
-                           @(NO), @"simpleView",
-                           nil];
+    
+    NSDictionary *dict = @{
+        // @"proxy" : @2,
+        @"autoLogin" : @YES,
+        @"enterLogin" : @YES,
+        @"wakeLogin" : @NO,
+        @"vibrate" : @YES,
+        @"picOnlyInWifi" : @NO,
+        @"autoSave" : @YES,
+        @"oppositeSwipe" : @YES,
+        @"toolbarEditor" : @1,
+        @"viewCollectionType" : @1,
+        @"textSize" : @100,
+        @"IDNum" : @(MAX_ID_NUM / 2),
+        @"hotNum" : @(MAX_HOT_NUM / 2),
+        @"checkUpdate" : @"2025-01-01",
+        @"checkPass" : @"2025-01-01"
+    };
+    NSDictionary *group = @{
+        @"URL" : DEFAULT_SERVER_URL,
+        @"token" : @"",
+        @"userInfo" : @"",
+        @"iconOnlyInWifi" : @NO,
+        @"simpleView" : @NO
+    };
     [DEFAULTS registerDefaults:dict];
     [DEFAULTS removeObjectForKey:@"enterLogin"];
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
     [GROUP_DEFAULTS registerDefaults:group];
     [self transferDefaults];
-
-    [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
-    [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
+    
+    [[NSURLCache sharedURLCache] setMemoryCapacity:64.0 * 1024 * 1024];
+    [[NSURLCache sharedURLCache] setDiskCapacity:256.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [self performSelectorInBackground:@selector(transport) withObject:nil];
     performer = [[ActionPerformer alloc] init];
-    if (IOS >= 9.0) {
-        [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
-    }
+    [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     if ([ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
         [self _loginAsync:YES];
     }
@@ -98,10 +125,14 @@
 
 - (void)showAlert:(NSNotification *)noti {
     NSDictionary *dict = noti.userInfo;
-    [[[UIAlertView alloc] initWithTitle:dict[@"title"] message:dict[@"message"] delegate:nil cancelButtonTitle:(dict[@"cancelTitle"] ? : @"好") otherButtonTitles:nil, nil] show];
+    UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topVC.presentedViewController) {
+        topVC = topVC.presentedViewController;
+    }
+    [topVC showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
 }
 
-- (BOOL)application:(nonnull UIApplication *)application continueUserActivity:(nonnull NSUserActivity *)userActivity restorationHandler:(nonnull void (^)(NSArray * __nullable))restorationHandler {
+- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
     NSString *identifier = userActivity.userInfo[@"kCSSearchableItemActivityIdentifier"];
     NSArray *info = [identifier componentsSeparatedByString:@"\n"];
     NSDictionary *dict;
@@ -152,18 +183,22 @@
     dispatch_global_default_async(^{
         if ([shortcutItem.type isEqualToString:@"Hot"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"hot"}];
-        }else if ([shortcutItem.type isEqualToString:@"Collection"]) {
+        } else if ([shortcutItem.type isEqualToString:@"Collection"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"collection"}];
-        }else if ([shortcutItem.type isEqualToString:@"Message"]) {
+        } else if ([shortcutItem.type isEqualToString:@"Message"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"message"}];
-        }else if ([shortcutItem.type isEqualToString:@"Compose"]) {
+        } else if ([shortcutItem.type isEqualToString:@"Compose"]) {
             [self _handleUrlRequestWithDictionary:@{@"open": @"compose"}];
         }
     });
     completionHandler(YES);
 }
 
-- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    if (![url.scheme isEqualToString:@"capubbs"]) {
+        return NO;
+    }
+    
     NSString *urlString = [url absoluteString];
     urlString = [urlString substringFromIndex:[@"capubbs://" length]];
     NSArray *paramsArray = [urlString componentsSeparatedByString:@"&"];
@@ -178,7 +213,7 @@
             NSLog(@"Handle Url error - wrong parameter");
             return NO;
         }
-        [params addEntriesFromDictionary:@{tempArray[0]: tempArray[1]}];
+        [params addEntriesFromDictionary:@{tempArray[0]: [tempArray[1] stringByRemovingPercentEncoding]}];
     }
     if (params.allKeys.count > 0) {
         dispatch_global_default_async(^{
@@ -195,7 +230,7 @@
         while ([view presentedViewController] != nil) {
             view = [view presentedViewController];
         }
-        UINavigationController *navi;
+        CustomNavigationController *navi;
         if ([open isEqualToString:@"message"]) {
             // 同步登陆
             [self _loginAsync:NO];
@@ -204,20 +239,20 @@
             MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"hot"]) {
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = @"hot";
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"collection"]) {
             CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         } else if ([open isEqualToString:@"compose"]) {
             ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
             
@@ -230,14 +265,14 @@
                 dest.title = dict[@"naviTitle"];
             }
             
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             navi.modalPresentationStyle = UIModalPresentationFormSheet;
         } else if ([open isEqualToString:@"list"]) {
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = dict[@"bid"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"post"]) {
             // 同步登陆
@@ -261,9 +296,9 @@
             }
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[UINavigationController alloc] initWithRootViewController:dest];
+            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         }
-        [view presentViewController:navi animated:YES completion:nil];
+        [view presentViewControllerSafe:navi];
         NSLog(@"Open with %@", open);
     }
 }
@@ -312,7 +347,7 @@
         [[CSSearchableIndex defaultSearchableIndex] indexSearchableItems:seachableItems completionHandler:^(NSError * __nullable error) {
             if (error) {
                 NSLog(@"%@", error.localizedDescription);
-            }else {
+            } else {
                 NSLog(@"Collection Saved");
             }
         }];
@@ -349,7 +384,10 @@
         for (int i = 0; i < MAX_ID_NUM; i++) {
             NSString *uid = [DEFAULTS objectForKey:[NSString stringWithFormat:@"id%d", i]];
             if (uid.length > 0) {
-                [IDs addObject:[NSDictionary dictionaryWithObjectsAndKeys:uid, @"id", [DEFAULTS objectForKey:[NSString stringWithFormat:@"password%d", i]], @"pass", nil]];
+                [IDs addObject:@{
+                    @"id" : uid,
+                    @"pass" : [DEFAULTS objectForKey:[NSString stringWithFormat:@"password%d", i]]
+                }];
                 [DEFAULTS removeObjectForKey:[NSString stringWithFormat:@"id%d", i]];
                 [DEFAULTS removeObjectForKey:[NSString stringWithFormat:@"password%d", i]];
             }
@@ -365,12 +403,13 @@
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
+    [[ReachabilityManager sharedManager] stopMonitoring];
     // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
     // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
-    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later. 
+    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
 }
 
@@ -386,7 +425,8 @@
         [self _loginAsync:YES];
     }
     [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"wakeLogin"];
-
+    [[ReachabilityManager sharedManager] startMonitoring];
+    
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 }
 
@@ -394,14 +434,24 @@
     NSString *uid = UID;
     if (uid.length > 0) {
         [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid, @"username", [ActionPerformer md5:PASS], @"password", @"ios", @"os", [ActionPerformer doDevicePlatform], @"device", [[UIDevice currentDevice] systemVersion], @"version", nil];
+        NSDictionary *dict = @{
+            @"username" : uid,
+            @"password" : [ActionPerformer md5:PASS],
+            @"os" : @"ios",
+            @"device" : [ActionPerformer doDevicePlatform],
+            @"version" : [[UIDevice currentDevice] systemVersion]
+        };
         dispatch_semaphore_t signal = dispatch_semaphore_create(0);
         [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
             [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
             if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
-                [[[UIAlertView alloc] initWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！" delegate:nil cancelButtonTitle:@"好" otherButtonTitles:nil, nil] show];
-            }else {
+                UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+                while (topVC.presentedViewController) {
+                    topVC = topVC.presentedViewController;
+                }
+                [topVC showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
+            } else {
                 [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                 NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
             }

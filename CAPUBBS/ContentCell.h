@@ -21,4 +21,6 @@
 @property (weak, nonatomic) IBOutlet UIButton *buttonIcon;
 @property (weak, nonatomic) IBOutlet UIView *topView;
 
+@property (strong, nonatomic) NSTimer *heightCheckTimer;
+
 @end

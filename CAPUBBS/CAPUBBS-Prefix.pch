@@ -5,14 +5,9 @@
 //
 
 #import <Availability.h>
-
-#ifndef __IPHONE_8_0
-#warning "This project uses features only available in iOS SDK 8.0 and later."
-#endif
-
-#ifdef __OBJC__
-
 #import "ActionPerformer.h"
 #import "CommonDefinitions.h"
+#import "CustomProgressHUD.h"
+#import "CustomViewControllers.h"
+#import "CustomNavigationController.h"
 
-#endif

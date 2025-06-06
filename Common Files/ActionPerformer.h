@@ -6,11 +6,13 @@
 //  Copyright (c) 2014年 熊典. All rights reserved.
 //
 
-#import "Reachability.h"
+#import <Foundation/Foundation.h>
+#import "ReachabilityManager.h"
 
 typedef void (^ActionPerformerResultBlock)(NSArray* result, NSError* err);
 
 @interface ActionPerformer: NSObject <NSXMLParserDelegate> {
+    NSCharacterSet *allowedCharacters;
     NSMutableArray *finalData;
     NSMutableString *currentString;
     NSMutableDictionary *tempData;

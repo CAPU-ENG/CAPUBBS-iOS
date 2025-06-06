@@ -8,15 +8,14 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
-#import "MBProgressHUD.h"
 
-@interface ContentViewController : UITableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
+@interface ContentViewController : CustomTableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
     MBProgressHUD *hud;
     ActionPerformer *performer;
     NSUserActivity *activity;
     NSString *URL;
     NSMutableArray *data;
-    MFMailComposeViewController *mail;
+    CustomMailComposeViewController *mail;
     UIDocumentInteractionController *dic;
     int page;
     int textSize;
@@ -26,7 +25,6 @@
     NSString *defaultContent;
     NSInteger selectedIndex;
     NSMutableArray *heights;
-    NSMutableArray *estimatedHeights;
     NSMutableArray *HTMLStrings;
     NSString *tempPath;
     NSString *imgPath;
@@ -48,7 +46,7 @@
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonJump;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonAction;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCompose;
-+ (NSString *)htmlStringWithRespondString:(NSString *)respondString;
++ (NSString *)htmlStringWithText:(NSString *)text sig:(NSString *)sig textSize:(int)textSize;
 + (NSString *)restoreFormat:(NSString *)text;
 + (NSString *)transFromHTML:(NSString *)text;
 + (NSString *)removeHTML:(NSString *)text;

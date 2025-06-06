@@ -10,20 +10,25 @@ CAPUBBS iOS客户端包含功能：
 -搜索、收藏论坛帖子
 -分享内容到微信、QQ、微博等
 -举报违规帖子/用户/私信
--支持3D Touch、Handoff、系统搜索
 
 祝使用愉快！欢迎反馈意见和建议！
 
 审核信息：
 
-"分享到QQ、微信”，指的是，例如，在点击查看贴子中的图片时，用户可以分享该图片文件，并且是在用户设备安装了QQ、微信app的前提下。
+Users must agree to the End User License Agreement (EULA) before using the app. The EULA is presented when the app is first launched, and users cannot proceed without accepting it. The EULA clearly states a zero-tolerance policy for objectionable or abusive content, and describes how such content will be handled.
+若要使用本软件，用户必须在首次启动时同意用户协议（EULA）。若拒绝协议，则无法继续使用软件。EULA 明确声明对违规、骚扰或不当内容采取零容忍政策，并说明处理机制。
 
-用户认为是违规内容的帖子/用户/私信均可举报，具体举报方法：
-帖子：在相应帖子界面，点击底部Action键，选择“举报”。
-用户/私信：在用户信息界面，（如果是举报私信内容，则先返回或点击右上方“(i)”键进入对方的用户信息），拉至表格底部，选择“举报该用户”。
-举报内容可以在邮件中详细说明，我们有一个团队随时处理用户的举报，对核实内容可以做删帖、删除聊天内容、封禁/删除用户等处理，并且可以通过admin账号发送私信告知双方处理结果。
+Registration is not required to use the app. Unregistered users can browse most content (except for the working board) and use features such as search. When registering, users are not required to provide private information such as gender—they may leave it blank or choose “Confidential.”
+本软件不强制注册。未注册用户可浏览除工作区外的大部分内容，并可正常使用搜索等功能。注册时不强制填写隐私信息，如性别字段可留空或选择“保密”。
 
-若要使用软件，用户必须同意EULA，EULA会在第一次打开软件时显示，如果拒绝EULA则无法开始使用软件。本软件不强制要求用户注册，未注册用户可以正常浏览非工作区的所有帖子，并且正常使用搜索等功能。
+Our servers automatically scan all user-generated content for potentially inappropriate material. If potential violations are detected, the content will not be publicly visible until it has been reviewed and approved by our moderators.
+我们的服务器会自动扫描用户发布的内容，若发现潜在违规内容，将在审核通过后才予以公开展示。
+
+Users can report posts, users, or private messages they believe to be inappropriate. To report a post, find report button in the action button under bottom bar. To report a user, find report button in their user info page. Our moderation team handles all reports within 24 hours. Verified violations may result in content deletion, account suspension, or permanent bans. Users may be notified of the results via private message.
+用户可举报认为违规的帖子、用户或私信。举报帖子时，点击底部操作栏中的“更多”按钮，找到举报选项；举报用户时，在其用户信息页面中找到“举报用户”按钮。我们团队会在24小时内处理所有举报，经核实后可删除内容、封禁账号或永久移除用户，并可通过私信通知处理结果。
+
+Users can request to delete their account within the app, by scrolling to the bottom of the user info page. Once confirmed, all user-related data will be permanently removed from our database.
+用户可在 App 内用户信息页面底部申请删除账号。确认后，与用户相关的所有数据将永久删除，无法恢复。
 
 1.2.1
 1、适配iPhone 6/iPhone 6 Plus
@@ -273,5 +278,71 @@ For A Better CAPU!
 
 3.6.2
 -恢复http访问兼容性
+-支持IPV6 Only网络
 
-关于目前暂时无法通过域名访问论坛的解决方法：进入主页，点击下方"欢迎来到北大车协论坛"，在弹出的文本框中输入"http://162.105.69.21"，即可正常访问
+关于目前暂时无法通过"www.chexie.net"域名访问论坛的解决方法：进入主页，点击下方"欢迎来到北大车协论坛"，在弹出的文本框中输入"http://162.105.69.21"，即可正常访问
+
+3.6.3
+-恢复http访问兼容性
+-支持IPV6 Only网络
+-小错误修复
+
+关于目前暂时无法通过"www.chexie.net"域名访问论坛的解决方法：进入主页，点击下方"欢迎来到北大车协论坛"，在弹出的文本框中输入"http://162.105.69.21"，即可正常访问
+
+3.6.4
+- 适配iOS 11系统
+- 适配iPhone 8/8 plus机型
+- 小错误修复
+
+3.6.5
+- 适配 iOS 11.4 系统
+- 适配 iPhone X
+
+3.6.6
+- 适配 iOS 12.1 系统
+- 适配 iPhone XS, iPhone XS Max, 2018款 iPad Pro
+
+3.9
+庆祝北京大学自行车协会成立30周年
+
+- 适配最新 iOS 18 / iPadOS 18 等系统
+- 适配最新 iPhone / iPad 等设备
+- 最低兼容版本更新为 iOS 12
+- 支持在论坛热点中显示置顶帖
+- 细节改进，修复错误
+  •改进了帖子的渲染方式，长帖加载速度显著提升
+  •支持帖子中jQuery的执行
+  •搜索默认时间范围为过去一年
+  •修复某些时间显示的不一致，所有时间都设定为北京时间
+  •修复一些会导致崩溃的问题
+  
+3.9.1
+庆祝北京大学自行车协会成立30周年
+
+- 适配最新 iOS 18 / iPadOS 18 等系统
+- 适配最新 iPhone / iPad 等设备
+- 最低兼容版本更新为 iOS 12
+- 支持在论坛热点中显示置顶帖
+- 细节改进，修复错误
+  •改进了帖子的渲染方式，长帖加载速度显著提升
+  •支持帖子中jQuery的执行
+  •搜索默认时间范围为过去一年
+  •修复某些时间显示的不一致，所有时间都设定为北京时间
+  •修复一些会导致崩溃的问题
+  
+3.9.2
+庆祝北京大学自行车协会成立30周年
+
+- 适配最新 iOS 18 / iPadOS 18 等系统
+- 适配最新 iPhone / iPad 等设备
+- 最低兼容版本更新为 iOS 12
+- 支持在论坛热点中显示置顶帖
+- 支持查看用户个人简介
+- 细节改进，修复错误
+  •改进了帖子的渲染方式，长帖加载速度显著提升
+  •支持帖子中jQuery的执行
+  •上传图片时提供更多尺寸选项
+  •搜索默认时间范围为过去一年
+  •修复某些时间显示的不一致，所有时间都设定为北京时间
+  •修复状态栏与主题颜色不匹配的问题
+  •修复一些会导致崩溃的问题

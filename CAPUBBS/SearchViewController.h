@@ -9,22 +9,19 @@
 #import <UIKit/UIKit.h>
 #import "SearchViewCell.h"
 #import "AsyncImageView.h"
-#import "MBProgressHUD.h"
 
-@interface SearchViewController : UIViewController <UITableViewDelegate> {
+@interface SearchViewController : CustomViewController<UITableViewDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     AsyncImageView *backgroundView;
     NSString *text;
     NSString *type;
-    NSString *beginTime;
-    NSString *endTime;
     NSString *author;
     UIRefreshControl *control;
     UIDatePicker *startDatePicker;
     UIDatePicker *endDatePicker;
     NSDateFormatter *formatter;
-    UINavigationController *navi;
+    CustomNavigationController *navi;
     NSArray *data;
     NSArray *searchResult;
 }
