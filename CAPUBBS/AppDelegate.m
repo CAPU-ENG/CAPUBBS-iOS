@@ -102,7 +102,7 @@
     performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     if ([ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
-        [self _loginAsync:YES];
+        [self loginAsync:YES];
     }
     return YES;
 }
@@ -123,13 +123,20 @@
     }
 }
 
+- (UIViewController *)getTopViewController {
+    __block UIViewController *topVC;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+        while (topVC.presentedViewController) {
+            topVC = topVC.presentedViewController;
+        }
+    });
+    return topVC;
+}
+
 - (void)showAlert:(NSNotification *)noti {
     NSDictionary *dict = noti.userInfo;
-    UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-    while (topVC.presentedViewController) {
-        topVC = topVC.presentedViewController;
-    }
-    [topVC showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
+    [[self getTopViewController] showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
 }
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
@@ -226,14 +233,11 @@
 - (void)_handleUrlRequestWithDictionary:(NSDictionary *)dict {
     NSString *open = dict[@"open"];
     if (open) {
-        UIViewController *view = self.window.rootViewController;
-        while ([view presentedViewController] != nil) {
-            view = [view presentedViewController];
-        }
+        UIViewController *view = [self getTopViewController];
         CustomNavigationController *navi;
         if ([open isEqualToString:@"message"]) {
             // 同步登陆
-            [self _loginAsync:NO];
+            [self loginAsync:NO];
             [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"wakeLogin"];
             
             MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
@@ -276,7 +280,7 @@
             [navi setToolbarHidden:NO];
         } else if ([open isEqualToString:@"post"]) {
             // 同步登陆
-            [self _loginAsync:NO];
+            [self loginAsync:NO];
             [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"wakeLogin"];
             
             ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
@@ -304,11 +308,7 @@
 }
 
 - (void)back {
-    UIViewController *view = self.window.rootViewController;
-    while ([view presentedViewController] != nil) {
-        view = [view presentedViewController];
-    }
-    [view dismissViewControllerAnimated:YES completion:nil];
+    [[self getTopViewController] dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)collectionChanged { // 后台更新系统搜索内容
@@ -422,15 +422,16 @@
     // 返回后自动登录
     // 条件为 已登录 或 不是第一次打开软件且开启了自动登录
     if (([ActionPerformer checkLogin:NO] || [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) && [[DEFAULTS objectForKey:@"wakeLogin"] boolValue] == YES) {
-        [self _loginAsync:YES];
+        [self loginAsync:YES];
     }
     [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"wakeLogin"];
     [[ReachabilityManager sharedManager] startMonitoring];
+    [self maybeCheckUpdate];
     
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 }
 
-- (void)_loginAsync:(BOOL)async {
+- (void)loginAsync:(BOOL)async {
     NSString *uid = UID;
     if (uid.length > 0) {
         [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
@@ -446,11 +447,7 @@
             [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
             if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
-                UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-                while (topVC.presentedViewController) {
-                    topVC = topVC.presentedViewController;
-                }
-                [topVC showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
+                [[self getTopViewController] showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
             } else {
                 [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                 NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
@@ -462,6 +459,69 @@
             dispatch_semaphore_wait(signal, DISPATCH_TIME_FOREVER);
         }
     }
+}
+
+- (void)maybeCheckUpdate {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd"];
+    NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
+    [formatter setTimeZone:beijingTimeZone];
+    NSDate *currentDate = [NSDate date];
+    NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkUpdate"]];
+    NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
+    if ((int)time > 3600 * 24) { // 每隔1天检测一次更新
+        NSLog(@"Check For Update");
+        [self performSelectorInBackground:@selector(checkUpdate) withObject:nil];
+        [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
+    } else {
+        NSLog(@"Needn't Check Update");
+    }
+}
+
+- (void)checkUpdate {
+    NSString *currentVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+//    NSString *currentVersion = @"3.9";
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+    //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
+    [request setURL:[NSURL URLWithString:@"https://itunes.apple.com/lookup?id=826386033"]];
+    [request setHTTPMethod:@"POST"];
+    
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession]
+                                  dataTaskWithRequest:request
+                                  completionHandler:^(NSData * _Nullable data,
+                                                      NSURLResponse * _Nullable response,
+                                                      NSError * _Nullable error) {
+        
+        if (error || !data) {
+            NSLog(@"Check Update Failed: %@", error.localizedDescription);
+            [[self getTopViewController] showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
+            return;
+        }
+        
+        NSError *jsonError = nil;
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+        if (!json || jsonError) {
+            NSLog(@"JSON Parse Error: %@", jsonError.localizedDescription);
+            return;
+        }
+        
+        NSArray *infoArray = json[@"results"];
+        if (infoArray.count == 0) {
+            NSLog(@"No app info returned from App Store.");
+            return;
+        }
+        
+        NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
+        NSString *lastVersion = [releaseInfo objectForKey:@"version"];
+        NSLog(@"App Store latest version: %@",lastVersion);
+        if ([currentVersion compare:lastVersion options:NSNumericSearch] == NSOrderedAscending) {
+            NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
+            [[self getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", lastVersion] message:[releaseInfo objectForKey:@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
+                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
+            } cancelTitle:@"暂不"];
+        }
+    }];
+    [task resume];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {

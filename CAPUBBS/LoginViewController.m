@@ -412,68 +412,7 @@
         // NSLog(@"%@", news);
         [DEFAULTS setObject:news forKey:@"newsCache"];
         [self.tableview reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:@"yyyy-MM-dd"];
-        NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
-        [formatter setTimeZone:beijingTimeZone];
-        NSDate *currentDate = [NSDate date];
-        NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkUpdate"]];
-        NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
-        if ((int)time > 3600 * 24) { // 每隔1天检测一次更新
-            NSLog(@"Check For Update");
-            [self performSelectorInBackground:@selector(checkUpdate) withObject:nil];
-            [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
-        } else {
-            NSLog(@"Needn't Check Update");
-        }
     }];
-}
-
-- (void)checkUpdate {
-    NSDictionary *infoDic = [[NSBundle mainBundle] infoDictionary];
-    //CFShow((__bridge CFTypeRef)(infoDic));
-    NSString *currentVersion = [infoDic objectForKey:@"CFBundleVersion"];
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-    //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
-    [request setURL:[NSURL URLWithString:@"https://itunes.apple.com/lookup?id=826386033"]];
-    [request setHTTPMethod:@"POST"];
-    
-    NSURLSessionDataTask *task = [[NSURLSession sharedSession]
-                                  dataTaskWithRequest:request
-                                  completionHandler:^(NSData * _Nullable data,
-                                                      NSURLResponse * _Nullable response,
-                                                      NSError * _Nullable error) {
-        
-        if (error || !data) {
-            NSLog(@"Check Update Failed: %@", error.localizedDescription);
-            [self showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
-            return;
-        }
-        
-        NSError *jsonError = nil;
-        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-        if (!json || jsonError) {
-            NSLog(@"JSON Parse Error: %@", jsonError.localizedDescription);
-            return;
-        }
-        
-        NSArray *infoArray = json[@"results"];
-        if (infoArray.count == 0) {
-            NSLog(@"No app info returned from App Store.");
-            return;
-        }
-        
-        NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
-        NSString *lastVersion = [releaseInfo objectForKey:@"version"];
-        NSLog(@"App Store latest version: %@",lastVersion);
-        if ([currentVersion compare:lastVersion options:NSNumericSearch] == NSOrderedAscending) {
-            NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
-            [self showAlertWithTitle:@"发现新版本%@" message:[NSString stringWithFormat:@"更新内容：\n%@", [releaseInfo objectForKey:@"releaseNotes"]] confirmTitle:@"升级" confirmAction:^(UIAlertAction *action) {
-                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
-            } cancelTitle:@"暂不"];
-        }
-    }];
-    [task resume];
 }
 
 - (IBAction)didEndOnExit:(UITextField*)sender {
