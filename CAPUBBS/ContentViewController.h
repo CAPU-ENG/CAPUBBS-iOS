@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
 
-@interface ContentViewController : CustomTableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
+@interface ContentViewController : CustomTableViewController<MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
     MBProgressHUD *hud;
     ActionPerformer *performer;
     NSUserActivity *activity;

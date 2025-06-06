@@ -10,7 +10,7 @@
 #import <MessageUI/MessageUI.h>
 #import "AsyncImageView.h"
 
-@interface UserViewController : CustomTableViewController<UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
+@interface UserViewController : CustomTableViewController<UIWebViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     AsyncImageView *backgroundView;
