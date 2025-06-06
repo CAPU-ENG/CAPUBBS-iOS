@@ -206,13 +206,15 @@
 
 - (IBAction)done:(id)sender {
     if (self.textTitle.text.length==0) {
-        [self showAlertWithTitle:@"错误" message:@"请输入标题！"];
-        [self.textTitle becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"请输入标题！" cancelAction:^(UIAlertAction *action) {
+            [self.textTitle becomeFirstResponder];
+        }];
         return;
     }
     if (self.textBody.text.length==0) {
-        [self showAlertWithTitle:@"错误" message:@"请输入帖子内容！"];
-        [self.textBody becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"请输入帖子内容！" cancelAction:^(UIAlertAction *action) {
+            [self.textBody becomeFirstResponder];
+        }];
         return;
     }
     [self.textTitle resignFirstResponder];
@@ -611,7 +613,6 @@ CGSize ScaledSizeForImage(UIImage *image, CGFloat maxLength) {
             url = [@"https://" stringByAppendingString:url];
         }
         [self.textBody insertText:[NSString stringWithFormat:@"[url=%@]%@[/url]", url, title]];
-        [self.textBody becomeFirstResponder];
         [self.textBody becomeFirstResponder];
         
     }]];

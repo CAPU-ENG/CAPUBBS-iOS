@@ -278,13 +278,15 @@
 
 - (IBAction)buttonPost:(id)sender {
     if (self.textPost.text.length == 0) {
-        [self showAlertWithTitle:@"错误" message:@"楼中楼内容为空！"];
-        [self.textPost becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"楼中楼内容为空！" cancelAction:^(UIAlertAction *action) {
+            [self.textPost becomeFirstResponder];
+        }];
         return;
     }
     if (self.textPost.text.length > 140) {
-        [self showAlertWithTitle:@"错误" message:@"楼中楼内容太长！"];
-        [self.textPost becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"楼中楼内容太长！" cancelAction:^(UIAlertAction *action) {
+            [self.textPost becomeFirstResponder];
+        }];
         return;
     }
     

@@ -231,6 +231,7 @@
             [self.iconUser setImage:PLACEHOLDER];
             [self.buttonAddNews setHidden:YES];
         } else {
+            [self refreshIcon];
             if (userInfoRefreshing == NO) {
                 userInfoRefreshing = YES;
                 [performerUser performActionWithDictionary:@{@"uid": UID} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
@@ -251,7 +252,6 @@
                             [NOTIFICATION postNotificationName:@"infoRefreshed" object:nil];
                         });
                     }
-                    [self.buttonAddNews setHidden:([ActionPerformer checkRight] < 1)];
                 }];
             }
         }
@@ -266,6 +266,7 @@
         } else {
             [self.iconUser setImage:PLACEHOLDER];
         }
+        [self.buttonAddNews setHidden:([ActionPerformer checkRight] < 1)];
     });
 }
 
@@ -308,13 +309,15 @@
     NSString *uid = self.textUid.text;
     NSString *pass = self.textPass.text;
     if (uid.length == 0) {
-        [self showAlertWithTitle:@"错误" message:@"用户名不能为空"];
-        [self.textUid becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"用户名不能为空" cancelAction:^(UIAlertAction *action) {
+            [self.textUid becomeFirstResponder];
+        }];
         return;
     }
     if (pass.length == 0) {
-        [self showAlertWithTitle:@"错误" message:@"密码不能为空"];
-        [self.textPass becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"密码不能为空" cancelAction:^(UIAlertAction *action) {
+            [self.textPass becomeFirstResponder];
+        }];
         return;
     }
     [hud showWithProgressMessage:@"正在登录"];
@@ -338,13 +341,15 @@
             [hud hideWithFailureMessage:@"登录失败"];
         }
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
-            [self showAlertWithTitle:@"登录失败" message:@"密码错误！"];
-            [self.textPass becomeFirstResponder];
+            [self showAlertWithTitle:@"登录失败" message:@"密码错误！" cancelAction:^(UIAlertAction *action) {
+                [self.textPass becomeFirstResponder];
+            }];
             [self getNewsAndInfo];
             return ;
         } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
-            [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！"];
-            [self.textUid becomeFirstResponder];
+            [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！" cancelAction:^(UIAlertAction *action) {
+                [self.textUid becomeFirstResponder];
+            }];
             [self getNewsAndInfo];
             return ;
         } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {

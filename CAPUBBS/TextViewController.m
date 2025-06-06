@@ -139,8 +139,9 @@
 
 - (IBAction)addText:(id)sender {
     if (self.textInput.text.length == 0) {
-        [self showAlertWithTitle:@"错误" message:@"您还未输入正文内容！"];
-        [self.textInput becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"您还未输入正文内容！" cancelAction:^(UIAlertAction *action) {
+            [self.textInput becomeFirstResponder];
+        }];
     } else {
         [self postText];
         [self showAlertWithTitle:@"插入成功" message:@"请选择下一步操作" confirmTitle:@"继续插入" confirmAction:^(UIAlertAction *action) {

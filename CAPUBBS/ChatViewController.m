@@ -266,7 +266,9 @@
     ChatCell *cell = (ChatCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
     NSString *text = cell.textSend.text;
     if (text.length == 0) {
-        [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！"];
+        [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！" cancelAction:^(UIAlertAction *action) {
+            [cell.textSend becomeFirstResponder];
+        }];
         return;
     }
     [hud showWithProgressMessage:@"正在发送"];

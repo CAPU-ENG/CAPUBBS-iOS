@@ -71,6 +71,12 @@
     [self showAlertWithTitle:title message:message confirmTitle:nil confirmAction:nil cancelTitle:cancelTitle cancelAction:nil];
 }
 
+- (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+             cancelAction:(void (^)(UIAlertAction *action))cancelAction {
+    [self showAlertWithTitle:title message:message confirmTitle:nil confirmAction:nil cancelTitle:@"好" cancelAction:cancelAction];
+}
+
 - (void)showAlertWithTitle:(NSString *)title message:(NSString *)message {
     [self showAlertWithTitle:title message:message confirmTitle:nil confirmAction:nil cancelTitle:@"好" cancelAction:nil];
 }

@@ -134,69 +134,82 @@
     //NSString *code = self.textCode.text;
     if (self.isEdit == NO) {
         if (uid.length == 0) {
-            [self showAlertWithTitle:@"错误" message:@"请填写用户名！"];
-            [self.textUid becomeFirstResponder];
+            [self showAlertWithTitle:@"错误" message:@"请填写用户名！" cancelAction:^(UIAlertAction *action) {
+                [self.textUid becomeFirstResponder];
+            }];
             return;
         }
         if (pass.length == 0) {
-            [self showAlertWithTitle:@"错误" message:@"请填写密码！"];
-            [self.textPsd becomeFirstResponder];
+            [self showAlertWithTitle:@"错误" message:@"请填写密码！" cancelAction:^(UIAlertAction *action) {
+                [self.textPsd becomeFirstResponder];
+            }];
             return;
         }
     }
     if (pass.length > 0 && pass.length < 6) {
-        [self showAlertWithTitle:@"错误" message:@"密码过于简单，至少为六位！"];
-        [self.textPsd becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"密码过于简单，至少为六位！" cancelAction:^(UIAlertAction *action) {
+            [self.textPsd becomeFirstResponder];
+        }];
         return;
     }
     if (![pass1 isEqualToString:pass]) {
-        [self showAlertWithTitle:@"错误" message:@"两次密码填写不一致！"];
-        [self.textPsdSure becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"两次密码填写不一致！" cancelAction:^(UIAlertAction *action) {
+            [self.textPsdSure becomeFirstResponder];
+        }];
         return;
     }
 //    if (email.length == 0) {
-//        [self showAlertWithTitle:@"错误" message:@"请填写邮箱！"];
-//        [self.textEmail becomeFirstResponder];
+//        [self showAlertWithTitle:@"错误" message:@"请填写邮箱！" cancelAction:^(UIAlertAction *action) {
+//            [self.textEmail becomeFirstResponder];
+//        }];
 //        return;
 //    }
     if (email.length > 0 && [RegisterViewController isValidateEmail:email] == NO) {
-        [self showAlertWithTitle:@"错误" message:@"邮箱格式错误！"];
-        [self.textEmail becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"邮箱格式错误！" cancelAction:^(UIAlertAction *action) {
+            [self.textEmail becomeFirstResponder];
+        }];
         return;
     }
     if (qq.length > 0 && [self isValidQQ:qq] == NO) {
-        [self showAlertWithTitle:@"错误" message:@"QQ格式错误！"];
-        [self.textQQ becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"QQ格式错误！" cancelAction:^(UIAlertAction *action) {
+            [self.textQQ becomeFirstResponder];
+        }];
         return;
     }
 //    if (code.length == 0) {
-//        [self showAlertWithTitle:@"错误" message:@"请填写注册码！"];
-//        [self.textCode becomeFirstResponder];
+//        [self showAlertWithTitle:@"错误" message:@"请填写注册码！" cancelAction:^(UIAlertAction *action) {
+//            [self.textCode becomeFirstResponder];
+//        }];
 //        return;
 //    }
     if ([self getByte:hobby] > 500) {
-        [self showAlertWithTitle:@"错误" message:@"爱好过长，不能超过500字节！"];
-        [self.textHobby becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"爱好过长，不能超过500字节！" cancelAction:^(UIAlertAction *action) {
+            [self.textHobby becomeFirstResponder];
+        }];
         return;
     }
     if ([self getByte:intro] > 1000) {
-        [self showAlertWithTitle:@"错误" message:@"个人简介过长，不能超过1000字节！"];
-        [self.textIntro becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"个人简介过长，不能超过1000字节！" cancelAction:^(UIAlertAction *action) {
+            [self.textIntro becomeFirstResponder];
+        }];
         return;
     }
     if ([self getByte:sig] > 1000) {
-        [self showAlertWithTitle:@"错误" message:@"签名档1过长，不能超过1000字节！"];
-        [self.textSig becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"签名档1过长，不能超过1000字节！" cancelAction:^(UIAlertAction *action) {
+            [self.textSig becomeFirstResponder];
+        }];
         return;
     }
     if ([self getByte:sig2] > 1000) {
-        [self showAlertWithTitle:@"错误" message:@"签名档2过长，不能超过1000字节！"];
-        [self.textSig2 becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"签名档2过长，不能超过1000字节！" cancelAction:^(UIAlertAction *action) {
+            [self.textSig2 becomeFirstResponder];
+        }];
         return;
     }
     if ([self getByte:sig3] > 1000) {
-        [self showAlertWithTitle:@"错误" message:@"签名档3过长，不能超过1000字节！"];
-        [self.textSig3 becomeFirstResponder];
+        [self showAlertWithTitle:@"错误" message:@"签名档3过长，不能超过1000字节！" cancelAction:^(UIAlertAction *action) {
+            [self.textSig3 becomeFirstResponder];
+        }];
         return;
     }
     NSDictionary *dict = @{
@@ -242,13 +255,15 @@
                     break;
                 }
                 case 8:{
-                    [self showAlertWithTitle:@"注册失败" message:@"用户名含有非法字符！"];
-                    [self.textUid becomeFirstResponder];
+                    [self showAlertWithTitle:@"注册失败" message:@"用户名含有非法字符！" cancelAction:^(UIAlertAction *action) {
+                        [self.textUid becomeFirstResponder];
+                    }];
                     break;
                 }
                 case 9:{
-                    [self showAlertWithTitle:@"注册失败" message:@"用户名已经存在！"];
-                    [self.textUid becomeFirstResponder];
+                    [self showAlertWithTitle:@"注册失败" message:@"用户名已经存在！" cancelAction:^(UIAlertAction *action) {
+                        [self.textUid becomeFirstResponder];
+                    }];
                     break;
                 }
                 default:

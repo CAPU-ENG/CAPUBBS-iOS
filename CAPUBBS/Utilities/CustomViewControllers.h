@@ -48,6 +48,10 @@
                cancelTitle:(NSString *)cancelTitle;
 
 - (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+              cancelAction:(void (^)(UIAlertAction *action))cancelAction;
+
+- (void)showAlertWithTitle:(NSString *)title
                    message:(NSString *)message;
 
 @end
