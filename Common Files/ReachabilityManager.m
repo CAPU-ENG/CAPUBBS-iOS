@@ -29,12 +29,16 @@
     self = [super init];
     if (self) {
         _currentNetworkTypeInternal = NetworkTypeUnknown;
-        _monitor = nw_path_monitor_create();
     }
     return self;
 }
 
 - (void)startMonitoring {
+    if (self.monitor) {
+        [self stopMonitoring];
+    }
+    self.monitor = nw_path_monitor_create();
+    
     nw_path_monitor_set_queue(self.monitor, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
     nw_path_monitor_set_update_handler(self.monitor, ^(nw_path_t path) {
         if (nw_path_get_status(path) == nw_path_status_satisfied) {
@@ -56,6 +60,7 @@
 - (void)stopMonitoring {
     if (self.monitor) {
         nw_path_monitor_cancel(self.monitor);
+        self.monitor = nil;
     }
 }
 

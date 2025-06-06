@@ -128,9 +128,6 @@
         dispatch_global_default_async(^{
             [self startLoadingImage:showPlaceholder];
         });
-        dispatch_global_default_async(^{
-            [self startLoadingImage:showPlaceholder];
-        });
     }
 }
 
