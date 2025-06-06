@@ -40,4 +40,12 @@
     // Configure the view for the selected state
 }
 
+- (void)prepareForReuse {
+    [super prepareForReuse];
+    [self.webView loadHTMLString:@"" baseURL:[NSURL URLWithString:CHEXIE]];
+    if (self.heightCheckTimer && [self.heightCheckTimer isValid]) {
+        [self.heightCheckTimer invalidate];
+    }
+}
+
 @end

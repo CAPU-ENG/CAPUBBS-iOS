@@ -65,39 +65,38 @@
     [[UISwitch appearance] setTintColor:[UIColor whiteColor]];
     [[UITableViewCell appearance] setBackgroundColor:[UIColor clearColor]];
     
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
-                          //                          @(2), @"proxy",
-                          //                          @"school", @"proxyPosition",
-                          @(YES), @"autoLogin",
-                          @(YES), @"enterLogin",
-                          @(NO), @"wakeLogin",
-                          @(YES), @"vibrate",
-                          @(NO), @"picOnlyInWifi",
-                          @(YES), @"autoSave",
-                          @(YES), @"oppositeSwipe",
-                          @(1), @"toolbarEditor",
-                          @(1), @"viewCollectionType",
-                          @(100), @"textSize",
-                          @(MAX_ID_NUM / 2), @"IDNum",
-                          @(MAX_HOT_NUM / 2), @"hotNum",
-                          @"2016-01-01", @"checkUpdate",
-                          @"2016-01-01", @"checkPass",
-                          nil];
-    NSDictionary *group = [NSDictionary dictionaryWithObjectsAndKeys:
-                           DEFAULT_SERVER_URL, @"URL",
-                           @"", @"token",
-                           @"", @"userInfo",
-                           @(NO), @"iconOnlyInWifi",
-                           @(NO), @"simpleView",
-                           nil];
+    NSDictionary *dict = @{
+        // @"proxy" : @2,
+        @"autoLogin" : @YES,
+        @"enterLogin" : @YES,
+        @"wakeLogin" : @NO,
+        @"vibrate" : @YES,
+        @"picOnlyInWifi" : @NO,
+        @"autoSave" : @YES,
+        @"oppositeSwipe" : @YES,
+        @"toolbarEditor" : @1,
+        @"viewCollectionType" : @1,
+        @"textSize" : @100,
+        @"IDNum" : @(MAX_ID_NUM / 2),
+        @"hotNum" : @(MAX_HOT_NUM / 2),
+        @"checkUpdate" : @"2025-01-01",
+        @"checkPass" : @"2025-01-01"
+    };
+    NSDictionary *group = @{
+        @"URL" : DEFAULT_SERVER_URL,
+        @"token" : @"",
+        @"userInfo" : @"",
+        @"iconOnlyInWifi" : @NO,
+        @"simpleView" : @NO
+    };
     [DEFAULTS registerDefaults:dict];
     [DEFAULTS removeObjectForKey:@"enterLogin"];
     [DEFAULTS removeObjectForKey:@"wakeLogin"];
     [GROUP_DEFAULTS registerDefaults:group];
     [self transferDefaults];
     
-    [[NSURLCache sharedURLCache] setMemoryCapacity:16.0 * 1024 * 1024];
-    [[NSURLCache sharedURLCache] setDiskCapacity:64.0 * 1024 * 1024];
+    [[NSURLCache sharedURLCache] setMemoryCapacity:64.0 * 1024 * 1024];
+    [[NSURLCache sharedURLCache] setDiskCapacity:256.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [self performSelectorInBackground:@selector(transport) withObject:nil];
     performer = [[ActionPerformer alloc] init];
@@ -299,7 +298,7 @@
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
             navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         }
-        [view presentViewController:navi animated:YES completion:nil];
+        [view presentViewControllerSafe:navi];
         NSLog(@"Open with %@", open);
     }
 }
@@ -385,7 +384,10 @@
         for (int i = 0; i < MAX_ID_NUM; i++) {
             NSString *uid = [DEFAULTS objectForKey:[NSString stringWithFormat:@"id%d", i]];
             if (uid.length > 0) {
-                [IDs addObject:[NSDictionary dictionaryWithObjectsAndKeys:uid, @"id", [DEFAULTS objectForKey:[NSString stringWithFormat:@"password%d", i]], @"pass", nil]];
+                [IDs addObject:@{
+                    @"id" : uid,
+                    @"pass" : [DEFAULTS objectForKey:[NSString stringWithFormat:@"password%d", i]]
+                }];
                 [DEFAULTS removeObjectForKey:[NSString stringWithFormat:@"id%d", i]];
                 [DEFAULTS removeObjectForKey:[NSString stringWithFormat:@"password%d", i]];
             }
@@ -432,7 +434,13 @@
     NSString *uid = UID;
     if (uid.length > 0) {
         [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid, @"username", [ActionPerformer md5:PASS], @"password", @"ios", @"os", [ActionPerformer doDevicePlatform], @"device", [[UIDevice currentDevice] systemVersion], @"version", nil];
+        NSDictionary *dict = @{
+            @"username" : uid,
+            @"password" : [ActionPerformer md5:PASS],
+            @"os" : @"ios",
+            @"device" : [ActionPerformer doDevicePlatform],
+            @"version" : [[UIDevice currentDevice] systemVersion]
+        };
         dispatch_semaphore_t signal = dispatch_semaphore_create(0);
         [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
             [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];

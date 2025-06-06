@@ -9,7 +9,6 @@
 #import <UIKit/UIKit.h>
 #import "SearchViewCell.h"
 #import "AsyncImageView.h"
-#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface SearchViewController : CustomViewController<UITableViewDelegate> {
     ActionPerformer *performer;

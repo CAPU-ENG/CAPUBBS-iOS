@@ -21,6 +21,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     performer = [[ActionPerformer alloc] init];
     messageRefreshing = NO;
     isFirstTime = YES;
@@ -30,7 +34,20 @@
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableView addSubview:control];
-    [self.segmentType setTintColor:GREEN_DARK];
+    if (@available(iOS 13.0, *)) {
+        self.segmentType.selectedSegmentTintColor = GREEN_DARK;
+        // 普通状态文字颜色
+        [self.segmentType setTitleTextAttributes:@{
+            NSForegroundColorAttributeName: [UIColor grayColor]
+        } forState:UIControlStateNormal];
+        // 选中状态文字颜色
+        [self.segmentType setTitleTextAttributes:@{
+            NSForegroundColorAttributeName: [UIColor whiteColor]
+        } forState:UIControlStateSelected];
+    } else {
+        self.segmentType.tintColor = GREEN_DARK;
+    }
+//    [self.segmentType setTintColor:GREEN_DARK];
     [self typeChanged:self.segmentType];
     // Do any additional setup after loading the view.
 }
@@ -51,17 +68,11 @@
 
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
     control.attributedTitle = [[NSAttributedString alloc] initWithString:@"刷新"];
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"正在刷新";
-    [hud showAnimated:YES];
+    [hud showWithProgressMessage:@"正在刷新"];
     [self getInfo];
 }
 
 - (void)getInfo {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
     if (self.segmentType.selectedSegmentIndex == 0) {
         self.toolbarItems = @[self.buttonPrevious, self.barFreeSpace, self.barFreeSpace, self.buttonNext];
     } else {
@@ -70,10 +81,11 @@
     if ([ActionPerformer checkLogin:NO] && messageRefreshing == NO) {
         messageRefreshing = YES;
         NSString *type = (self.segmentType.selectedSegmentIndex == 0) ? @"system" : @"private";
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.label.text = @"正在加载";
-        [hud showAnimated:YES];
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:type, @"type", [NSString stringWithFormat:@"%ld", (long)page], @"page", nil];
+        [hud showWithProgressMessage:@"正在加载"];
+        NSDictionary *dict = @{
+            @"type" : type,
+            @"page" : [NSString stringWithFormat:@"%ld", (long)page]
+        };
         [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
             if (control.isRefreshing) {
                 [control endRefreshing];
@@ -81,16 +93,10 @@
             messageRefreshing = NO;
             isBackground = NO;
             if (err || result.count == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"加载失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hideAnimated:YES afterDelay:0.5];
-                return ;
+                [hud hideWithFailureMessage:@"加载失败"];
+                return;
             }
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.mode = MBProgressHUDModeCustomView;
-            hud.label.text = @"加载成功";
-            [hud hideAnimated:YES afterDelay:0.5];
+            [hud hideWithSuccessMessage:@"加载成功"];
             
             // NSLog(@"%@", result);
             data = result;
@@ -131,11 +137,7 @@
         if (control.isRefreshing) {
             [control endRefreshing];
         }
-        hud.label.text = @"尚未登录";
-        [hud showAnimated:YES];
-        hud.mode = MBProgressHUDModeCustomView;
-        hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        [hud hideAnimated:YES afterDelay:0.5];
+        [hud showAndHideWithFailureMessage:@"尚未登录"];
         data = nil;
         self.buttonPrevious.enabled = NO;
         self.buttonNext.enabled = NO;
@@ -215,10 +217,27 @@
 }
 
 - (IBAction)add:(id)sender {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"发送私信" message:@"请输入对方的用户名" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"开始", nil];
-    alert.alertViewStyle = UIAlertViewStylePlainTextInput;
-    [alert textFieldAtIndex:0].placeholder = @"用户名";
-    [alert show];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"发送私信"
+                                                                   message:@"请输入对方的用户名"
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = @"用户名";
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"开始"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        NSString *userName = alert.textFields.firstObject.text;
+        if (userName.length == 0) {
+            [self showAlertWithTitle:@"错误" message:@"用户名不能为空"];
+        } else {
+            chatID = userName;
+            [self performSegueWithIdentifier:@"chat" sender:nil];
+        }
+    }]];
+    [self presentViewControllerSafe:alert];
 }
 
 - (void)backgroundRefresh {
@@ -297,20 +316,6 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title isEqualToString:@"发送私信"]) {
-        if ([alertView textFieldAtIndex:0].text.length == 0) {
-            [self showAlertWithTitle:@"错误" message:@"用户名不能为空"];
-        } else {
-            chatID = [alertView textFieldAtIndex:0].text;
-            [self performSegueWithIdentifier:@"chat" sender:nil];
-        }
-    }
 }
 
 #pragma mark - Navigation

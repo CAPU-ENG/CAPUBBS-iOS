@@ -23,6 +23,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     performer = [[ActionPerformer alloc] init];
     performerPsd = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(setUserIcon:) name:@"selectIcon" object:nil];
@@ -107,8 +111,8 @@
 }
 
 - (void)setUserIcon:(NSNotification *)notification{
-    iconURL = [notification.userInfo objectForKey:@"URL"];
     dispatch_main_async_safe(^{
+        iconURL = [notification.userInfo objectForKey:@"URL"];
         [self.icon setUrl:iconURL];
     });
 }
@@ -195,33 +199,36 @@
         [self.textSig3 becomeFirstResponder];
         return;
     }
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid, @"username",[ActionPerformer md5:pass], @"password", sex, @"sex",qq,@"qq",email,@"mail",iconURL, @"icon", from, @"from", intro, @"intro", hobby, @"hobby", sig, @"sig", sig2, @"sig2", sig3, @"sig3", @"ios", @"os", [ActionPerformer doDevicePlatform], @"device", [[UIDevice currentDevice] systemVersion], @"version", nil];
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    [hud showAnimated:YES];
+    NSDictionary *dict = @{
+        @"username" : uid,
+        @"password" : [ActionPerformer md5:pass],
+        @"sex" : sex,
+        @"qq" : qq,
+        @"mail" : email,
+        @"icon" : iconURL,
+        @"from" : from,
+        @"intro" : intro,
+        @"hobby" : hobby,
+        @"sig" : sig,
+        @"sig2" : sig2,
+        @"sig3" : sig3,
+        @"os" : @"ios",
+        @"device" : [ActionPerformer doDevicePlatform],
+        @"version" : [[UIDevice currentDevice] systemVersion]
+    };
     if (self.isEdit == NO) {
-        hud.label.text = @"注册中";
+        [hud showWithProgressMessage:@"注册中"];
         [performer performActionWithDictionary:dict toURL:@"register" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [self showAlertWithTitle:@"注册失败" message:[err localizedDescription]];
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"注册失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hideAnimated:YES afterDelay:0.5];
+                [hud hideWithFailureMessage:@"注册失败"];
                 return;
             }
             if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.label.text = @"注册成功";
+                [hud hideWithSuccessMessage:@"注册成功"];
             } else {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"注册失败";
+                [hud hideWithFailureMessage:@"注册失败"];
             }
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
                     [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
@@ -252,34 +259,35 @@
             }
         }];
     } else {
-        hud.label.text = @"修改中";
+        [hud showWithProgressMessage:@"修改中"];
         [performer performActionWithDictionary:dict toURL:@"edituser" withBlock:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"修改失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hideAnimated:YES afterDelay:0.5];
+                [hud hideWithFailureMessage:@"修改失败"];
                 return;
             }
             if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.label.text = @"修改成功";
+                [hud hideWithSuccessMessage:@"修改成功"];
             } else {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"修改失败";
+                [hud hideWithFailureMessage:@"修改失败"];
             }
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
             
             switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
                 case 0: {
                     if (self.textPsd.text.length > 0) {
-                        UIAlertView *passSure = [[UIAlertView alloc] initWithTitle:@"验证密码" message:@"您选择了修改密码\n请输入原密码以验证身份" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil];
-                        [passSure setAlertViewStyle:UIAlertViewStylePlainTextInput];
-                        [passSure textFieldAtIndex:0].placeholder = @"原密码";
-                        [passSure textFieldAtIndex:0].secureTextEntry = YES;
-                        [passSure show];
+                        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"验证密码" message:@"您选择了修改密码\n请输入原密码以验证身份" preferredStyle:UIAlertControllerStyleAlert];
+                        [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+                            textField.placeholder = @"原密码";
+                            textField.secureTextEntry = YES;
+                        }];
+                        [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+                            [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                        }]];
+                        [alert addAction:[UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                            NSString *oldPassword = alert.textFields.firstObject.text;
+                            [self changePasswordWithOldPassword:oldPassword];
+                        }]];
+                        [self presentViewControllerSafe:alert];
                     } else {
                         [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
                     }
@@ -311,68 +319,50 @@
     [self.navigationController popViewControllerAnimated:YES];
 }
 
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        if ([alertView.title isEqualToString:@"验证密码"]) {
-            [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+- (void)changePasswordWithOldPassword:(NSString *)oldPassword {
+    [hud showWithProgressMessage:@"修改中"];
+    NSDictionary *dict = @{
+        @"old" : [ActionPerformer md5:oldPassword],
+        @"new" : [ActionPerformer md5:self.textPsd.text]
+    };
+    [performerPsd performActionWithDictionary:dict toURL:@"changepsd" withBlock:^(NSArray *result, NSError *err) {
+        if (err || result.count == 0) {
+            [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
+            [hud hideWithFailureMessage:@"修改失败"];
+            return;
         }
-        return;
-    }
-    if ([alertView.title isEqualToString:@"验证密码"]) {
-        if (!hud && self.navigationController) {
-            hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-            [self.navigationController.view addSubview:hud];
+        if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+            [hud hideWithSuccessMessage:@"修改成功"];
+        } else {
+            [hud hideWithFailureMessage:@"修改失败"];
         }
-        hud.mode = MBProgressHUDModeIndeterminate;
-        [hud showAnimated:YES];
-        hud.label.text = @"修改中";
-        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[ActionPerformer md5:[alertView textFieldAtIndex:0].text], @"old", [ActionPerformer md5:self.textPsd.text], @"new", nil];
-        [performerPsd performActionWithDictionary:dict toURL:@"changepsd" withBlock:^(NSArray *result, NSError *err) {
-            if (err || result.count == 0) {
-                [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"修改失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hideAnimated:YES afterDelay:0.5];
-                return;
+        
+        switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+            case 0: {
+                [GROUP_DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
+                [GROUP_DEFAULTS setObject:[[result firstObject] objectForKey:@"msg"] forKey:@"token"];
+                [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                break;
             }
-            if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.label.text = @"修改成功";
-            } else {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"修改失败";
+            case 1:{
+                [self showAlertWithTitle:@"修改密码失败" message:@"登录超时，请重新登录！"];
+                break;
             }
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
-            
-            switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
-                case 0: {
-                    [GROUP_DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
-                    [GROUP_DEFAULTS setObject:[[result firstObject] objectForKey:@"msg"] forKey:@"token"];
-                    [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
-                    break;
-                }
-                case 1:{
-                    [self showAlertWithTitle:@"修改密码失败" message:@"登录超时，请重新登录！"];
-                    break;
-                }
-                case 2:{
-                    [self showAlertWithTitle:@"修改密码失败" message:@"旧密码错误！"];
-                    break;
-                }
-                case 3:{
-                    [self showAlertWithTitle:@"修改密码失败" message:@"数据库错误！"];
-                    break;
-                }
-                default:
-                {
-                    [self showAlertWithTitle:@"修改密码失败" message:@"发生未知错误！"];
-                    break;
-                }
+            case 2:{
+                [self showAlertWithTitle:@"修改密码失败" message:@"旧密码错误！"];
+                break;
             }
-        }];
-    }
+            case 3:{
+                [self showAlertWithTitle:@"修改密码失败" message:@"数据库错误！"];
+                break;
+            }
+            default:
+            {
+                [self showAlertWithTitle:@"修改密码失败" message:@"发生未知错误！"];
+                break;
+            }
+        }
+    }];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {

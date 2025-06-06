@@ -23,6 +23,7 @@
 		017785ED1AADDA870089361C /* FacesViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 017785EC1AADDA870089361C /* FacesViewCell.m */; };
 		017FE5F21A9DC2E5001BDD15 /* Launch Screen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 017FE5F11A9DC2E5001BDD15 /* Launch Screen.xib */; };
 		01830CB91C2694B70026D1EB /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01830CB81C2694B70026D1EB /* Accelerate.framework */; };
+		018590472DF103EB002E73D9 /* CustomProgressHUD.m in Sources */ = {isa = PBXBuildFile; fileRef = 018590462DF103EA002E73D9 /* CustomProgressHUD.m */; };
 		018DC2021BFF482600334BF1 /* IDCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 018DC2011BFF482600334BF1 /* IDCell.m */; };
 		019D7E952DEA179F00F91E41 /* jquery.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 019D7E942DEA179500F91E41 /* jquery.min.js */; };
 		01A552BB1C1204AA002317C0 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 01A552BA1C1204AA002317C0 /* Images.xcassets */; };
@@ -297,6 +298,8 @@
 		017785EC1AADDA870089361C /* FacesViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FacesViewCell.m; sourceTree = "<group>"; };
 		017FE5F11A9DC2E5001BDD15 /* Launch Screen.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = "Launch Screen.xib"; sourceTree = "<group>"; };
 		01830CB81C2694B70026D1EB /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		018590452DF103D7002E73D9 /* CustomProgressHUD.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CustomProgressHUD.h; sourceTree = "<group>"; };
+		018590462DF103EA002E73D9 /* CustomProgressHUD.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CustomProgressHUD.m; sourceTree = "<group>"; };
 		018DC2001BFF482600334BF1 /* IDCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IDCell.h; sourceTree = "<group>"; };
 		018DC2011BFF482600334BF1 /* IDCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IDCell.m; sourceTree = "<group>"; };
 		019D7E942DEA179500F91E41 /* jquery.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = jquery.min.js; sourceTree = "<group>"; };
@@ -586,6 +589,8 @@
 		0169A9492DF0A98000F8978B /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				018590452DF103D7002E73D9 /* CustomProgressHUD.h */,
+				018590462DF103EA002E73D9 /* CustomProgressHUD.m */,
 				0169A9532DF0B01A00F8978B /* CustomViewControllers.h */,
 				0169A9542DF0B02400F8978B /* CustomViewControllers.m */,
 				0169A94A2DF0A99700F8978B /* CustomNavigationController.h */,
@@ -1247,6 +1252,7 @@
 			files = (
 				8B7403E018B5ADC3009753FE /* RegisterViewController.m in Sources */,
 				01C2D9B81AC82DC400CA4F02 /* TextViewController.m in Sources */,
+				018590472DF103EB002E73D9 /* CustomProgressHUD.m in Sources */,
 				0141F9621B03B803003F3186 /* OnlineViewController.m in Sources */,
 				0141F9651B03C1C1003F3186 /* OnlineViewCell.m in Sources */,
 				01729C281B01EFA300BC8218 /* WebViewController.m in Sources */,

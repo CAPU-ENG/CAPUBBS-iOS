@@ -190,23 +190,16 @@
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.barButtonItem = self.buttonOrganize;
-    [self presentViewController:action animated:YES completion:nil];
+    [self presentViewControllerSafe:action];
 }
 
 - (IBAction)clearAll:(id)sender {
-    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"确认删除所有个人收藏吗？\n删除操作不可逆" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title isEqualToString:@"警告"]) {
+    [self showAlertWithTitle:@"警告" message:@"确认删除所有个人收藏吗？\n删除操作不可逆" confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
         [DEFAULTS removeObjectForKey:@"collection"];
         [self.tableView setEditing:NO];
         [self.navigationController setToolbarHidden:YES animated:YES];
         [NOTIFICATION postNotificationName:@"collectionChanged" object:nil];
-    }
+    }];
 }
 
 #pragma mark - Table view data source

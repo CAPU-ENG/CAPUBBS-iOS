@@ -8,9 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import "AsyncImageView.h"
-#import <MBProgressHUD/MBProgressHUD.h>
 
-@interface LoginViewController : CustomViewController<UIAlertViewDelegate, UITableViewDelegate> {
+@interface LoginViewController : CustomViewController<UITableViewDelegate> {
     MBProgressHUD *hud;
     NSArray *news;
     NSString *title;
@@ -18,8 +17,8 @@
     ActionPerformer *performerInfo;
     ActionPerformer *performerUser;
     UIRefreshControl *control;
-    NSString *newVerURL;
     BOOL userInfoRefreshing;
+    BOOL newsRefreshing;
 }
 @property (weak, nonatomic) IBOutlet UITextField *textUid;
 @property (weak, nonatomic) IBOutlet UITextField *textPass;

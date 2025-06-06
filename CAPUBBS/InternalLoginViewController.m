@@ -18,6 +18,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     performer = [[ActionPerformer alloc] init];
     performerLogout = [[ActionPerformer alloc] init];
     self.textUid.text = self.defaultUid;
@@ -64,32 +68,25 @@
         return;
     }
     shouldPop = NO;
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"正在登录";
-    [hud showAnimated:YES];
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:uid,@"username",[ActionPerformer md5:pass],@"password",@"ios",@"os",[ActionPerformer doDevicePlatform],@"device",[[UIDevice currentDevice] systemVersion],@"version",nil];
+    [hud showWithProgressMessage:@"正在登录"];
+    NSDictionary *dict = @{
+        @"username" : uid,
+        @"password" : [ActionPerformer md5:pass],
+        @"os" : @"ios",
+        @"device" : [ActionPerformer doDevicePlatform],
+        @"version" : [[UIDevice currentDevice] systemVersion]
+    };
     [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.label.text = @"登录失败";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"登录失败"];
 //            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.label.text = @"登录成功";
+            [hud hideWithSuccessMessage:@"登录成功"];
         } else {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.label.text = @"登录失败";
+            [hud hideWithFailureMessage:@"登录失败"];
         }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hideAnimated:YES afterDelay:0.5];
         if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
             [self showAlertWithTitle:@"登录失败" message:@"密码错误！"];
             [self.textPass becomeFirstResponder];

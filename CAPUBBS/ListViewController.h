@@ -8,9 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
-#import <MBProgressHUD/MBProgressHUD.h>
 
-@interface ListViewController : CustomTableViewController<UIAlertViewDelegate> {
+@interface ListViewController : CustomTableViewController {
     ActionPerformer *performer;
     ActionPerformer *performerReply;
     NSMutableArray *data;

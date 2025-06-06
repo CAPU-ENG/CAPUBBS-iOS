@@ -123,13 +123,7 @@
 }
 
 - (IBAction)logOut:(id)sender {
-    [[[UIAlertView alloc] initWithTitle:@"警告" message:@"您确定要注销当前账号吗？" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil] show];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    } else if ([alertView.title isEqualToString:@"警告"]) {
+    [self showAlertWithTitle:@"警告" message:@"您确定要注销当前账号吗？" confirmTitle:@"确定" confirmAction:^(UIAlertAction *action) {
         [performer performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
         NSLog(@"Logout - %@", UID);
         [GROUP_DEFAULTS removeObjectForKey:@"uid"];
@@ -139,7 +133,7 @@
         dispatch_main_async_safe(^{
             [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
         });
-    }
+    }];
 }
 
 - (IBAction)back:(id)sender {
@@ -147,9 +141,9 @@
 }
 
 - (void)userChanged:(NSNotification*)noti {
-    data = [[DEFAULTS objectForKey:@"ID"] mutableCopy];
-    isDelete = NO;
     dispatch_main_async_safe(^{
+        data = [[DEFAULTS objectForKey:@"ID"] mutableCopy];
+        isDelete = NO;
         self.buttonLogout.enabled = ([UID length] > 0);
         [self.tableView reloadData];
     });

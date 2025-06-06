@@ -21,6 +21,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
     
     largeCellSize = smallCellSize = 0;
     performer = [[ActionPerformer alloc] init];
@@ -136,7 +139,9 @@
 // Uncomment this method to specify if the specified item should be selected
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     IconCell *cell = (IconCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[cell.icon getUrl], @"URL", nil]];
+    [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:@{
+        @"URL" : [cell.icon getUrl]
+    }];
     [self.navigationController popViewControllerAnimated:YES];
 }
 
@@ -186,11 +191,32 @@
 - (IBAction)upload:(id)sender {
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"选择图片来源" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"网址链接" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        UIAlertView *alert=[[UIAlertView alloc] initWithTitle:@"设置头像" message:@"请输入图片链接" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil];
-        alert.alertViewStyle=UIAlertViewStylePlainTextInput;
-        [alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeURL;
-        [alert textFieldAtIndex:0].placeholder = @"链接";
-        [alert show];
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"设置头像"
+                                                                       message:@"请输入图片链接"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+            textField.keyboardType = UIKeyboardTypeURL;
+            textField.placeholder = @"链接";
+        }];
+        [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                                  style:UIAlertActionStyleCancel
+                                                handler:nil]];
+        [alert addAction:[UIAlertAction actionWithTitle:@"确认"
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(UIAlertAction * _Nonnull action) {
+            NSString *url = alert.textFields.firstObject.text;
+            if (url.length > 0) {
+                [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:@{
+                    @"num" : @"-1",
+                    @"URL" : url
+                }];
+                [self.navigationController popViewControllerAnimated:YES];
+            } else {
+                [self showAlertWithTitle:@"错误" message:@"链接不能为空"];
+            }
+        }]];
+        [self presentViewControllerSafe:alert];
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"照片图库" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
@@ -213,17 +239,19 @@
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.barButtonItem = self.buttonUpload;
-    [self presentViewController:action animated:YES completion:nil];
+    [self presentViewControllerSafe:action];
 }
 
 - (void)presentImagePicker:(UIImagePickerController*)imagePicker {
-    [self presentViewController:imagePicker animated:YES completion:nil];
+    [self presentViewControllerSafe:imagePicker];
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     image = [info objectForKey:UIImagePickerControllerEditedImage];
     if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
-        [[[UIAlertView alloc] initWithTitle:@"警告" message:@"所选图片偏离正方形\n建议裁剪处理后使用" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"继续上传", nil] show];
+        [self showAlertWithTitle:@"警告" message:@"所选图片偏离正方形\n建议裁剪处理后使用" confirmTitle:@"继续上传" confirmAction:^(UIAlertAction *action) {
+            [self prepareUpload];
+        } cancelTitle:@"取消上传"];
     } else {
         [self prepareUpload];
     }
@@ -231,13 +259,7 @@
 }
 
 - (void)prepareUpload {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"正在压缩";
-    [hud showAnimated:YES];
+    [hud showWithProgressMessage:@"正在压缩"];
     [self performSelectorInBackground:@selector(upload) withObject:nil];
 }
 
@@ -250,25 +272,20 @@
         imageData = UIImageJPEGRepresentation(image, ratio);
     }
     NSLog(@"Icon Size:%dkB", (int)imageData.length / 1024);
-    hud.label.text = @"正在上传";
-    [performer performActionWithDictionary:[NSDictionary dictionaryWithObjectsAndKeys:[imageData base64EncodedStringWithOptions:0], @"image", nil] toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
+    [hud showWithProgressMessage:@"正在上传"];
+    [performer performActionWithDictionary:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.label.text = @"上传失败";
-        } else {
-            if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.label.text = @"上传完成";
-                NSString *url = [[result firstObject] objectForKey:@"imgurl"];
-                [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:url, @"URL", nil]];
-                [self.navigationController popViewControllerAnimated:YES];
-            } else {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"上传失败";
-            }
+            [hud hideWithFailureMessage:@"上传失败"];
+            return;
         }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hideAnimated:YES afterDelay:0.5];
+        if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
+            [hud hideWithSuccessMessage:@"上传成功"];
+            NSString *url = [[result firstObject] objectForKey:@"imgurl"];
+            [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:@{ @"URL" : url }];
+            [self.navigationController popViewControllerAnimated:YES];
+        } else {
+            [hud hideWithFailureMessage:@"上传失败"];
+        }
     }];
 }
 
@@ -278,23 +295,6 @@
     UIImage *reSizeImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return reSizeImage;
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title isEqualToString:@"设置头像"]) {
-        NSString *url = [alertView textFieldAtIndex:0].text;
-        if (url.length > 0) {
-            [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"-1", @"num", url, @"URL", nil]];
-            [self.navigationController popViewControllerAnimated:YES];
-        } else {
-            [self showAlertWithTitle:@"错误" message:@"链接不能为空"];
-        }
-    } else if ([alertView.title isEqualToString:@"警告"]) {
-        [self prepareUpload];
-    }
 }
 
 @end

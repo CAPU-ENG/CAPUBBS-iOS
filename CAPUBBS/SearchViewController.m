@@ -20,6 +20,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
     
     [self refreshBackgroundView:YES];
     [self.inputType setTintColor:GREEN_DARK];
@@ -242,31 +245,26 @@
         return;
     }
     // NSLog(@"Search Text:%@, Type:%@, BT:%@, ET:%@, Author:%@ Bid:%@", text, type, beginTime, endTime, author, self.b);
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"正在搜索";
-    [hud showAnimated:YES];
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:type, @"type", self.bid, @"bid", text, @"text", beginTime, @"starttime", endTime, @"endtime", author, @"username", nil];
+    [hud showWithProgressMessage:@"正在搜索"];
+    NSDictionary *dict = @{
+        @"type" : type,
+        @"bid" : self.bid,
+        @"text" : text,
+        @"starttime" : beginTime,
+        @"endtime" : endTime,
+        @"username" : author
+    };
     [performer performActionWithDictionary:dict toURL:@"search" withBlock:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
         if (err || result.count == 0) {
             searchResult=nil;
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.label.text = @"搜索失败";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"搜索失败"];
             NSLog(@"%@",err);
             return;
         }
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.label.text = @"搜索成功";
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hideAnimated:YES afterDelay:0.5];
+        [hud hideWithSuccessMessage:@"搜索成功"];
         searchResult=[result subarrayWithRange:NSMakeRange(1, result.count-1)];
 //         NSLog(@"Search Result:%@", searchResult);
         if (searchResult.count == 0) {
@@ -293,7 +291,7 @@
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     action.popoverPresentationController.sourceView = self.labelB;
     action.popoverPresentationController.sourceRect = self.labelB.bounds;
-    [self presentViewController:action animated:YES completion:nil];
+    [self presentViewControllerSafe:action];
 }
 
 #pragma mark - Navigation

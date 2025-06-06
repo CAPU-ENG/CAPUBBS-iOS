@@ -32,12 +32,12 @@
 }
 
 - (void)refresh:(NSNotification *)noti {
-    if (self.iconData.length == 0) {
-        self.iconData = noti.userInfo[@"data"];
-        dispatch_main_async_safe(^{
+    dispatch_main_async_safe(^{
+        if (self.iconData.length == 0) {
+            self.iconData = noti.userInfo[@"data"];
             [self refreshBackgroundView:NO];
-        });
-    }
+        }
+    });
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {

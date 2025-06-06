@@ -36,7 +36,7 @@
             sig = dict[[NSString stringWithFormat:@"sig%d", self.sig]];
         }
     }
-    NSString *html = [ContentViewController htmlStringWithText:[self transToHTML:self.textBody] andSig:sig];
+    NSString *html = [ContentViewController htmlStringWithText:[self transToHTML:self.textBody] sig:sig textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
     [self.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     // Do any additional setup after loading the view.
 }
@@ -85,7 +85,7 @@
         CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = path;
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
-        [self presentViewController:navi animated:YES completion:nil];
+        [self presentViewControllerSafe:navi];
         return NO;
     } else {
         return YES;

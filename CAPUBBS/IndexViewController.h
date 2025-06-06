@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "IndexViewCell.h"
-#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface IndexViewController : CustomViewController<UICollectionViewDelegate> {
     ActionPerformer *performer;

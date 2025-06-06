@@ -22,6 +22,9 @@
     [self.webView setAllowsLinkPreview:YES];
     self.buttonBack.enabled = NO;
     self.buttonForward.enabled = NO;
+    if (!([self.URL hasPrefix:@"http://"] || [self.URL hasPrefix:@"https://"])) {
+        self.URL = [@"https://" stringByAppendingString:self.URL];
+    }
     
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".web"]];
     activity.webpageURL = [NSURL URLWithString:self.URL];
@@ -126,7 +129,7 @@
     UIActivityViewController *activityViewController =
     [[UIActivityViewController alloc] initWithActivityItems:@[self.title, [NSURL URLWithString:self.URL]] applicationActivities:nil];
     activityViewController.popoverPresentationController.barButtonItem = self.buttonShare;
-    [self.navigationController presentViewController:activityViewController animated:YES completion:nil];
+    [self presentViewControllerSafe:activityViewController];
 }
 
 // 开始拖拽视图

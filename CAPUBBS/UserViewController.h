@@ -9,7 +9,6 @@
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
 #import "AsyncImageView.h"
-#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface UserViewController : CustomTableViewController<UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
     ActionPerformer *performer;

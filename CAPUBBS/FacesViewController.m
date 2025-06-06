@@ -67,9 +67,13 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == 1) {
-        [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"[img]/bbsimg/expr/%ld.gif[/img]", (long)(indexPath.row+1)], @"HTML", nil]];
+        [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:@{
+            @"HTML" : [NSString stringWithFormat:@"[img]/bbsimg/expr/%ld.gif[/img]", (long)(indexPath.row + 1)]
+        }];
     } else {
-        [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"[img]/bbsimg/%ld.gif[/img]", (long)(indexPath.row+1)], @"HTML", nil]];
+        [NOTIFICATION postNotificationName:@"addContent" object:nil userInfo:@{
+            @"HTML" : [NSString stringWithFormat:@"[img]/bbsimg/%ld.gif[/img]", (long)(indexPath.row + 1)]
+        }];
     }
     self.numberOfFaces++;
     self.title = [NSString stringWithFormat:@"已插入%d个表情", self.numberOfFaces];

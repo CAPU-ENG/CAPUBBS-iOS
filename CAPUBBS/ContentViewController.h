@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
-#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface ContentViewController : CustomTableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
     MBProgressHUD *hud;
@@ -47,7 +46,7 @@
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonJump;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonAction;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCompose;
-+ (NSString *)htmlStringWithText:(NSString *)text andSig:(NSString *)sig;
++ (NSString *)htmlStringWithText:(NSString *)text sig:(NSString *)sig textSize:(int)textSize;
 + (NSString *)restoreFormat:(NSString *)text;
 + (NSString *)transFromHTML:(NSString *)text;
 + (NSString *)removeHTML:(NSString *)text;

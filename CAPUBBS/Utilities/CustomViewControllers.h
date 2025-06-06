@@ -21,9 +21,27 @@
 @interface CustomMailComposeViewController : MFMailComposeViewController
 @end
 
-@interface UIViewController (Alert)
+@interface UIViewController (Extension)
 
-- (void)presentAlertController:(UIAlertController *)alert;
+- (void)presentViewControllerSafe:(UIViewController *)view;
+
+- (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+              confirmTitle:(NSString *)confirmTitle
+             confirmAction:(void (^)(UIAlertAction *action))confirmAction
+               cancelTitle:(NSString *)cancelTitle
+              cancelAction:(void (^)(UIAlertAction *action))cancelAction;
+
+- (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+              confirmTitle:(NSString *)confirmTitle
+             confirmAction:(void (^)(UIAlertAction *action))confirmAction
+               cancelTitle:(NSString *)cancelTitle;
+
+- (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+              confirmTitle:(NSString *)confirmTitle
+             confirmAction:(void (^)(UIAlertAction *action))confirmAction;
 
 - (void)showAlertWithTitle:(NSString *)title
                    message:(NSString *)message

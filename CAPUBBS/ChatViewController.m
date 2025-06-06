@@ -18,6 +18,10 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     if (self.iconData.length > 0) {
         [self refreshBackgroundView:YES];
     }
@@ -37,10 +41,7 @@
     if (self.ID.length == 0) {
         self.directTalk = YES;
         self.title = @"私信";
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"发送私信" message:@"请输入对方的用户名" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"开始", nil];
-        alert.alertViewStyle = UIAlertViewStylePlainTextInput;
-        [alert textFieldAtIndex:0].placeholder = @"用户名";
-        [alert show];
+        [self askForUserId];
     } else {
         self.title = self.ID;
         [self loadChat];
@@ -56,13 +57,44 @@
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
 }
 
+- (void)askForUserId {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"发送私信"
+                                                                   message:@"请输入对方的用户名"
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = @"用户名";
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                              style:UIAlertActionStyleCancel
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"开始"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+        NSString *userName = alert.textFields.firstObject.text;
+        if (userName.length == 0) {
+            [self showAlertWithTitle:@"错误" message:@"用户名不能为空" confirmTitle:@"重试" confirmAction:^(UIAlertAction *action) {
+                [self askForUserId];
+            } cancelTitle:@"取消" cancelAction:^(UIAlertAction *action) {
+                [self dismissViewControllerAnimated:YES completion:nil];
+            }];
+        } else {
+            self.ID = userName;
+            self.title = userName;
+            [self loadChat];
+        }
+    }]];
+    [self presentViewControllerSafe:alert];
+}
+
 - (void)refresh:(NSNotification *)noti {
-    if (self.iconData.length == 0) {
-        self.iconData = noti.userInfo[@"data"];
-        dispatch_main_async_safe(^{
+    dispatch_main_async_safe(^{
+        if (self.iconData.length == 0) {
+            self.iconData = noti.userInfo[@"data"];
             [self refreshBackgroundView:NO];
-        });
-    }
+        }
+    });
 }
 
 - (void)refreshBackgroundView:(BOOL)noAnimation {
@@ -92,26 +124,20 @@
 }
 
 - (void)loadChat {
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
     if (shouldShowHud) {
-        hud.mode = MBProgressHUDModeIndeterminate;
-        hud.label.text = @"正在加载";
-        [hud showAnimated:YES];
+        [hud showWithProgressMessage:@"正在加载"];
     }
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:@"chat", @"type", self.ID, @"chatter", nil];
+    NSDictionary *dict = @{
+        @"type" : @"chat",
+        @"chatter" : self.ID
+    };
     [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
         if (err || result.count == 0) {
             if (shouldShowHud) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"加载失败";
-                hud.mode = MBProgressHUDModeCustomView;
-                [hud hideAnimated:YES afterDelay:0.5];
+                [hud hideWithFailureMessage:@"加载失败"];
             }
             return ;
         }
@@ -124,10 +150,7 @@
         if (data.count == 1) {
             [self checkID:shouldShowHud];
         } else if (shouldShowHud) {
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-            hud.label.text = @"加载成功";
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
+            [hud hideWithSuccessMessage:@"加载成功"];
         }
         
         // NSLog(@"%@", data);
@@ -147,10 +170,14 @@
         }
         // NSLog(@"%@", result);
         if ([result[0][@"username"] length] == 0) {
-            [self showAlertWithTitle:@"错误" message:@"没有这个ID！"];
+            [self showAlertWithTitle:@"错误" message:@"没有这个ID！" confirmTitle:@"重试" confirmAction:^(UIAlertAction *action) {
+                [self askForUserId];
+            } cancelTitle:@"取消" cancelAction:^(UIAlertAction *action) {
+                [self dismissViewControllerAnimated:YES completion:nil];
+            }];
+            
             if (hudVisible) {
-                hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-                hud.label.text = @"加载失败";
+                [hud hideWithFailureMessage:@"加载失败"];
             }
         } else {
             NSString *iconUrl = result[0][@"icon"];
@@ -158,27 +185,10 @@
             AsyncImageView *icon = [[AsyncImageView alloc] init];
             [icon setUrl:iconUrl];
             if (hudVisible) {
-                hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-                hud.label.text = @"加载成功";
+                [hud hideWithSuccessMessage:@"加载成功"];
             }
         }
-        if (hudVisible) {
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
-        }
     }];
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        [self dismissViewControllerAnimated:YES completion:nil];
-        return;
-    }
-    if ([alertView.title isEqualToString:@"发送私信"]) {
-        self.ID = [alertView textFieldAtIndex:0].text;
-        self.title = self.ID;
-        [self loadChat];
-    }
 }
 
 - (void)scrollTableView {
@@ -259,34 +269,24 @@
         [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！"];
         return;
     }
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"正在发送";
-    [hud showAnimated:YES];
+    [hud showWithProgressMessage:@"正在发送"];
     
-    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:self.ID, @"to", text, @"text", nil];
+    NSDictionary *dict = @{
+        @"to" : self.ID,
+        @"text" : text
+    };
     [performerSend performActionWithDictionary:dict toURL:@"sendmsg" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@",err);
-            hud.label.text = @"发送失败";
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.mode = MBProgressHUDModeCustomView;
-            [hud hideAnimated:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"发送失败"];
             return;
         }
         // NSLog(@"%@", result);
         if ([[result.firstObject objectForKey:@"code"] integerValue] == 0) {
-            hud.label.text = @"发送成功";
-            hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
+            [hud hideWithSuccessMessage:@"发送成功"];
         } else {
-            hud.label.text = @"发送失败";
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
+            [hud hideWithFailureMessage:@"发送失败"];
         }
-        hud.mode = MBProgressHUDModeCustomView;
-        [hud hideAnimated:YES afterDelay:0.5];
         switch ([[result.firstObject objectForKey:@"code"] integerValue]) {
             case 0: {
                 cell.textSend.text = @"";

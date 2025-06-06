@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "OnlineViewCell.h"
-#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface OnlineViewController : CustomTableViewController {
     NSMutableArray *data;

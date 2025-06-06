@@ -7,9 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MBProgressHUD/MBProgressHUD.h>
 
-@interface TextViewController : CustomTableViewController<UIAlertViewDelegate, UITextViewDelegate> {
+@interface TextViewController : CustomTableViewController<UITextViewDelegate> {
     NSMutableAttributedString *textPreview;
     int color;
     NSArray *colors;

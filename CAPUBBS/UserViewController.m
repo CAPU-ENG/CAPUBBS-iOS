@@ -23,6 +23,10 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     self.preferredContentSize = CGSizeMake(360, 0);
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     if (self.iconData.length > 0) {
         [self.icon setImage:[UIImage imageWithData:self.iconData]];
         [self refreshBackgroundView:YES];
@@ -63,6 +67,8 @@
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableView addSubview:control];
+    self.tableView.estimatedRowHeight = 100;
+//    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     [self getInformation];
     // Uncomment the following line to preserve selection between presentations.
@@ -129,32 +135,20 @@
 
 - (void)getInformation {
     [self setDefault];
-    if (!hud && self.navigationController) {
-        hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-        [self.navigationController.view addSubview:hud];
-    }
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"查询中";
-    [hud showAnimated:YES];
+    [hud showWithProgressMessage:@"查询中"];
     [performer performActionWithDictionary:@{@"uid": self.ID, @"recent": @"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
         if (err || result.count == 0) {
-            hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-            hud.mode = MBProgressHUDModeCustomView;
-            hud.label.text = @"查询失败";
-            [hud hideAnimated:YES afterDelay:0.5];
+            [hud hideWithFailureMessage:@"查询失败"];
             NSLog(@"%@",err);
             self.username.text = [self.username.text stringByAppendingString:@"❗️"];
             return;
         }
         
         // NSLog(@"%@", result);
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.mode = MBProgressHUDModeCustomView;
-        hud.label.text = @"查询成功";
-        [hud hideAnimated:YES afterDelay:0.5];
+        [hud hideWithSuccessMessage:@"查询成功"];
         NSDictionary *dict = [result firstObject];
         if ([dict[@"username"] length] == 0) {
             [self showAlertWithTitle:@"查询错误！" message:@"没有这个ID或者您还未登录！"];
@@ -203,7 +197,7 @@
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
                     content = @"暂无";
                 }
-                NSString *htmlString = [ContentViewController htmlStringWithText:nil andSig:content];
+                NSString *htmlString = [ContentViewController htmlStringWithText:nil sig:content textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
                 [webView stopLoading];
                 [webView loadHTMLString:htmlString baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
             }
@@ -211,7 +205,7 @@
                 [heightCheckTimer invalidate];
             }
             // Do not trigger immediately, the webview might still be showing the previous content.
-            heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 target:self selector:@selector(updateWebViewHeight) userInfo:nil repeats:YES];
+            heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updateWebViewHeight) userInfo:nil repeats:YES];
             
             [recentPost removeAllObjects];
             [recentReply removeAllObjects];
@@ -231,7 +225,7 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.row == 0) {
-        return 500;
+        return UITableViewAutomaticDimension;
     } else if (indexPath.row <= 4) {
         return MIN(MAX([[heights objectAtIndex:indexPath.row - 1] floatValue], 14) + 35, WEB_VIEW_MAX_HEIGHT);
     } else {
@@ -241,7 +235,7 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    if (indexPath.section == 0 && indexPath.row == 6) {
+    if (indexPath.section == 0 && indexPath.row == 7) {
         if ([CustomMailComposeViewController canSendMail]) {
             mail = [[CustomMailComposeViewController alloc] init];
             mail.mailComposeDelegate = self;
@@ -255,7 +249,7 @@
                 [mail setSubject:@"CAPUBBS 举报违规用户"];
                 [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID] isHTML:YES];
             }
-            [self presentViewController:mail animated:YES completion:nil];
+            [self presentViewControllerSafe:mail];
         } else {
             [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
         }
@@ -270,7 +264,7 @@
         CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
         dest.URL = path;
         navi.modalPresentationStyle = UIModalPresentationFullScreen;
-        [self presentViewController:navi animated:YES completion:nil];
+        [self presentViewControllerSafe:navi];
         return NO;
     } else {
         return YES;
@@ -308,7 +302,7 @@
     [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
     [mail.navigationBar setTintColor:[UIColor whiteColor]];
     [mail setToRecipients:@[self.mailBtn.titleLabel.text]];
-    [self presentViewController:mail animated:YES completion:nil];
+    [self presentViewControllerSafe:mail];
 }
 
 - (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
@@ -321,9 +315,7 @@
     }
 }
 - (void)showPic:(NSURL *)url {
-    hud.mode = MBProgressHUDModeIndeterminate;
-    hud.label.text = @"正在载入";
-    [hud showAnimated:YES];
+    [hud showWithProgressMessage:@"正在载入"];
     NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url.absoluteString]];
     if ([MANAGER fileExistsAtPath:cachePath] && [AsyncImageView fileType:[MANAGER contentsAtPath:cachePath]] == GIF_TYPE) { // GIF是未压缩的格式 可直接调取
         NSData *imageData = [MANAGER contentsAtPath:cachePath];
@@ -344,15 +336,11 @@
     [task resume];
 }
 - (void)presentImage:(NSData *)image {
-    hud.mode = MBProgressHUDModeCustomView;
-    [hud hideAnimated:YES afterDelay:0.5];
     if (!image || ![UIImage imageWithData:image]) {
-        hud.customView = [[UIImageView alloc] initWithImage:FAILMARK];
-        hud.label.text = @"载入失败";
+        [hud hideWithFailureMessage:@"载入失败"];
         return;
     } else {
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        hud.label.text = @"载入成功";
+        [hud hideWithSuccessMessage:@"载入成功"];
     }
     [image writeToFile:imgPath atomically:YES];
     dic = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:imgPath]];

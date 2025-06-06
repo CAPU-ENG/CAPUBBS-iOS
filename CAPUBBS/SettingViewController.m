@@ -22,6 +22,10 @@
     self.view.backgroundColor = GRAY_PATTERN;
     self.preferredContentSize = CGSizeMake(360, 10000); // 高度填满屏幕
     [self.iconUser setRounded:YES];
+    UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
+    hud = [[MBProgressHUD alloc] initWithView:targetView];
+    [targetView addSubview:hud];
+    
     [NOTIFICATION addObserver:self selector:@selector(userChanged) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(refreshInfo) name:@"infoRefreshed" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(cacheChanged:) name:nil object:nil];
@@ -68,29 +72,33 @@
 }
 
 - (void)refreshInfo {
-    if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""]) {
-        NSDictionary *info = USERINFO;
-        if ([[info objectForKey:@"sex"] isEqualToString:@"男"]) {
-            self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚹"];
-        } else if ([[info objectForKey:@"sex"] isEqualToString:@"女"]) {
-            self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚺"];
+    dispatch_main_async_safe((^{
+        if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""]) {
+            NSDictionary *info = USERINFO;
+            if ([[info objectForKey:@"sex"] isEqualToString:@"男"]) {
+                self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚹"];
+            } else if ([[info objectForKey:@"sex"] isEqualToString:@"女"]) {
+                self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚺"];
+            }
+            [self.iconUser setUrl:[info objectForKey:@"icon"]];
+            self.textUidInfo.text = [NSString stringWithFormat:@"星星：%@ 权限：%@", [info objectForKey:@"star"], [info objectForKey:@"rights"]];
         }
-        [self.iconUser setUrl:[info objectForKey:@"icon"]];
-        self.textUidInfo.text = [NSString stringWithFormat:@"星星：%@ 权限：%@", [info objectForKey:@"star"], [info objectForKey:@"rights"]];
-    }
+    }));
 }
 
 - (void)cacheChanged:(NSNotification *)noti {
-    if (noti == nil || [noti.name hasPrefix:@"imageGet"]) {
-        __block long long cacheSize = 0;
-        NSString *dir = NSTemporaryDirectory(); // tmp目录
-        cacheSize += [SettingViewController folderSizeAtPath:dir];
-        dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]; // Caches目录
-        cacheSize += [SettingViewController folderSizeAtPath:dir];
-        self.appCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)cacheSize / (1024 * 1024)];
-        
-        self.iconCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)[SettingViewController folderSizeAtPath:CACHE_PATH] / (1024 * 1024)];
-    }
+    dispatch_main_async_safe((^{
+        if (noti == nil || [noti.name hasPrefix:@"imageGet"]) {
+            __block long long cacheSize = 0;
+            NSString *dir = NSTemporaryDirectory(); // tmp目录
+            cacheSize += [SettingViewController folderSizeAtPath:dir];
+            dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]; // Caches目录
+            cacheSize += [SettingViewController folderSizeAtPath:dir];
+            self.appCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)cacheSize / (1024 * 1024)];
+            
+            self.iconCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)[SettingViewController folderSizeAtPath:CACHE_PATH] / (1024 * 1024)];
+        }
+    }));
 }
 
 //单个文件的大小
@@ -126,40 +134,23 @@
     }
 }
 
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
-    if (buttonIndex == alertView.cancelButtonIndex) {
-        return;
-    }
-    if ([alertView.title hasPrefix:@"确认清除"]) {
-        if ([alertView.title isEqualToString:@"确认清除头像缓存？"]) {
-            [MANAGER removeItemAtPath:CACHE_PATH error:nil];
-        }
-        if ([alertView.title isEqualToString:@"确认清除软件缓存？"]) {
-            [self deleteAllFiles:NSTemporaryDirectory()]; // tmp目录
-            [[NSURLCache sharedURLCache] removeAllCachedResponses];
-            [MANAGER removeItemAtPath:[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0] error:nil]; // Caches目录
-        }
-        if (!hud && self.navigationController) {
-            hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-            [self.navigationController.view addSubview:hud];
-        }
-        [hud showAnimated:YES];
-        hud.label.text = @"清除完成";
-        hud.mode = MBProgressHUDModeCustomView;
-        hud.customView = [[UIImageView alloc] initWithImage:SUCCESSMARK];
-        [hud hideAnimated:YES afterDelay:0.5];
-        [self cacheChanged:nil];
-    }
-}
-
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 1) {
         if (indexPath.row == 0) {
-            [[[UIAlertView alloc] initWithTitle:@"确认清除软件缓存？" message:@"这将清除缓存和临时文件\n不会清除头像缓存\n部分系统缓存无法彻底清除" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
-        }
-        if (indexPath.row == 1) {
-            [[[UIAlertView alloc] initWithTitle:@"确认清除头像缓存？" message:@"建议仅在头像出错时使用" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil] show];
+            [self showAlertWithTitle:@"确认清除软件缓存？" message:@"这将清除缓存和临时文件\n不会清除头像缓存\n个别系统缓存无法彻底清除" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
+                [self deleteAllFiles:NSTemporaryDirectory()]; // tmp目录
+                [[NSURLCache sharedURLCache] removeAllCachedResponses];
+                [MANAGER removeItemAtPath:[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0] error:nil]; // Caches目录
+                [hud showAndHideWithSuccessMessage:@"清除完成"];
+                [self cacheChanged:nil];
+            }];
+        } else if (indexPath.row == 1) {
+            [self showAlertWithTitle:@"确认清除头像缓存？" message:@"建议仅在头像出错时使用" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
+                [MANAGER removeItemAtPath:CACHE_PATH error:nil];
+                [hud showAndHideWithSuccessMessage:@"清除完成"];
+                [self cacheChanged:nil];
+            }];
         }
     } else if (indexPath.section == 2) {
         if (indexPath.row == 3) {
@@ -173,7 +164,7 @@
                 [mail setSubject:@"CAPUBBS iOS客户端反馈"];
                 [mail setToRecipients:FEEDBACK_EMAIL];
                 [mail setMessageBody:[NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], appVersion, appBuild] isHTML:NO];
-                [self presentViewController:mail animated:YES completion:nil];
+                [self presentViewControllerSafe:mail];
             } else {
                 [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
             }
