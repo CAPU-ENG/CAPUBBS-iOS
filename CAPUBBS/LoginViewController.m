@@ -242,8 +242,8 @@
                         for (int i = 0; i < data.count; i++) {
                             NSMutableDictionary *dict = [data[i] mutableCopy];
                             if ([dict[@"id"] isEqualToString:result[0][@"username"]]) {
-                                [dict setObject:result[0][@"icon"] forKey:@"icon"];
-                                [data replaceObjectAtIndex:i withObject:dict];
+                                dict[@"icon"] = result[0][@"icon"];
+                                data[i] = dict;
                                 [DEFAULTS setObject:data forKey:@"ID"];
                                 break;
                             }
@@ -382,7 +382,7 @@
         if ([dict[@"id"] isEqualToString:UID]) {
             findID = YES;
             if (![dict[@"pass"] isEqualToString:PASS]) {
-                [data replaceObjectAtIndex:i withObject:nowDict];
+                data[i] = nowDict;
             }
         }
     }

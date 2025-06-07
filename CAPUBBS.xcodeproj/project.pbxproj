@@ -17,6 +17,7 @@
 		01695D3A1AD98B8A000D6BA5 /* PreviewViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01695D391AD98B8A000D6BA5 /* PreviewViewController.m */; };
 		0169A94C2DF0A9A800F8978B /* CustomNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0169A94B2DF0A9A600F8978B /* CustomNavigationController.m */; };
 		0169A9552DF0B02600F8978B /* CustomViewControllers.m in Sources */ = {isa = PBXBuildFile; fileRef = 0169A9542DF0B02400F8978B /* CustomViewControllers.m */; };
+		016CEE032DF2CC7800E5F5C2 /* CustomWebViewContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 016CEE022DF2CC7500E5F5C2 /* CustomWebViewContainer.m */; };
 		01729C281B01EFA300BC8218 /* WebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01729C271B01EFA300BC8218 /* WebViewController.m */; };
 		017785E41AAC48400089361C /* IndexViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 017785E31AAC48400089361C /* IndexViewCell.m */; };
 		017785EA1AADDA700089361C /* FacesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 017785E91AADDA700089361C /* FacesViewController.m */; };
@@ -288,6 +289,8 @@
 		0169A94B2DF0A9A600F8978B /* CustomNavigationController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CustomNavigationController.m; sourceTree = "<group>"; };
 		0169A9532DF0B01A00F8978B /* CustomViewControllers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CustomViewControllers.h; sourceTree = "<group>"; };
 		0169A9542DF0B02400F8978B /* CustomViewControllers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CustomViewControllers.m; sourceTree = "<group>"; };
+		016CEE012DF2CC6900E5F5C2 /* CustomWebViewContainer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CustomWebViewContainer.h; sourceTree = "<group>"; };
+		016CEE022DF2CC7500E5F5C2 /* CustomWebViewContainer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CustomWebViewContainer.m; sourceTree = "<group>"; };
 		01729C261B01EFA300BC8218 /* WebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebViewController.h; sourceTree = "<group>"; };
 		01729C271B01EFA300BC8218 /* WebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WebViewController.m; sourceTree = "<group>"; };
 		017785E21AAC48400089361C /* IndexViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IndexViewCell.h; sourceTree = "<group>"; };
@@ -589,6 +592,8 @@
 		0169A9492DF0A98000F8978B /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				016CEE012DF2CC6900E5F5C2 /* CustomWebViewContainer.h */,
+				016CEE022DF2CC7500E5F5C2 /* CustomWebViewContainer.m */,
 				018590452DF103D7002E73D9 /* CustomProgressHUD.h */,
 				018590462DF103EA002E73D9 /* CustomProgressHUD.m */,
 				0169A9532DF0B01A00F8978B /* CustomViewControllers.h */,
@@ -1252,6 +1257,7 @@
 			files = (
 				8B7403E018B5ADC3009753FE /* RegisterViewController.m in Sources */,
 				01C2D9B81AC82DC400CA4F02 /* TextViewController.m in Sources */,
+				016CEE032DF2CC7800E5F5C2 /* CustomWebViewContainer.m in Sources */,
 				018590472DF103EB002E73D9 /* CustomProgressHUD.m in Sources */,
 				0141F9621B03B803003F3186 /* OnlineViewController.m in Sources */,
 				0141F9651B03C1C1003F3186 /* OnlineViewCell.m in Sources */,

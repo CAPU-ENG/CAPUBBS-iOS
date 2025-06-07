@@ -20,12 +20,12 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(done:)];
-    [self.webView.layer setBorderColor:GREEN_LIGHT.CGColor];
-    [self.webView setDelegate:self];
-    [self.webView.layer setBorderWidth:1.0];
-    [self.webView.layer setMasksToBounds:YES];
-    [self.webView.layer setCornerRadius:10.0];
-    [self.webView setAllowsLinkPreview:YES];
+    [self.webViewContainer initiateWebViewForToken:nil];
+    [self.webViewContainer.layer setBorderColor:GREEN_LIGHT.CGColor];
+    [self.webViewContainer.layer setBorderWidth:1.0];
+    [self.webViewContainer.layer setMasksToBounds:YES];
+    [self.webViewContainer.layer setCornerRadius:10.0];
+    [self.webViewContainer.webView setNavigationDelegate:self];
     self.labelTitle.text = self.textTitle;
     NSDictionary *dict = USERINFO;
     NSString *sig = nil;
@@ -37,7 +37,7 @@
         }
     }
     NSString *html = [ContentViewController htmlStringWithText:[self transToHTML:self.textBody] sig:sig textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
-    [self.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
+    [self.webViewContainer.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     // Do any additional setup after loading the view.
 }
 
@@ -77,19 +77,32 @@
     return oriString;
 }
 
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType{// 处理帖子中的URL
-    // NSLog(@"type=%d,path=%@",navigationType,request.URL.absoluteString);
-    if (navigationType == UIWebViewNavigationTypeLinkClicked) {
-        NSString *path = request.URL.absoluteString;
-        WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-        dest.URL = path;
-        navi.modalPresentationStyle = UIModalPresentationFullScreen;
-        [self presentViewControllerSafe:navi];
-        return NO;
-    } else {
-        return YES;
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    // 允许其他类型加载（如 form submit、reload）
+    if (navigationAction.navigationType != WKNavigationTypeLinkActivated) {
+        decisionHandler(WKNavigationActionPolicyAllow);
+        return;
     }
+    
+    NSString *path = navigationAction.request.URL.absoluteString;
+    if ([path hasPrefix:@"x-apple"]) {
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"tel:"] || [path hasPrefix:@"mailto:"]) {
+        // Directly open
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:nil];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
+    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+    dest.URL = path;
+    navi.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewControllerSafe:navi];
+    decisionHandler(WKNavigationActionPolicyCancel);
 }
 
 @end

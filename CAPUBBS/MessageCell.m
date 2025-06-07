@@ -25,10 +25,4 @@
     [self.labelNum.layer setCornerRadius:self.labelNum.frame.size.height / 2]; // 圆形
 }
 
-- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
-    [super setSelected:selected animated:animated];
-
-    // Configure the view for the selected state
-}
-
 @end

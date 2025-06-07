@@ -10,6 +10,7 @@
 #import "ContentViewController.h"
 #import "UserViewController.h"
 #import "WebViewController.h"
+#import "CustomWebViewContainer.h"
 
 @interface SettingViewController ()
 
@@ -48,7 +49,7 @@
     [self.autoSave setOn:[[DEFAULTS objectForKey:@"autoSave"] boolValue]];
     [self.switchSimpleView setOn:SIMPLE_VIEW];
     [self.stepperSize setValue:[[DEFAULTS objectForKey:@"textSize"] intValue]];
-    [self.defaultSize setText:[NSString stringWithFormat:@"默认字体大小 - %d%%", (int)self.stepperSize.value]];
+    [self.defaultSize setText:[NSString stringWithFormat:@"默认页面缩放 - %d%%", (int)self.stepperSize.value]];
     [self userChanged];
     [self refreshInfo];
     [self cacheChanged:nil];
@@ -123,27 +124,31 @@
     return folderSize;
 }
 
-- (void)deleteAllFiles:(NSString *)path {
-    if ([MANAGER fileExistsAtPath:path]) {
-        NSArray *childerFiles = [MANAGER subpathsAtPath:path];
-        for (NSString *fileName in childerFiles) {
-            // 如有需要，加入条件，过滤掉不想删除的文件
-            NSString *absolutePath = [path stringByAppendingPathComponent:fileName];
-            [MANAGER removeItemAtPath:absolutePath error:nil];
-        }
-    }
-}
-
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 1) {
         if (indexPath.row == 0) {
-            [self showAlertWithTitle:@"确认清除软件缓存？" message:@"这将清除缓存和临时文件\n不会清除头像缓存\n个别系统缓存无法彻底清除" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
-                [self deleteAllFiles:NSTemporaryDirectory()]; // tmp目录
+            [self showAlertWithTitle:@"确认清除软件缓存？" message:@"该操作着重清除网络缓存\n不会清除头像缓存\n部分系统关键缓存无法彻底清除" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
+                [hud showWithProgressMessage:@"清除中"];
+                // Don't delete cache / tmp folder directly, otherwise will throw many db error
+                // NSURLCache
                 [[NSURLCache sharedURLCache] removeAllCachedResponses];
-                [MANAGER removeItemAtPath:[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0] error:nil]; // Caches目录
-                [hud showAndHideWithSuccessMessage:@"清除完成"];
-                [self cacheChanged:nil];
+                // WKWebView (WebKit) cache
+                NSSet *types = [WKWebsiteDataStore allWebsiteDataTypes];
+                NSDate *since = [NSDate dateWithTimeIntervalSince1970:0];
+                NSArray<WKWebsiteDataStore *> *allDataSources = [CustomWebViewContainer getAllDataSources];
+                dispatch_group_t group = dispatch_group_create();
+                for (WKWebsiteDataStore *dataStore in allDataSources) {
+                    dispatch_group_enter(group);
+                    [dataStore removeDataOfTypes:types modifiedSince:since completionHandler:^{
+                        dispatch_group_leave(group);
+                    }];
+                }
+                // wait for all removal to complete
+                dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+                    [hud hideWithSuccessMessage:@"清除完成"];
+                    [self cacheChanged:nil];
+                });
             }];
         } else if (indexPath.row == 1) {
             [self showAlertWithTitle:@"确认清除头像缓存？" message:@"建议仅在头像出错时使用" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
@@ -215,7 +220,7 @@
 
 - (IBAction)sizeChanged:(UIStepper *)sender {
     [DEFAULTS setObject:[NSNumber numberWithInt:(int)self.stepperSize.value] forKey:@"textSize"];
-    self.defaultSize.text = [NSString stringWithFormat:@"默认字体大小 - %d%%", (int)self.stepperSize.value];
+    self.defaultSize.text = [NSString stringWithFormat:@"默认页面缩放 - %d%%", (int)self.stepperSize.value];
 }
 
 - (IBAction)simpleViewChanged:(id)sender {

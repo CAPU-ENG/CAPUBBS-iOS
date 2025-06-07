@@ -13,10 +13,11 @@
     ActionPerformer *performer;
     MBProgressHUD *hud;
     BOOL shouldVibrate;
-    int cellWidth;
-    int cellHeight;
-    int cellSpace;
-    int fontSize;
+    CGFloat cellWidth;
+    CGFloat cellHeight;
+    CGFloat cellSpace;
+    CGFloat cellMargin;
+    CGFloat fontSize;
 }
 
 @property (weak, nonatomic) IBOutlet UIButton *buttonHot;

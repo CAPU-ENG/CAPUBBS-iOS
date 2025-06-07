@@ -8,13 +8,14 @@
 
 #import <UIKit/UIKit.h>
 #import "AsyncImageView.h"
+#import "CustomWebViewContainer.h"
 
 @interface ContentCell : UITableViewCell
 @property (weak, nonatomic) IBOutlet UILabel *labelDate;
 @property (weak, nonatomic) IBOutlet UILabel *labelAuthor;
 @property (weak, nonatomic) IBOutlet UILabel *labelInfo;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *indicatorLoading;
-@property (weak, nonatomic) IBOutlet UIWebView *webView;
+@property (weak, nonatomic) IBOutlet CustomWebViewContainer *webViewContainer;
 @property (weak, nonatomic) IBOutlet UIButton *buttonAction;
 @property (weak, nonatomic) IBOutlet UIButton *buttonLzl;
 @property (weak, nonatomic) IBOutlet AsyncImageView *icon;

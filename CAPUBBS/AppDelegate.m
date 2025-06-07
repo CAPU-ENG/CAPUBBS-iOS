@@ -95,8 +95,8 @@
     [GROUP_DEFAULTS registerDefaults:group];
     [self transferDefaults];
     
-    [[NSURLCache sharedURLCache] setMemoryCapacity:64.0 * 1024 * 1024];
-    [[NSURLCache sharedURLCache] setDiskCapacity:256.0 * 1024 * 1024];
+    [[NSURLCache sharedURLCache] setMemoryCapacity:128.0 * 1024 * 1024];
+    [[NSURLCache sharedURLCache] setDiskCapacity:512.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [self performSelectorInBackground:@selector(transport) withObject:nil];
     performer = [[ActionPerformer alloc] init];
@@ -342,11 +342,11 @@
     }
     [[CSSearchableIndex defaultSearchableIndex] deleteSearchableItemsWithDomainIdentifiers:@[BUNDLE_IDENTIFIER] completionHandler:^(NSError * __nullable error) {
         if (error) {
-            NSLog(@"%@", error.localizedDescription);
+            NSLog(@"%@", error);
         }
         [[CSSearchableIndex defaultSearchableIndex] indexSearchableItems:seachableItems completionHandler:^(NSError * __nullable error) {
             if (error) {
-                NSLog(@"%@", error.localizedDescription);
+                NSLog(@"%@", error);
             } else {
                 NSLog(@"Collection Saved");
             }
@@ -493,7 +493,7 @@
                                                       NSError * _Nullable error) {
         
         if (error || !data) {
-            NSLog(@"Check Update Failed: %@", error.localizedDescription);
+            NSLog(@"Check Update Failed: %@", error);
             [[self getTopViewController] showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
             return;
         }
@@ -501,7 +501,7 @@
         NSError *jsonError = nil;
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
         if (!json || jsonError) {
-            NSLog(@"JSON Parse Error: %@", jsonError.localizedDescription);
+            NSLog(@"JSON Parse Error: %@", jsonError);
             return;
         }
         

@@ -6,6 +6,8 @@
 //  Copyright © 2025 熊典. All rights reserved.
 //
 
+#import <objc/runtime.h>
+
 @implementation CustomViewController
 
 @end
@@ -24,10 +26,65 @@
 
 @implementation UIViewController (Extension)
 
-- (void)presentViewControllerSafe:(UIViewController *)view {
+static char kViewControllerQueueKey;
+static char kPresentTimerKey;
+
+- (NSMutableArray<UIViewController *> *)_getVcQueue {
+    NSMutableArray *queue = objc_getAssociatedObject(self, &kViewControllerQueueKey);
+    if (!queue) {
+        queue = [NSMutableArray array];
+        objc_setAssociatedObject(self, &kViewControllerQueueKey, queue, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return queue;
+}
+
+- (NSTimer *)_getPresentTimer {
+    return objc_getAssociatedObject(self, &kPresentTimerKey);
+}
+
+- (void)_setPresentTimer:(NSTimer *)timer {
+    objc_setAssociatedObject(self, &kPresentTimerKey, timer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (BOOL)_tryPresentNextVc {
+    if (self.presentedViewController) {
+        return NO;
+    }
+    
+    NSMutableArray *queue = [self _getVcQueue];
+    if (queue.count == 0) {
+        if ([self _getPresentTimer]) {
+            [[self _getPresentTimer] invalidate];
+            [self _setPresentTimer:nil];
+        }
+        return NO;
+    }
+    
+    UIViewController *item = queue.firstObject;
+    [queue removeObjectAtIndex:0];
     dispatch_main_async_safe(^{
-        [self presentViewController:view animated:YES completion:nil];
+        [self presentViewController:item animated:YES completion:nil];
     });
+    return YES;
+}
+
+- (void)_timerCheck {
+    [self _tryPresentNextVc];
+}
+
+- (void)presentViewControllerSafe:(UIViewController *)view {
+    [[self _getVcQueue] addObject:view];
+    if ([self _tryPresentNextVc]) {
+        return;
+    }
+    if (![self _getPresentTimer]) {
+        NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.2
+                                                          target:self
+                                                        selector:@selector(_timerCheck)
+                                                        userInfo:nil
+                                                         repeats:YES];
+        [self _setPresentTimer:timer];
+    }
 }
 
 - (void)showAlertWithTitle:(NSString *)title

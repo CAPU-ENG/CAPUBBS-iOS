@@ -7,12 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <WebKit/WebKit.h>
+#import "CustomWebViewContainer.h"
 
-@interface PreviewViewController : CustomViewController<UIWebViewDelegate> {
+@interface PreviewViewController : CustomViewController<WKNavigationDelegate> {
 }
 
 @property (weak, nonatomic) IBOutlet UILabel *labelTitle;
-@property (weak, nonatomic) IBOutlet UIWebView *webView;
+@property (weak, nonatomic) IBOutlet CustomWebViewContainer *webViewContainer;
 @property NSString *textTitle;
 @property NSString *textBody;
 @property int sig;

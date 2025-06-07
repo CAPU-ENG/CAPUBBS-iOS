@@ -27,6 +27,7 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
+    textSize = [[DEFAULTS objectForKey:@"textSize"] intValue];
     if (self.iconData.length > 0) {
         [self.icon setImage:[UIImage imageWithData:self.iconData]];
         [self refreshBackgroundView:YES];
@@ -47,13 +48,16 @@
         self.title = @"个人信息";
     }
     labels = @[self.rights, self.sign, self.hobby, self.qq, self.mailBtn, self.from, self.regDate, self.lastDate, self.post, self.reply, self.water, self.extr];
-    webViews = @[self.intro, self.sig1, self.sig2, self.sig3];
+    webViewContainers = @[self.intro, self.sig1, self.sig2, self.sig3];
     heights = [[NSMutableArray alloc] initWithArray:@[@0, @0, @0, @0]];
-    for (int i = 0; i < webViews.count; i++) {
-        UIWebView *webView = [webViews objectAtIndex:i];
-        [webView setTag:i];
-        [webView setDelegate:self];
-        [webView.scrollView setScrollEnabled:NO];
+    for (int i = 0; i < webViewContainers.count; i++) {
+        CustomWebViewContainer *webViewContainer = webViewContainers[i];
+        [webViewContainer initiateWebViewForToken:nil];
+        [webViewContainer setBackgroundColor:[UIColor clearColor]];
+        [webViewContainer setOpaque:NO];
+        [webViewContainer.webView setTag:i];
+        [webViewContainer.webView setNavigationDelegate:self];
+        [webViewContainer.webView.scrollView setScrollEnabled:NO];
     }
     
     recentPost = [[NSMutableArray alloc] init];
@@ -61,9 +65,6 @@
     property = @[@"rights", @"sign", @"hobby", @"qq", @"mail", @"place", @"regdate", @"lastdate", @"post", @"reply", @"water", @"extr"];
     performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(getInformation) name:@"userUpdated" object:nil];
-    for (UIWebView *webView in webViews) {
-        [webView setAllowsLinkPreview:YES];
-    }
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableView addSubview:control];
@@ -190,16 +191,18 @@
             }
             [self.icon setUrl:iconURL];
             
-            for (int i = 0; i < webViews.count; i++) {
-                [heights replaceObjectAtIndex:i withObject:@0];
-                UIWebView *webView = [webViews objectAtIndex:i];
+            for (int i = 0; i < webViewContainers.count; i++) {
+                heights[i] = @0;
+                CustomWebViewContainer *webViewContainer = webViewContainers[i];
                 NSString *content = i == 0 ? dict[@"intro"] : dict[[NSString stringWithFormat:@"sig%d", i]];
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
-                    content = @"暂无";
+                    content = @"<font color='gray'>暂无</font>";
                 }
-                NSString *htmlString = [ContentViewController htmlStringWithText:nil sig:content textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
-                [webView stopLoading];
-                [webView loadHTMLString:htmlString baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
+                NSString *html = [ContentViewController htmlStringWithText:nil sig:content textSize:textSize];
+                if (webViewContainer.webView.isLoading) {
+                    [webViewContainer.webView stopLoading];
+                }
+                [webViewContainer.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
             }
             if (heightCheckTimer && [heightCheckTimer isValid]) {
                 [heightCheckTimer invalidate];
@@ -219,6 +222,13 @@
             }
         }
     }];
+}
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    for (int i = 0; i < webViewContainers.count; i++) {
+        heights[i] = @0;
+    }
 }
 
 #pragma mark - Table view data source
@@ -256,19 +266,46 @@
     }
 }
 
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType{ // 处理帖子中的URL
-    // NSLog(@"type=%d,path=%@",navigationType,request.URL.absoluteString);
-    if (navigationType == UIWebViewNavigationTypeLinkClicked) {
-        NSString *path = request.URL.absoluteString;
-        WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-        dest.URL = path;
-        navi.modalPresentationStyle = UIModalPresentationFullScreen;
-        [self presentViewControllerSafe:navi];
-        return NO;
-    } else {
-        return YES;
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    // 允许其他类型加载（如 form submit、reload）
+    if (navigationAction.navigationType != WKNavigationTypeLinkActivated) {
+        decisionHandler(WKNavigationActionPolicyAllow);
+        return;
     }
+    
+    NSString *path = navigationAction.request.URL.absoluteString;
+    if ([path hasPrefix:@"x-apple"]) {
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"mailto:"]) {
+        if ([CustomMailComposeViewController canSendMail]) {
+            NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
+            mail = [[CustomMailComposeViewController alloc] init];
+            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
+            [mail.navigationBar setTintColor:[UIColor whiteColor]];
+            [mail setToRecipients:@[mailAddress]];
+            mail.mailComposeDelegate = self;
+            [self presentViewControllerSafe:mail];
+        }
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"tel:"]) {
+        // Directly open
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:nil];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
+    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+    dest.URL = path;
+    navi.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewControllerSafe:navi];
+    decisionHandler(WKNavigationActionPolicyCancel);
 }
 
 - (void)updateWebViewHeight {
@@ -277,19 +314,23 @@
         return;
     }
     
-    Boolean hasUpdate = NO;
-    for (int i = 0; i < webViews.count; i++) {
-        UIWebView *webView = [webViews objectAtIndex:i];
-        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-wrapper').scrollHeight"];
-        if (height.length &&
-            [height floatValue] - [[heights objectAtIndex:i] floatValue] >= 1) {
-            [heights replaceObjectAtIndex:i withObject:height];
-            hasUpdate = YES;
-        }
-    }
-    if (hasUpdate) {
-        [self.tableView beginUpdates];
-        [self.tableView endUpdates];
+    for (int i = 0; i < webViewContainers.count; i++) {
+        CustomWebViewContainer *webviewContainer = webViewContainers[i];
+        [webviewContainer.webView evaluateJavaScript:@"if(document.body){document.getElementById('body-wrapper').scrollHeight;}" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
+            if (error) {
+                NSLog(@"JS 执行失败: %@", error);
+                return;
+            }
+            NSNumber *height = result;
+            if (height) {
+                height = @([height floatValue] * (textSize / 100.0));
+            }
+            if (height && [height floatValue] - [[heights objectAtIndex:i] floatValue] >= 1) {
+                heights[i] = height;
+                [self.tableView beginUpdates];
+                [self.tableView endUpdates];
+            }
+        }];
     }
 }
 

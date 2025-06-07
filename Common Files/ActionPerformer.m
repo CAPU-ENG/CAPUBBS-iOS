@@ -61,7 +61,7 @@
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         dispatch_main_async_safe(^{
             if (error) {
-                NSLog(@"%@", error.localizedDescription);
+                NSLog(@"API POST error: %@", error);
                 block(nil, error);
                 return;
             }
@@ -121,7 +121,7 @@
 }
 
 - (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
-    NSLog(@"NSXMLParser error: %@", parseError.localizedDescription);
+    NSLog(@"NSXMLParser error: %@", parseError);
 }
 
 #pragma mark Common Functions

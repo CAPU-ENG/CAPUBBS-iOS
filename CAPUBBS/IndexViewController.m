@@ -25,6 +25,9 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
+    if ([self.collectionView.collectionViewLayout isKindOfClass:[UICollectionViewFlowLayout class]]) {
+        ((UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout).sectionInsetReference = UICollectionViewFlowLayoutSectionInsetFromSafeArea;
+    }
     cellWidth = cellHeight = 0;
     [NOTIFICATION addObserver:self selector:@selector(setVibrate) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(changeNoti) name:@"infoRefreshed" object:nil];
@@ -103,22 +106,25 @@
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     if (cellWidth == 0 || cellHeight == 0) {
         // iPhone 5s及之前:320 iPhone 6:375 iPhone 6 Plus:414 iPad:768 iPad Pro:1024
-        float width = collectionView.frame.size.width;
+        UIEdgeInsets safeArea = collectionView.safeAreaInsets;
+        CGFloat safeAreaWidth = (safeArea.left + safeArea.right) / 2;
+        CGFloat width = collectionView.bounds.size.width;
         int num = width / 450 + 2;
         fontSize = 15 + num;
         cellSpace = (0.1 + 0.025 * num) * (width / num);
-        cellWidth = (width - cellSpace * (num + 1)) / num;
+        cellMargin = MAX(0, cellSpace - safeAreaWidth);
+        cellWidth = (width - cellSpace * (num - 1) - (cellMargin + safeAreaWidth) * 2) / num;
         cellHeight = cellWidth * (11.0 / 15.0) + 2 * fontSize;
     }
     return CGSizeMake(cellWidth, cellHeight);
 }
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
-    return UIEdgeInsetsMake(20, cellSpace, 20, cellSpace); // top, left, bottom, right
+    return UIEdgeInsetsMake(20, cellMargin, 20, cellMargin); // top, left, bottom, right
 }
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
-    return cellSpace;
+    return cellSpace - 0.1;
 }
 
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
