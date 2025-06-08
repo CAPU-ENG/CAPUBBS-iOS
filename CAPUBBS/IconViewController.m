@@ -260,10 +260,12 @@
 
 - (void)prepareUpload {
     [hud showWithProgressMessage:@"正在压缩"];
-    [self performSelectorInBackground:@selector(upload) withObject:nil];
+    dispatch_global_default_async(^{
+        [self compressAndUpload];
+    });
 }
 
-- (void)upload {
+- (void)compressAndUpload {
     NSData * imageData = UIImageJPEGRepresentation(image, 1);
     float maxLength = 200; // 压缩超过200K的图片
     float ratio = 1.0;

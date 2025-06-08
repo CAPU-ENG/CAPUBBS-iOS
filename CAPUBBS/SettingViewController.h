@@ -7,12 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MessageUI/MessageUI.h>
 #import "AppDelegate.h"
 #import "AsyncImageView.h"
 
-@interface SettingViewController : CustomTableViewController<MFMailComposeViewControllerDelegate> {
-    CustomMailComposeViewController *mail;
+@interface SettingViewController : CustomTableViewController {
     MBProgressHUD *hud;
 }
 

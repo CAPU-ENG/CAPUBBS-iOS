@@ -20,7 +20,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
-    self.preferredContentSize = CGSizeMake(360, 0);
+    self.preferredContentSize = CGSizeMake(400, 0);
     
     UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
     hud = [[MBProgressHUD alloc] initWithView:targetView];
@@ -51,7 +51,9 @@
 
 - (void)viewOnline {
     [hud showWithProgressMessage:@"加载中"];
-    [self performSelectorInBackground:@selector(getData:) withObject:@"online"];
+    dispatch_global_default_async(^{
+        [self getData:@"online"];
+    });
 }
 
 - (void)loadOnline:(NSString *)HTMLString {
@@ -120,7 +122,9 @@
 - (IBAction)viewSign:(id)sender {
     self.buttonStat.enabled = NO;
     [hud showWithProgressMessage:@"加载中"];
-    [self performSelectorInBackground:@selector(getData:) withObject:@"sign"];
+    dispatch_global_default_async(^{
+        [self getData:@"sign"];
+    });
 }
 
 - (void)loadSign:(NSString *)HTMLString {
@@ -139,9 +143,13 @@
 - (void)getData:(NSString *)type{
     NSString * HTMLString = [[NSString alloc] initWithContentsOfURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/%@", CHEXIE, type]] encoding:NSUTF8StringEncoding error:nil];
     if ([type isEqualToString:@"online"]) {
-        [self performSelectorOnMainThread:@selector(loadOnline:) withObject:HTMLString waitUntilDone:NO];
+        dispatch_main_async_safe(^{
+            [self loadOnline:HTMLString];
+        });
     } else if ([type isEqualToString:@"sign"]) {
-        [self performSelectorOnMainThread:@selector(loadSign:) withObject:HTMLString waitUntilDone:NO];
+        dispatch_main_async_safe(^{
+            [self loadSign:HTMLString];
+        });
     }
 }
 

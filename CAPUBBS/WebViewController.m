@@ -80,7 +80,16 @@
         return;
     }
     
-    if ([path hasPrefix:@"tel:"] || [path hasPrefix:@"mailto:"]) {
+    if ([path hasPrefix:@"mailto:"]) {
+        NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
+        [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+            @"recipients": @[mailAddress]
+        }];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"tel:"]) {
         // Directly open
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:nil];
         decisionHandler(WKNavigationActionPolicyCancel);
@@ -109,7 +118,7 @@
             return;
         }
         [webView evaluateJavaScript:@"document.title" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
-            if (!error && result && [result length] > 0) {
+            if (!error && result && [result isKindOfClass:[NSString class]]) {
                 strongSelf.title = result;
             }
         }];

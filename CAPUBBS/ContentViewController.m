@@ -41,6 +41,7 @@ static const float kWebViewMinHeight = 40;
     selectedIndex = -1;
     isEdit = NO;
     heights = [[NSMutableArray alloc] init];
+    tempHeights = [[NSMutableArray alloc] init];
     HTMLStrings = [[NSMutableArray alloc] init];
     
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
@@ -216,6 +217,9 @@ static const float kWebViewMinHeight = 40;
     for (int i = 0; i < data.count; i++) {
         NSDictionary *dict = [data objectAtIndex:i];
         [heights addObject:@0];
+        if (tempHeights.count <= i) {
+            [tempHeights addObject:@0];
+        }
         NSString *html = [ContentViewController htmlStringWithText:dict[@"text"] sig:dict[@"sig"] textSize:textSize];
         NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
         html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
@@ -230,7 +234,8 @@ static const float kWebViewMinHeight = 40;
             if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
                 [cell.heightCheckTimer invalidate];
             }
-            [cell.webViewContainer.webView loadHTMLString:@"" baseURL:[NSURL URLWithString:CHEXIE]];
+            // 加载空HTML以快速清空，防止reuse后还短暂显示之前的内容
+            [cell.webViewContainer.webView loadHTMLString:EMPTY_HTML baseURL:[NSURL URLWithString:CHEXIE]];
         }
     }
     if (reload) {
@@ -298,8 +303,11 @@ static const float kWebViewMinHeight = 40;
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     float webViewHeight = 0;
-    if (heights.count >= indexPath.row && [[heights objectAtIndex:indexPath.row] floatValue] > 0) {
-        webViewHeight = [[heights objectAtIndex:indexPath.row] floatValue];
+    for (NSArray *candidate in @[heights, tempHeights]) {
+        if (candidate.count > indexPath.row && [candidate[indexPath.row] floatValue] > 0) {
+            webViewHeight = [candidate[indexPath.row] floatValue];
+            break;
+        }
     }
     return kOtherViewHeight + MIN(MAX(kWebViewMinHeight, webViewHeight), WEB_VIEW_MAX_HEIGHT);
 }
@@ -328,17 +336,18 @@ static const float kWebViewMinHeight = 40;
         return;
     }
     
-    [webView evaluateJavaScript:[NSString stringWithFormat:@"if(document.body){document.body.style.zoom= '%d%%';document.getElementById('body-wrapper').scrollHeight;}", textSize] completionHandler:^(id _Nullable result, NSError * _Nullable error) {
+    [webView evaluateJavaScript:[NSString stringWithFormat:@"if(document.getElementById('body-wrapper')){document.body.style.zoom= '%d%%';document.getElementById('body-wrapper').scrollHeight;}", textSize] completionHandler:^(id _Nullable result, NSError * _Nullable error) {
         if (error) {
             NSLog(@"JS 执行失败: %@", error);
             return;
         }
-        NSNumber *height = result;
-        if (height) {
-            height = @([height floatValue] * (textSize / 100.0));
+        float height = 0;
+        if (result && [result isKindOfClass:[NSNumber class]]) {
+            height = [result floatValue] * (textSize / 100.0);
         }
-        if (height && [height floatValue] - [[heights objectAtIndex:row] floatValue] >= 1) {
-            heights[row] = height;
+        if (height > 0 && height - [heights[row] floatValue] >= 1) {
+            heights[row] = @(height);
+            tempHeights[row] = @(height);
             [self.tableView beginUpdates];
             [self.tableView endUpdates];
         }
@@ -456,7 +465,7 @@ static const float kWebViewMinHeight = 40;
     [cell.webViewContainer.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     
     
-    if (([[heights objectAtIndex:indexPath.row] floatValue] > 0)) {
+    if (([heights[indexPath.row] floatValue] > 0)) {
         [cell.indicatorLoading stopAnimating];
     } else {
         [cell.indicatorLoading startAnimating];
@@ -500,15 +509,14 @@ static const float kWebViewMinHeight = 40;
 
 - (void)showPic:(NSURL *)url {
     [hud showWithProgressMessage:@"正在载入"];
-    [self performSelectorInBackground:@selector(showPicThread:) withObject:url];
-}
-- (void)showPicThread:(NSURL *)url {
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         if (idata) {
             imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
         }
-        [self performSelectorOnMainThread:@selector(presentImage:) withObject:idata waitUntilDone:NO];
+        dispatch_main_async_safe(^{
+            [self presentImage:idata];
+        });
     }];
     [task resume];
 }
@@ -520,19 +528,10 @@ static const float kWebViewMinHeight = 40;
         [hud hideWithSuccessMessage:@"载入成功"];
     }
     [image writeToFile:imgPath atomically:YES];
-    dic = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:imgPath]];
-    dic.delegate = self;
-    dic.name = @"查看帖子图片";
-    [dic presentPreviewAnimated:YES];
-}
-- (UIViewController *)documentInteractionControllerViewControllerForPreview:(UIDocumentInteractionController *)controller {
-    return self;
-}
-- (UIView *)documentInteractionControllerViewForPreview:(UIDocumentInteractionController *)controller {
-    return self.view;
-}
-- (void)documentInteractionControllerDidEndPreview:(UIDocumentInteractionController *)controller {
-    [MANAGER removeItemAtPath:imgPath error:nil];
+    [NOTIFICATION postNotificationName:@"previewFile" object:nil userInfo:@{
+        @"filePath": imgPath,
+        @"fileName": @"查看帖子图片",
+    }];
 }
 
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
@@ -560,15 +559,10 @@ static const float kWebViewMinHeight = 40;
     }
     
     if ([path hasPrefix:@"mailto:"]) {
-        if ([CustomMailComposeViewController canSendMail]) {
-            NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
-            mail = [[CustomMailComposeViewController alloc] init];
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setToRecipients:@[mailAddress]];
-            mail.mailComposeDelegate = self;
-            [self presentViewControllerSafe:mail];
-        }
+        NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
+        [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+            @"recipients": @[mailAddress]
+        }];
         decisionHandler(WKNavigationActionPolicyCancel);
         return;
     }
@@ -744,18 +738,13 @@ static const float kWebViewMinHeight = 40;
 - (IBAction)action:(id)sender {
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"更多操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"举报" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        if ([CustomMailComposeViewController canSendMail]) {
-            mail = [[CustomMailComposeViewController alloc] init];
-            mail.mailComposeDelegate = self;
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setSubject:@"CAPUBBS 举报违规帖子"];
-            [mail setToRecipients:REPORT_EMAIL];
-            [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我在帖子 <a href=\"%@\">%@</a> 中发现了违规内容，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", URL, self.title] isHTML:YES];
-            [self presentViewControllerSafe:mail];
-        } else {
-            [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
-        }
+        [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+            @"recipients": REPORT_EMAIL,
+            @"subject": @"CAPUBBS 举报违规帖子",
+            @"body": [NSString stringWithFormat:@"您好，我是%@，我在帖子 <a href=\"%@\">%@</a> 中发现了违规内容，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", URL, self.title],
+            @"isHTML": @(YES),
+            @"fallbackMessage": @"请前往网络维护板块反馈"
+        }];
     }]];
     [action addAction:[UIAlertAction actionWithTitle:self.isCollection ? @"取消收藏" : @"收藏" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         [self changeCollection:nil];
@@ -801,10 +790,6 @@ static const float kWebViewMinHeight = 40;
     [self presentViewControllerSafe:action];
 }
 
-- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
-    [mail dismissViewControllerAnimated:YES completion:nil];
-}
-
 - (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
         if (self.buttonForward.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
@@ -845,15 +830,8 @@ static const float kWebViewMinHeight = 40;
             return ;
         }
         ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:indexPath];
-        if (!cell.webViewContainer.webView.scrollView.scrollEnabled) {
-            [hud showAndHideWithSuccessMessage:@"透视模式"];
-            cell.webViewContainer.webView.scrollView.scrollEnabled = YES;
-            [cell.webViewContainer.webView evaluateJavaScript:@"document.getElementById('body-mask').style.backgroundColor = 'rgba(127, 127, 127, 0.75)'" completionHandler:nil];
-        } else {
-            [hud showAndHideWithSuccessMessage:@"恢复默认"];
-            cell.webViewContainer.webView.scrollView.scrollEnabled = NO;
-            [cell.webViewContainer.webView evaluateJavaScript:@"document.getElementById('body-mask').style.backgroundColor = ''" completionHandler:nil];
-        }
+        [hud showAndHideWithSuccessMessage:@"双击切换背景"];
+        [cell.webViewContainer.webView evaluateJavaScript:@"(()=>{const bodyMask=document.getElementById('body-mask');if(bodyMask.style.backgroundColor){ bodyMask.style.backgroundColor='';}else{bodyMask.style.backgroundColor='rgba(127, 127, 127, 0.75)';}})()" completionHandler:nil];
     }
 }
 

@@ -25,7 +25,8 @@
 
 - (void)prepareForReuse {
     [super prepareForReuse];
-    [self.webViewContainer.webView loadHTMLString:@"" baseURL:[NSURL URLWithString:CHEXIE]];
+    // 加载空HTML以快速清空，防止reuse后还短暂显示之前的内容
+    [self.webViewContainer.webView loadHTMLString:EMPTY_HTML baseURL:[NSURL URLWithString:CHEXIE]];
     if (self.heightCheckTimer && [self.heightCheckTimer isValid]) {
         [self.heightCheckTimer invalidate];
     }

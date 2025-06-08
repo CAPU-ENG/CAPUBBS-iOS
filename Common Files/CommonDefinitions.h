@@ -42,6 +42,8 @@
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
 //#define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
+#define APP_VERSION [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]
+#define APP_BUILD [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"]
 #define IS_CELLULAR ([ReachabilityManager sharedManager].currentNetworkType == NetworkTypeCellular)
 
 #define MAX_ID_NUM 10
@@ -58,11 +60,20 @@ static inline void dispatch_main_async_safe(dispatch_block_t block) {
     }
 }
 
+static inline void dispatch_main_sync_safe(dispatch_block_t block) {
+    if ([NSThread isMainThread]) {
+        block();
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), block);
+    }
+}
+
 static inline void dispatch_global_default_async(dispatch_block_t block) {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
 }
 
 #define WEB_VIEW_MAX_HEIGHT 100000
+#define EMPTY_HTML @"<html><head></head><body></body></html>"
 #define JQUERY_MIN_JS [[NSBundle mainBundle] pathForResource:@"jquery.min" ofType:@"js"]
 
 #endif /* CommonDefinitions_h */

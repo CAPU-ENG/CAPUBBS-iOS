@@ -16,6 +16,16 @@
 #import "ComposeViewController.h"
 #import <CoreSpotlight/CoreSpotlight.h>
 
+@interface PreviewItemWithName : NSObject <QLPreviewItem>
+
+@property (nonatomic, strong) NSURL *previewItemURL;
+@property (nonatomic, strong) NSString *previewItemTitle;
+
+@end
+
+@implementation PreviewItemWithName
+@end
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -31,6 +41,10 @@
         UINavigationBar *navBarAppearance = [UINavigationBar appearance];
         navBarAppearance.standardAppearance = appearance;
         navBarAppearance.scrollEdgeAppearance = appearance;
+        navBarAppearance.compactAppearance = appearance;
+        if (@available(iOS 15.0, *)) {
+            navBarAppearance.compactScrollEdgeAppearance = appearance;
+        }
         navBarAppearance.tintColor = [UIColor whiteColor]; // buttons color
     } else {
         [[UINavigationBar appearance] setBarTintColor:GREEN_DARK];
@@ -40,15 +54,17 @@
     }
     
     if (@available(iOS 13.0, *)) {
-        UIToolbarAppearance *toolbarAppearance = [[UIToolbarAppearance alloc] init];
-        [toolbarAppearance configureWithOpaqueBackground];
-        toolbarAppearance.backgroundColor = [UIColor whiteColor];
+        UIToolbarAppearance *appearance = [[UIToolbarAppearance alloc] init];
+        [appearance configureWithOpaqueBackground];
+        appearance.backgroundColor = [UIColor whiteColor];
         
-        UIToolbar *toolbarAppearanceProxy = [UIToolbar appearance];
-        toolbarAppearanceProxy.tintColor = BLUE;
-        toolbarAppearanceProxy.standardAppearance = toolbarAppearance;
+        UIToolbar *toolbarAppearance = [UIToolbar appearance];
+        toolbarAppearance.tintColor = BLUE;
+        toolbarAppearance.standardAppearance = appearance;
+        toolbarAppearance.compactAppearance = appearance;
         if (@available(iOS 15.0, *)) {
-            toolbarAppearanceProxy.scrollEdgeAppearance = toolbarAppearance;
+            toolbarAppearance.scrollEdgeAppearance = appearance;
+            toolbarAppearance.compactScrollEdgeAppearance = appearance;
         }
     } else {
         [[UIToolbar appearance] setTintColor:BLUE];
@@ -98,9 +114,13 @@
     [[NSURLCache sharedURLCache] setMemoryCapacity:128.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:512.0 * 1024 * 1024];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
-    [self performSelectorInBackground:@selector(transport) withObject:nil];
+    dispatch_global_default_async(^{
+        [self transport];
+    });
     performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
+    [NOTIFICATION addObserver:self selector:@selector(sendEmail:) name:@"sendEmail" object:nil];
+    [NOTIFICATION addObserver:self selector:@selector(previewFile:) name:@"previewFile" object:nil];
     if ([ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
         [self loginAsync:YES];
     }
@@ -125,7 +145,7 @@
 
 - (UIViewController *)getTopViewController {
     __block UIViewController *topVC;
-    dispatch_sync(dispatch_get_main_queue(), ^{
+    dispatch_main_sync_safe(^{
         topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
         while (topVC.presentedViewController) {
             topVC = topVC.presentedViewController;
@@ -137,6 +157,85 @@
 - (void)showAlert:(NSNotification *)noti {
     NSDictionary *dict = noti.userInfo;
     [[self getTopViewController] showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
+}
+
+- (void)sendEmail:(NSNotification *)notification {
+    NSDictionary *mailInfo = notification.userInfo;
+    if ([MFMailComposeViewController canSendMail]) {
+        MFMailComposeViewController *mail = [[CustomMailComposeViewController alloc] init];
+        mail.mailComposeDelegate = self;
+        mail.navigationBar.barStyle = UIBarStyleBlackTranslucent;
+        mail.navigationBar.barTintColor = [UIColor whiteColor];
+        [mail setToRecipients:mailInfo[@"recipients"]];
+        if (mailInfo[@"subject"]) {
+            [mail setSubject:mailInfo[@"subject"]];
+        }
+        if (mailInfo[@"body"]) {
+            BOOL isHTML = mailInfo[@"isHTML"] ? [mailInfo[@"isHTML"] boolValue] : NO;
+            [mail setMessageBody:mailInfo[@"body"] isHTML:isHTML];
+        }
+        [[self getTopViewController] presentViewControllerSafe:mail];
+    } else {
+        [[self getTopViewController] showAlertWithTitle:@"您的设备无法发送邮件" message:mailInfo[@"fallbackMessage"] ?: @"请查看系统设置"];
+    }
+}
+
+- (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
+    [controller dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)previewFile:(NSNotification *)noti {
+    NSDictionary *dict = noti.userInfo;
+    previewFilePath = dict[@"filePath"];
+    previewFileName = dict[@"fileName"];
+    if (noti.object && [noti.object isKindOfClass:[UIView class]]) {
+        previewFrame = noti.object;
+    }
+    
+    QLPreviewController *previewController = [[QLPreviewController alloc] init];
+    previewController.dataSource = self;
+    previewController.delegate = self;
+    [[self getTopViewController] presentViewControllerSafe:previewController];
+}
+
+- (NSInteger)numberOfPreviewItemsInPreviewController:(QLPreviewController *)controller {
+    return previewFilePath ? 1 : 0;
+}
+
+- (id<QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndex:(NSInteger)index {
+    PreviewItemWithName *item = [[PreviewItemWithName alloc] init];
+    item.previewItemURL = [NSURL fileURLWithPath:previewFilePath];
+    item.previewItemTitle = previewFileName;
+    return item;
+}
+
+- (void)previewControllerDidDismiss:(QLPreviewController *)controller {
+    if (previewFilePath) {
+        [MANAGER removeItemAtPath:previewFilePath error:nil];
+        previewFilePath = nil;
+        previewFileName = nil;
+        previewFrame = nil;
+    }
+}
+
+- (UIImage *)previewController:(QLPreviewController *)controller
+ transitionImageForPreviewItem:(id<QLPreviewItem>)item
+                   contentRect:(CGRect *)contentRect {
+    if (!previewFrame) {
+        *contentRect = CGRectZero;
+        return nil;
+    }
+    *contentRect = previewFrame.bounds;
+    return [UIImage imageWithContentsOfFile:previewFilePath];
+}
+
+- (CGRect)previewController:(QLPreviewController *)controller frameForPreviewItem:(id<QLPreviewItem>)item inSourceView:(UIView * _Nullable * _Nonnull)view {
+    if (!previewFrame) {
+        *view = nil;
+        return CGRectZero;
+    }
+    *view = previewFrame;
+    return previewFrame.bounds;
 }
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
@@ -469,17 +568,28 @@
     NSDate *currentDate = [NSDate date];
     NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkUpdate"]];
     NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
-    if ((int)time > 3600 * 24) { // 每隔1天检测一次更新
+    if (time > 3600 * 24) { // 每隔1天检测一次更新
         NSLog(@"Check For Update");
-        [self performSelectorInBackground:@selector(checkUpdate) withObject:nil];
-        [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
+        dispatch_global_default_async(^{
+            [self checkUpdate:^(BOOL success) {
+                if (!success) {
+                    // 如果7天没成功检查更新，提示失败
+                    if (time > 7 * 3600 * 24) {
+                        [[self getTopViewController] showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
+                        [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
+                    }
+                } else {
+                    [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
+                }
+            }];
+        });
     } else {
         NSLog(@"Needn't Check Update");
     }
 }
 
-- (void)checkUpdate {
-    NSString *currentVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+- (void)checkUpdate:(void (^)(BOOL success))callback {
+    NSString *currentVersion = APP_VERSION;
 //    NSString *currentVersion = @"3.9";
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
     //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
@@ -494,7 +604,7 @@
         
         if (error || !data) {
             NSLog(@"Check Update Failed: %@", error);
-            [[self getTopViewController] showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
+            callback(NO);
             return;
         }
         
@@ -502,15 +612,18 @@
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
         if (!json || jsonError) {
             NSLog(@"JSON Parse Error: %@", jsonError);
+            callback(NO);
             return;
         }
         
         NSArray *infoArray = json[@"results"];
         if (infoArray.count == 0) {
             NSLog(@"No app info returned from App Store.");
+            callback(NO);
             return;
         }
         
+        callback(YES);
         NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
         NSString *lastVersion = [releaseInfo objectForKey:@"version"];
         NSLog(@"App Store latest version: %@",lastVersion);

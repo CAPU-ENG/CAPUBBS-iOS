@@ -464,10 +464,12 @@ CGSize ScaledSizeForImage(UIImage *image, CGFloat maxLength) {
 
 - (void)prepareUpload {
     [hud showWithProgressMessage:@"正在压缩"];
-    [self performSelectorInBackground:@selector(upload) withObject:nil];
+    dispatch_global_default_async(^{
+        [self compressAndUpload];
+    });
 }
 
-- (void)upload {
+- (void)compressAndUpload {
     NSData * imageData = UIImageJPEGRepresentation(image, 1);
     float maxLength = IS_SUPER_USER ? 500 : 300; // 压缩超过300K / 500K的图片
     float ratio = 1.0;

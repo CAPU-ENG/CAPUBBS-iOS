@@ -8,11 +8,10 @@
 
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
-#import <MessageUI/MessageUI.h>
 #import "AsyncImageView.h"
 #import "CustomWebViewContainer.h"
 
-@interface UserViewController : CustomTableViewController<WKNavigationDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
+@interface UserViewController : CustomTableViewController<WKNavigationDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
     AsyncImageView *backgroundView;
@@ -28,7 +27,6 @@
     NSArray *property;
     NSMutableArray *heights;
     UIDocumentInteractionController *dic;
-    CustomMailComposeViewController *mail;
     NSTimer *heightCheckTimer;
 }
 

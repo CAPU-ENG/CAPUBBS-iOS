@@ -90,7 +90,16 @@
         return;
     }
     
-    if ([path hasPrefix:@"tel:"] || [path hasPrefix:@"mailto:"]) {
+    if ([path hasPrefix:@"mailto:"]) {
+        NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
+        [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+            @"recipients": @[mailAddress]
+        }];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"tel:"]) {
         // Directly open
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:nil];
         decisionHandler(WKNavigationActionPolicyCancel);

@@ -8,15 +8,13 @@
 
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
-#import <MessageUI/MessageUI.h>
 
-@interface ContentViewController : CustomTableViewController<MFMailComposeViewControllerDelegate, WKNavigationDelegate, UIDocumentInteractionControllerDelegate> {
+@interface ContentViewController : CustomTableViewController<WKNavigationDelegate> {
     MBProgressHUD *hud;
     ActionPerformer *performer;
     NSUserActivity *activity;
     NSString *URL;
     NSMutableArray *data;
-    CustomMailComposeViewController *mail;
     UIDocumentInteractionController *dic;
     int page;
     int textSize;
@@ -26,6 +24,7 @@
     NSString *defaultContent;
     NSInteger selectedIndex;
     NSMutableArray *heights;
+    NSMutableArray *tempHeights; // 储存之前计算的高度结果，防止reload时高度突变
     NSMutableArray *HTMLStrings;
     NSString *tempPath;
     NSString *imgPath;

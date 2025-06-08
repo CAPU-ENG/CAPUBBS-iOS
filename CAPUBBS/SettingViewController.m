@@ -21,7 +21,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
-    self.preferredContentSize = CGSizeMake(360, 10000); // 高度填满屏幕
+    self.preferredContentSize = CGSizeMake(400, 1000);
     [self.iconUser setRounded:YES];
     UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
     hud = [[MBProgressHUD alloc] initWithView:targetView];
@@ -159,33 +159,19 @@
         }
     } else if (indexPath.section == 2) {
         if (indexPath.row == 3) {
-            if ([CustomMailComposeViewController canSendMail]) {
-                NSString *appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-                NSString *appBuild = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
-                mail = [[CustomMailComposeViewController alloc] init];
-                mail.mailComposeDelegate = self;
-                [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-                [mail.navigationBar setTintColor:[UIColor whiteColor]];
-                [mail setSubject:@"CAPUBBS iOS客户端反馈"];
-                [mail setToRecipients:FEEDBACK_EMAIL];
-                [mail setMessageBody:[NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], appVersion, appBuild] isHTML:NO];
-                [self presentViewControllerSafe:mail];
-            } else {
-                [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
-            }
+            [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+                @"recipients": FEEDBACK_EMAIL,
+                @"subject": @"CAPUBBS iOS客户端反馈",
+                @"body": [NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], APP_VERSION, APP_BUILD],
+                @"fallbackMessage": @"请前往网络维护板块反馈"
+            }];
         } else if (indexPath.row == 4) {
             NSString *str = @"itms-apps://itunes.apple.com/app/id826386033";
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:str] options:@{} completionHandler:nil];
         } else if (indexPath.row == 5) {
-            NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-            NSString *appVersion = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
-            [self showAlertWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\n更新时间：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", appVersion, __DATE__, COPYRIGHT, EULA]];
+            [self showAlertWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\nBuild：%@\n版本创建日期：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", APP_VERSION, APP_BUILD, __DATE__, COPYRIGHT, EULA]];
         }
     }
-}
-
-- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error{
-    [mail dismissViewControllerAnimated:YES completion:nil];
 }
 
 /*- (IBAction)proxyChanged:(id)sender {

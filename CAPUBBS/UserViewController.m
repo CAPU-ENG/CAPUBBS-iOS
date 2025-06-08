@@ -22,7 +22,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
-    self.preferredContentSize = CGSizeMake(360, 0);
+    self.preferredContentSize = CGSizeMake(400, 0);
     UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
@@ -246,22 +246,21 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 0 && indexPath.row == 7) {
-        if ([CustomMailComposeViewController canSendMail]) {
-            mail = [[CustomMailComposeViewController alloc] init];
-            mail.mailComposeDelegate = self;
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setToRecipients:REPORT_EMAIL];
-            if ([self.ID isEqualToString:UID]) {
-                [mail setSubject:@"CAPUBBS 申请删除账号"];
-                [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我申请删除该账号，希望尽快处理，谢谢！", UID] isHTML:YES];
-            } else {
-                [mail setSubject:@"CAPUBBS 举报违规用户"];
-                [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID] isHTML:YES];
-            }
-            [self presentViewControllerSafe:mail];
+        if ([self.ID isEqualToString:UID]) {
+            [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+                @"recipients": REPORT_EMAIL,
+                @"subject": @"CAPUBBS 申请删除账号",
+                @"body": [NSString stringWithFormat:@"您好，我是%@，我申请删除该账号，希望尽快处理，谢谢！", UID],
+                @"fallbackMessage": @"请前往网络维护板块反馈"
+            }];
         } else {
-            [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
+            [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+                @"recipients": REPORT_EMAIL,
+                @"subject": @"CAPUBBS 举报违规用户",
+                @"body": [NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID],
+                @"isHTML": @(YES),
+                @"fallbackMessage": @"请前往网络维护板块反馈"
+            }];
         }
     }
 }
@@ -280,15 +279,10 @@
     }
     
     if ([path hasPrefix:@"mailto:"]) {
-        if ([CustomMailComposeViewController canSendMail]) {
-            NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
-            mail = [[CustomMailComposeViewController alloc] init];
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setToRecipients:@[mailAddress]];
-            mail.mailComposeDelegate = self;
-            [self presentViewControllerSafe:mail];
-        }
+        NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
+        [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+            @"recipients": @[mailAddress]
+        }];
         decisionHandler(WKNavigationActionPolicyCancel);
         return;
     }
@@ -316,17 +310,17 @@
     
     for (int i = 0; i < webViewContainers.count; i++) {
         CustomWebViewContainer *webviewContainer = webViewContainers[i];
-        [webviewContainer.webView evaluateJavaScript:@"if(document.body){document.getElementById('body-wrapper').scrollHeight;}" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
+        [webviewContainer.webView evaluateJavaScript:@"if(document.getElementById('body-wrapper')){document.getElementById('body-wrapper').scrollHeight;}" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
             if (error) {
                 NSLog(@"JS 执行失败: %@", error);
                 return;
             }
-            NSNumber *height = result;
-            if (height) {
-                height = @([height floatValue] * (textSize / 100.0));
+            float height = 0;
+            if (result && [result isKindOfClass:[NSNumber class]]) {
+                height = [result floatValue] * (textSize / 100.0);
             }
-            if (height && [height floatValue] - [[heights objectAtIndex:i] floatValue] >= 1) {
-                heights[i] = height;
+            if (height > 0 && height - [[heights objectAtIndex:i] floatValue] >= 1) {
+                heights[i] = @(height);
                 [self.tableView beginUpdates];
                 [self.tableView endUpdates];
             }
@@ -335,19 +329,9 @@
 }
 
 - (IBAction)sendMail:(id)sender {
-    if (![CustomMailComposeViewController canSendMail]) {
-        return;
-    }
-    mail = [[CustomMailComposeViewController alloc] init];
-    mail.mailComposeDelegate = self;
-    [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-    [mail.navigationBar setTintColor:[UIColor whiteColor]];
-    [mail setToRecipients:@[self.mailBtn.titleLabel.text]];
-    [self presentViewControllerSafe:mail];
-}
-
-- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
-    [mail dismissViewControllerAnimated:YES completion:nil];
+    [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+        @"recipients": @[self.mailBtn.titleLabel.text]
+    }];
 }
 
 - (IBAction)tapPic:(UIButton *)sender {
@@ -363,18 +347,17 @@
         imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:imageData] == GIF_TYPE) ? @"gif" : @"png"];
         [self presentImage:imageData];
     } else {
-        [self performSelectorInBackground:@selector(showPicThread:) withObject:url];
+        NSURLRequest *request = [NSURLRequest requestWithURL:url];
+        NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            if (idata) {
+                imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
+            }
+            dispatch_main_async_safe(^{
+                [self presentImage:idata];
+            });
+        }];
+        [task resume];
     }
-}
-- (void)showPicThread:(NSURL *)url {
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        if (idata) {
-            imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
-        }
-        [self performSelectorOnMainThread:@selector(presentImage:) withObject:idata waitUntilDone:NO];
-    }];
-    [task resume];
 }
 - (void)presentImage:(NSData *)image {
     if (!image || ![UIImage imageWithData:image]) {
@@ -384,19 +367,10 @@
         [hud hideWithSuccessMessage:@"载入成功"];
     }
     [image writeToFile:imgPath atomically:YES];
-    dic = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:imgPath]];
-    dic.delegate = self;
-    dic.name = [NSString stringWithFormat:@"%@的头像", self.ID];
-    [dic presentPreviewAnimated:YES];
-}
-- (UIViewController *)documentInteractionControllerViewControllerForPreview:(UIDocumentInteractionController *)controller{
-    return self;
-}
-- (UIView *)documentInteractionControllerViewForPreview:(UIDocumentInteractionController *)controller {
-    return self.icon;
-}
-- (void)documentInteractionControllerDidEndPreview:(UIDocumentInteractionController *)controller {
-    [MANAGER removeItemAtPath:imgPath error:nil];
+    [NOTIFICATION postNotificationName:@"previewFile" object:self.icon userInfo:@{
+        @"filePath": imgPath,
+        @"fileName": [NSString stringWithFormat:@"%@的头像", self.ID],
+    }];
 }
 
 - (IBAction)back:(id)sender {
