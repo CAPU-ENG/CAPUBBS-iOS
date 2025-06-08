@@ -225,9 +225,6 @@
         @"sig" : sig,
         @"sig2" : sig2,
         @"sig3" : sig3,
-        @"os" : @"ios",
-        @"device" : [ActionPerformer doDevicePlatform],
-        @"version" : [[UIDevice currentDevice] systemVersion]
     };
     if (self.isEdit == NO) {
         [hud showWithProgressMessage:@"注册中"];

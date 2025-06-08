@@ -12,6 +12,7 @@
 		0134178B1AB06CFF0086098F /* IDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0134178A1AB06CFF0086098F /* IDViewController.m */; };
 		0141F9621B03B803003F3186 /* OnlineViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0141F9611B03B803003F3186 /* OnlineViewController.m */; };
 		0141F9651B03C1C1003F3186 /* OnlineViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 0141F9641B03C1C1003F3186 /* OnlineViewCell.m */; };
+		01445B672DF5589B0000638F /* XMLDictionary.m in Sources */ = {isa = PBXBuildFile; fileRef = 01445B662DF558990000638F /* XMLDictionary.m */; };
 		01460D991AA8CE3A00762761 /* SearchViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01460D981AA8CE3A00762761 /* SearchViewController.m */; };
 		01460DA21AA9962000762761 /* SearchViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 01460DA11AA9962000762761 /* SearchViewCell.m */; };
 		01695D3A1AD98B8A000D6BA5 /* PreviewViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 01695D391AD98B8A000D6BA5 /* PreviewViewController.m */; };
@@ -279,6 +280,8 @@
 		0141F9611B03B803003F3186 /* OnlineViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = OnlineViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		0141F9631B03C1C1003F3186 /* OnlineViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OnlineViewCell.h; sourceTree = "<group>"; };
 		0141F9641B03C1C1003F3186 /* OnlineViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OnlineViewCell.m; sourceTree = "<group>"; };
+		01445B652DF558740000638F /* XMLDictionary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XMLDictionary.h; sourceTree = "<group>"; };
+		01445B662DF558990000638F /* XMLDictionary.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XMLDictionary.m; sourceTree = "<group>"; };
 		01460D971AA8CE3A00762761 /* SearchViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SearchViewController.h; sourceTree = "<group>"; };
 		01460D981AA8CE3A00762761 /* SearchViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SearchViewController.m; sourceTree = "<group>"; };
 		01460DA01AA9962000762761 /* SearchViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SearchViewCell.h; sourceTree = "<group>"; };
@@ -809,6 +812,8 @@
 				01E042BE2DE4B1C800590A6C /* ReachabilityManager.m */,
 				01E1B1591C28061500EC680D /* UIImageEffects.h */,
 				01E1B15A1C28061500EC680D /* UIImageEffects.m */,
+				01445B652DF558740000638F /* XMLDictionary.h */,
+				01445B662DF558990000638F /* XMLDictionary.m */,
 			);
 			path = "Common Files";
 			sourceTree = "<group>";
@@ -1290,6 +1295,7 @@
 				01F38EB71AE1516C007F25D0 /* ChatViewController.m in Sources */,
 				018DC2021BFF482600334BF1 /* IDCell.m in Sources */,
 				017785ED1AADDA870089361C /* FacesViewCell.m in Sources */,
+				01445B672DF5589B0000638F /* XMLDictionary.m in Sources */,
 				0100A0D21C0C562C00A1282D /* AsyncImageView.m in Sources */,
 				01F38EBD1AE1537F007F25D0 /* ChatCell.m in Sources */,
 				8BAC8EEB18B10E6700F68A62 /* IndexViewController.m in Sources */,

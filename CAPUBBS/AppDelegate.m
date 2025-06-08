@@ -537,9 +537,6 @@
         NSDictionary *dict = @{
             @"username" : uid,
             @"password" : [ActionPerformer md5:PASS],
-            @"os" : @"ios",
-            @"device" : [ActionPerformer doDevicePlatform],
-            @"version" : [[UIDevice currentDevice] systemVersion]
         };
         dispatch_semaphore_t signal = dispatch_semaphore_create(0);
         [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {

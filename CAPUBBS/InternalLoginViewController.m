@@ -74,9 +74,6 @@
     NSDictionary *dict = @{
         @"username" : uid,
         @"password" : [ActionPerformer md5:pass],
-        @"os" : @"ios",
-        @"device" : [ActionPerformer doDevicePlatform],
-        @"version" : [[UIDevice currentDevice] systemVersion]
     };
     [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {

@@ -40,7 +40,6 @@
 #define SUCCESSMARK [UIImage imageNamed:@"successmark"]
 #define FAILMARK [UIImage imageNamed:@"failmark"]
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
-//#define IOS [[[UIDevice currentDevice] systemVersion] floatValue]
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
 #define APP_VERSION [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]
 #define APP_BUILD [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"]

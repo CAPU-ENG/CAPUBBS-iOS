@@ -7,6 +7,7 @@
 //
 
 #import "ActionPerformer.h"
+#import "XMLDictionary.h" // XML parsing
 #import <CommonCrypto/CommonCrypto.h> // MD5
 #import "sys/utsname.h" // 设备型号
 
@@ -22,18 +23,94 @@
     return [encoded stringByReplacingOccurrencesOfString:@" " withString:@"+"];
 }
 
+/**
+ * 强制以UTF-8解码，并将所有无效的字节序列替换为指定内容
+ * @param corruptData 从服务器接收的可能已损坏的NSData
+ * @param replacement 无效字节的替换，默认为空（跳过）
+ * @return 清理和解码后的NSString
+ */
+- (NSString *)forceDecodeUTF8StringFromData:(NSData *)corruptData replacement:(NSString *)replacement {
+    if (!corruptData || corruptData.length == 0) {
+        return nil;
+    }
+
+    // 预先创建问号的NSData对象，以便在循环中复用
+    NSData *replacementData = [replacement ?: @"" dataUsingEncoding:NSUTF8StringEncoding];
+
+    NSMutableData *cleanedData = [NSMutableData dataWithCapacity:corruptData.length];
+    const unsigned char *bytes = (const unsigned char *)[corruptData bytes];
+    NSUInteger length = corruptData.length;
+    NSUInteger i = 0;
+
+    while (i < length) {
+        unsigned char leadByte = bytes[i];
+        NSUInteger sequenceLength = 0;
+
+        if ((leadByte & 0x80) == 0) { // 0xxxxxxx -> ASCII
+            sequenceLength = 1;
+        } else if ((leadByte & 0xE0) == 0xC0) { // 110xxxxx
+            sequenceLength = 2;
+        } else if ((leadByte & 0xF0) == 0xE0) { // 1110xxxx
+            sequenceLength = 3;
+        } else if ((leadByte & 0xF8) == 0xF0) { // 11110xxx
+            sequenceLength = 4;
+        } else {
+            // 发现无效的UTF-8起始字节
+            [cleanedData appendData:replacementData];
+            i++;
+            continue; // 继续下一个字节
+        }
+
+        if (i + sequenceLength > length) {
+            // 数据末尾不足以构成一个完整序列，将其视为错误
+            [cleanedData appendData:replacementData];
+            break; // 结束循环
+        }
+
+        NSData *sequenceData = [NSData dataWithBytes:&bytes[i] length:sequenceLength];
+        BOOL isValid = [[NSString alloc] initWithData:sequenceData encoding:NSUTF8StringEncoding] != nil;
+        // 这样性能更高，但可能在极端情况下出错
+//        BOOL isValid = YES;
+//        for (NSUInteger j = 1; j < sequenceLength; j++) {
+//            if ((bytes[i + j] & 0xC0) != 0x80) { // 非起始字节必须是 10xxxxxx
+//                isValid = NO;
+//                break;
+//            }
+//        }
+
+        if (isValid) {
+            // 这是一个有效的序列，直接追加原始字节
+            [cleanedData appendData:sequenceData];
+        } else {
+            // 这是一个无效的序列 (例如，起始字节有效，但后续字节错误)
+            [cleanedData appendData:replacementData];
+        }
+        
+        // 移动指针到下一个序列的开始
+        i += sequenceLength;
+    }
+
+    // 用清理过的数据最终生成字符串
+    return [[NSString alloc] initWithData:cleanedData encoding:NSUTF8StringEncoding];
+}
+
 - (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
     NSString *postUrl = [NSString stringWithFormat:@"%@/api/client.php?ask=%@",CHEXIE, url];
     
-    NSMutableDictionary *requestDictionary = [[NSMutableDictionary alloc] init];
-    [requestDictionary setObject:@"ios" forKey:@"os"];
-    [requestDictionary setObject:TOKEN forKey:@"token"];
+    NSMutableDictionary *requestDict = [@{
+        @"os": @"ios",
+        @"device": [ActionPerformer doDevicePlatform],
+        @"version": [[UIDevice currentDevice] systemVersion],
+        @"clientversion": APP_VERSION,
+        @"clientbuild": APP_BUILD,
+        @"token": TOKEN
+    } mutableCopy];
     for (NSString *key in [dict allKeys]) {
         NSString *data = dict[key];
         if ([data hasPrefix:@"@"]) { // 修复字符串首带有@时的错误
             data = [@" " stringByAppendingString:data];
         }
-        [requestDictionary setObject:data forKey:key];
+        requestDict[key] = data;
     }
     
     NSMutableURLRequest *request = [NSMutableURLRequest
@@ -43,7 +120,7 @@
     
     // Convert parameters to x-www-form-urlencoded (or JSON, depending on server)
     NSMutableArray *bodyParts = [NSMutableArray array];
-    [requestDictionary enumerateKeysAndObjectsUsingBlock:^(id key,
+    [requestDict enumerateKeysAndObjectsUsingBlock:^(id key,
                                                            id obj,
                                                            BOOL *stop) {
         NSString *part = [NSString stringWithFormat:@"%@=%@",
@@ -59,69 +136,55 @@
     NSURLSession *session = [NSURLSession sharedSession];
     NSURLSessionDataTask *task = [session dataTaskWithRequest:request
                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        dispatch_main_async_safe(^{
-            if (error) {
-                NSLog(@"API POST error: %@", error);
+        if (error) {
+            NSLog(@"API POST error: %@", error);
+            dispatch_main_async_safe(^{
                 block(nil, error);
-                return;
+            });
+            return;
+        }
+        
+        BOOL hasError = NO;
+        // Sanity check by encoding to UTF-8. Otherwise it might fail silently with lost data.
+        NSString *xmlString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if (!xmlString) {
+            NSLog(@"API data corrupted, attempting to recover...");
+            xmlString = [self forceDecodeUTF8StringFromData:data replacement:@"�"];
+            if (!xmlString) {
+                NSLog(@"API data recovery failed!");
+                hasError = YES;
+            } else {
+                NSLog(@"API data recovery success!");
             }
-            
-            NSXMLParser *parser = [[NSXMLParser alloc] initWithData:data];
-            parser.delegate = self;
-            
-            if (![parser parse]) {
-                NSError *parseError = [NSError errorWithDomain:@"XMLParsing" code:0 userInfo:@{NSLocalizedDescriptionKey: @"XML parsing failed"}];
-                block(nil, parseError);
-                [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert"
-                                                                    object:nil
-                                                                  userInfo:@{@"title": @"加载失败",
-                                                                             @"message": @"内容解析出现异常\n请使用网页版查看"}];
-                return;
+        }
+        NSDictionary *xmlData = [NSDictionary dictionaryWithXMLString:xmlString];
+        if (!xmlData || ![xmlData[@"__name"] isEqualToString:@"capu"]) {
+            hasError = YES;
+        }
+        if (hasError) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"showAlert"
+                                                                object:nil
+                                                              userInfo:@{@"title": @"加载失败",
+                                                                         @"message": @"内容解析出现异常\n请使用网页版查看"}];
+            dispatch_main_async_safe(^{
+                block(nil, [NSError errorWithDomain:@"XMLParsing" code:0 userInfo:@{NSLocalizedDescriptionKey: @"XML parsing failed"}]);
+            });
+        } else {
+            id info = xmlData[@"info"];
+            NSArray *result;
+            if (!info) {
+                result = @[];
+            } else if ([info isKindOfClass:[NSArray class]]) {
+                result = info;
+            } else {
+                result = @[info];
             }
-            block(finalData, nil);
-        });
+            dispatch_main_async_safe(^{
+                block(result, nil);
+            });
+        }
     }];
     [task resume];
-}
-
-- (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName attributes:(NSDictionary *)attributeDict {
-    if ([elementName isEqualToString:@"capu"]) {
-        finalData = [[NSMutableArray alloc] init];
-    } else if ([elementName isEqualToString:@"info"]) {
-        tempData = [[NSMutableDictionary alloc] init];
-    } else {
-        currentString = nil;
-    }
-}
-
-- (void)parser:(NSXMLParser *)parser didEndElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName {
-    if ([elementName isEqualToString:@"capu"]) {
-        return;
-    }
-    if ([elementName isEqualToString:@"info"]) {
-        [finalData addObject:tempData];
-    } else {
-        [tempData setObject:currentString ? [currentString stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]] : @"" forKey:elementName];
-    }
-}
-
-- (void)parser:(NSXMLParser *)parser foundCharacters:(NSString *)string {
-    if (!currentString) {
-        currentString = [[NSMutableString alloc] init];
-    }
-    [currentString appendString:string];
-}
-
-- (void)parser:(NSXMLParser *)parser foundCDATA:(NSData *)CDATABlock {
-    if (!currentString) {
-        currentString = [[NSMutableString alloc] init];
-    }
-    NSString *string = [[NSString alloc] initWithData:CDATABlock encoding:NSUTF8StringEncoding];
-    [currentString appendString:string];
-}
-
-- (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
-    NSLog(@"NSXMLParser error: %@", parseError);
 }
 
 #pragma mark Common Functions
