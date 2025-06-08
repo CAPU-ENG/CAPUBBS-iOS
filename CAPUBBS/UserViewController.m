@@ -60,8 +60,8 @@
         [webViewContainer.webView.scrollView setScrollEnabled:NO];
     }
     
-    recentPost = [[NSMutableArray alloc] init];
-    recentReply = [[NSMutableArray alloc] init];
+    recentPost = @[];
+    recentReply = @[];
     property = @[@"rights", @"sign", @"hobby", @"qq", @"mail", @"place", @"regdate", @"lastdate", @"post", @"reply", @"water", @"extr"];
     performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(getInformation) name:@"userUpdated" object:nil];
@@ -210,16 +210,8 @@
             // Do not trigger immediately, the webview might still be showing the previous content.
             heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updateWebViewHeight) userInfo:nil repeats:YES];
             
-            [recentPost removeAllObjects];
-            [recentReply removeAllObjects];
-            for (NSDictionary *dict in result) {
-                if ([dict[@"type"] isEqualToString:@"post"]) {
-                    [recentPost addObject:dict];
-                }
-                if ([dict[@"type"] isEqualToString:@"reply"]) {
-                    [recentReply addObject:dict];
-                }
-            }
+            recentPost = result[1][@"info"];
+            recentReply = result[2][@"info"];
         }
     }];
 }
