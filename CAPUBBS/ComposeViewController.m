@@ -376,11 +376,20 @@
         [self presentViewControllerSafe:alert];
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"照片图库" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
-        imagePicker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-        imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
-        imagePicker.delegate = self;
-        [self performSelector:@selector(presentImagePicker:) withObject:imagePicker afterDelay:0.5];
+        if (@available(iOS 14, *)) {
+            PHPickerConfiguration *config = [[PHPickerConfiguration alloc] init];
+            config.selectionLimit = 20; // 最多一次选20张
+            config.filter = [PHPickerFilter imagesFilter];
+            PHPickerViewController *picker = [[PHPickerViewController alloc] initWithConfiguration:config];
+            picker.delegate = self;
+            [self presentViewControllerSafe:picker];
+        } else {
+            UIImagePickerController *imagePicker = [[UIImagePickerController alloc] init];
+            imagePicker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+            imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
+            imagePicker.delegate = self;
+            [self presentViewControllerSafe:imagePicker];
+        }
     }]];
     if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
         [action addAction:[UIAlertAction actionWithTitle:@"拍照" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -388,7 +397,7 @@
             imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
             imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
             imagePicker.delegate = self;
-            [self performSelector:@selector(presentImagePicker:) withObject:imagePicker afterDelay:0.5];
+            [self presentViewControllerSafe:imagePicker];
         }]];
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
@@ -402,20 +411,66 @@
     }
     [self presentViewControllerSafe:action];
 }
-- (void)presentImagePicker:(UIImagePickerController*)imagePicker {
-    [self presentViewControllerSafe:imagePicker];
-}
+
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-    image = [info objectForKey:UIImagePickerControllerOriginalImage];
-    if (image.size.width <= 800 && image.size.height <= 800) {
-        [self prepareUpload];
-    } else {
-        [self performSelector:@selector(showResize) withObject:nil afterDelay:0.5];
-    }
     [picker dismissViewControllerAnimated:YES completion:nil];
+    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    [self uploadOneImage:image withCallback:^(NSString *url) {
+        if (url) {
+            [self.textBody insertText:[NSString stringWithFormat:@"\n[img]%@[/img]\n",url]];
+        } else {
+            [self.textBody becomeFirstResponder];
+        }
+    }];
 }
 
-CGSize ScaledSizeForImage(UIImage *image, CGFloat maxLength) {
+- (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPickerResult *> *)results API_AVAILABLE(ios(14)) {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    NSMutableArray<UIImage *> *selectedImages = [NSMutableArray array];
+    dispatch_group_t group = dispatch_group_create();
+    
+    for (PHPickerResult *result in results) {
+        if ([result.itemProvider canLoadObjectOfClass:[UIImage class]]) {
+            dispatch_group_enter(group);
+            [result.itemProvider loadObjectOfClass:[UIImage class] completionHandler:^(UIImage *image, NSError *error) {
+                if (image) {
+                    @synchronized (selectedImages) {
+                        [selectedImages addObject:image];
+                    }
+                }
+                dispatch_group_leave(group);
+            }];
+        }
+    }
+    
+    // 所有图片加载完后开始上传
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        [self uploadImages:selectedImages index:0];
+    });
+}
+
+- (void)uploadImages:(NSArray<UIImage *> *)images index:(NSInteger)index {
+    if (index >= images.count) {
+        [self.textBody becomeFirstResponder];
+        return;
+    }
+    [self uploadOneImage:images[index] withCallback:^(NSString *url) {
+        if (url) {
+            [self.textBody insertText:[NSString stringWithFormat:@"[img]%@[/img]",url]];
+        }
+        [self uploadImages:images index:index + 1];
+    }];
+}
+
+- (void)uploadOneImage:(UIImage *)image withCallback:(void (^)(NSString *url))callback {
+    if (image.size.width <= 800 && image.size.height <= 800) {
+        [self compressAndUploadImage:image withCallback:callback];
+    } else {
+        [self askForResizeImage:image withCallback:callback];
+    }
+}
+
+CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     if (!image) {
         return CGSizeZero;
     }
@@ -431,18 +486,33 @@ CGSize ScaledSizeForImage(UIImage *image, CGFloat maxLength) {
     return CGSizeMake(width * scale, height * scale);
 }
 
-- (void)showResize {
-    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"图片大小" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+- (void)askForResizeImage:(UIImage *)image withCallback:(void (^)(NSString *url))callback {
+    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"图片大小" message:nil preferredStyle:UIAlertControllerStyleAlert];
+    // 添加预览图
+    UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
+    imageView.translatesAutoresizingMaskIntoConstraints = NO;
+    imageView.contentMode = UIViewContentModeScaleAspectFit;
+    imageView.layer.cornerRadius = 8;
+    imageView.clipsToBounds = YES;
+    [action.view addSubview:imageView];
+    CGSize previewSize = scaledSizeForImage(image, 250);
+    [NSLayoutConstraint activateConstraints:@[
+        [imageView.bottomAnchor constraintEqualToAnchor:action.view.topAnchor constant:-16],
+        [imageView.centerXAnchor constraintEqualToAnchor:action.view.centerXAnchor],
+        [imageView.widthAnchor constraintEqualToConstant:previewSize.width ?: image.size.width],
+        [imageView.heightAnchor constraintEqualToConstant:previewSize.height ?: image.size.height],
+    ]];
+    
     [action addAction:[UIAlertAction actionWithTitle:
         [NSString stringWithFormat:@"上传原图 (%d×%d)", (int)image.size.width, (int)image.size.height]
                                                  style:UIAlertActionStyleDefault
                                                handler:^(UIAlertAction * _Nonnull action) {
-        [self prepareUpload];
+        [self compressAndUploadImage:image withCallback:callback];
     }]];
     // 多种缩图尺寸（最长边限制）
     NSArray<NSNumber *> *sizes = @[@800, @1600, @2400];
     for (NSNumber *size in sizes) {
-        CGSize newSize = ScaledSizeForImage(image, size.floatValue);
+        CGSize newSize = scaledSizeForImage(image, size.floatValue);
         if (CGSizeEqualToSize(newSize, CGSizeZero)) {
             continue; // 跳过，无需缩放
         }
@@ -450,49 +520,43 @@ CGSize ScaledSizeForImage(UIImage *image, CGFloat maxLength) {
         [action addAction:[UIAlertAction actionWithTitle:title
                                                    style:UIAlertActionStyleDefault
                                                  handler:^(UIAlertAction * _Nonnull action) {
-            image = [self reSizeImage:image toSize:newSize];
-            [self prepareUpload];
+            UIImage *resizedImage = [self reSizeImage:image toSize:newSize];
+            [self compressAndUploadImage:resizedImage withCallback:callback];
         }]];
     }
-    [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-    if (!self.viewTools.isHidden) {
-        action.popoverPresentationController.sourceView = self.buttonPic;
-        action.popoverPresentationController.sourceRect = self.buttonPic.bounds;
-    }
+    [action addAction:[UIAlertAction actionWithTitle:@"取消上传" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        callback(nil);
+    }]];
     [self presentViewControllerSafe:action];
 }
 
-- (void)prepareUpload {
+- (void)compressAndUploadImage:(UIImage *)image withCallback:(void (^)(NSString *url))callback {
     [hud showWithProgressMessage:@"正在压缩"];
     dispatch_global_default_async(^{
-        [self compressAndUpload];
-    });
-}
-
-- (void)compressAndUpload {
-    NSData * imageData = UIImageJPEGRepresentation(image, 1);
-    float maxLength = IS_SUPER_USER ? 500 : 300; // 压缩超过300K / 500K的图片
-    float ratio = 1.0;
-    while (imageData.length / 1024 >= maxLength && ratio >= 0.05) {
-        ratio *= 0.75;
-        imageData = UIImageJPEGRepresentation(image, ratio);
-    }
-    NSLog(@"Image Size:%dkB", (int)imageData.length / 1024);
-    [hud showWithProgressMessage:@"正在上传"];
-    [performer performActionWithDictionary:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
-        if (err || result.count == 0) {
-            [hud hideWithFailureMessage:@"上传失败"];
-        } else {
-            if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
-                [hud hideWithSuccessMessage:@"上传完成"];
-                NSString *url = [[result firstObject] objectForKey:@"imgurl"];
-                [self.textBody insertText:[NSString stringWithFormat:@"[img]%@[/img]",url]];
-            } else {
-                [hud hideWithFailureMessage:@"上传失败"];
-            }
-            [self.textBody becomeFirstResponder];
+        NSData * imageData = UIImageJPEGRepresentation(image, 1);
+        float maxLength = IS_SUPER_USER ? 500 : 300; // 压缩超过300K / 500K的图片
+        float ratio = 1.0;
+        while (imageData.length / 1024 >= maxLength && ratio >= 0.05) {
+            ratio *= 0.75;
+            imageData = UIImageJPEGRepresentation(image, ratio);
         }
-    }];
+        NSLog(@"Image Size:%dkB", (int)imageData.length / 1024);
+        [hud showWithProgressMessage:@"正在上传"];
+        [performer performActionWithDictionary:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
+            if (err || result.count == 0) {
+                [hud hideWithFailureMessage:@"上传失败"];
+                callback(nil);
+            } else {
+                if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
+                    [hud hideWithSuccessMessage:@"上传完成"];
+                    callback([result firstObject][@"imgurl"]);
+                } else {
+                    [hud hideWithFailureMessage:@"上传失败"];
+                    callback(nil);
+                }
+            }
+        }];
+    });
 }
 
 - (UIImage *)reSizeImage:(UIImage *)oriImage toSize:(CGSize)reSize{
