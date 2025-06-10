@@ -143,11 +143,11 @@
     }
 }
 
-- (UIViewController *)getTopViewController {
++ (UIViewController *)getTopViewController {
     __block UIViewController *topVC;
     dispatch_main_sync_safe(^{
         topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-        while (topVC.presentedViewController) {
+        while (topVC.presentedViewController && !topVC.presentedViewController.isBeingDismissed) {
             topVC = topVC.presentedViewController;
         }
     });
@@ -156,7 +156,7 @@
 
 - (void)showAlert:(NSNotification *)noti {
     NSDictionary *dict = noti.userInfo;
-    [[self getTopViewController] showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
+    [[AppDelegate getTopViewController] showAlertWithTitle:dict[@"title"] message:dict[@"message"] cancelTitle:dict[@"cancelTitle"] ? : @"好"];
 }
 
 - (void)sendEmail:(NSNotification *)notification {
@@ -174,9 +174,9 @@
             BOOL isHTML = mailInfo[@"isHTML"] ? [mailInfo[@"isHTML"] boolValue] : NO;
             [mail setMessageBody:mailInfo[@"body"] isHTML:isHTML];
         }
-        [[self getTopViewController] presentViewControllerSafe:mail];
+        [[AppDelegate getTopViewController] presentViewControllerSafe:mail];
     } else {
-        [[self getTopViewController] showAlertWithTitle:@"您的设备无法发送邮件" message:mailInfo[@"fallbackMessage"] ?: @"请查看系统设置"];
+        [[AppDelegate getTopViewController] showAlertWithTitle:@"您的设备无法发送邮件" message:mailInfo[@"fallbackMessage"] ?: @"请查看系统设置"];
     }
 }
 
@@ -196,7 +196,7 @@
         QLPreviewController *previewController = [[QLPreviewController alloc] init];
         previewController.dataSource = self;
         previewController.delegate = self;
-        [[self getTopViewController] presentViewControllerSafe:previewController];
+        [[AppDelegate getTopViewController] presentViewControllerSafe:previewController];
     });
 }
 
@@ -211,7 +211,7 @@
     return item;
 }
 
-- (void)previewControllerDidDismiss:(QLPreviewController *)controller {
+- (void)previewControllerWillDismiss:(QLPreviewController *)controller {
     if (previewFilePath) {
         [MANAGER removeItemAtPath:previewFilePath error:nil];
         previewFilePath = nil;
@@ -334,7 +334,7 @@
 - (void)_handleUrlRequestWithDictionary:(NSDictionary *)dict {
     NSString *open = dict[@"open"];
     if (open) {
-        UIViewController *view = [self getTopViewController];
+        UIViewController *view = [AppDelegate getTopViewController];
         CustomNavigationController *navi;
         if ([open isEqualToString:@"message"]) {
             // 同步登陆
@@ -409,7 +409,7 @@
 }
 
 - (void)back {
-    [[self getTopViewController] dismissViewControllerAnimated:YES completion:nil];
+    [[AppDelegate getTopViewController] dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)collectionChanged { // 后台更新系统搜索内容
@@ -545,7 +545,7 @@
             [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
             if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
-                [[self getTopViewController] showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
+                [[AppDelegate getTopViewController] showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
             } else {
                 [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
                 NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
@@ -574,7 +574,7 @@
                 if (!success) {
                     // 如果7天没成功检查更新，提示失败
                     if (time > 7 * 3600 * 24) {
-                        [[self getTopViewController] showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
+                        [[AppDelegate getTopViewController] showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
                         [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
                     }
                 } else {
@@ -628,7 +628,7 @@
         NSLog(@"App Store latest version: %@", latestVersion);
         if ([currentVersion compare:latestVersion options:NSNumericSearch] == NSOrderedAscending) {
             NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
-            [[self getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", latestVersion] message:[releaseInfo objectForKey:@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
+            [[AppDelegate getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", latestVersion] message:[releaseInfo objectForKey:@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
                 [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
             } cancelTitle:@"暂不"];
         }

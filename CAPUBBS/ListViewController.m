@@ -37,7 +37,7 @@
     } else {
         self.navigationItem.rightBarButtonItems = @[self.buttonSearch];
         
-        if (SIMPLE_VIEW == NO) {
+        if (!SIMPLE_VIEW) {
             AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
             [backgroundView setBlurredImage:[UIImage imageNamed:[@"b" stringByAppendingString:self.bid]] animated:NO];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
@@ -579,13 +579,13 @@
         ContentViewController *dest = [segue destinationViewController];
         NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)sender];
         NSDictionary *one = [data objectAtIndex:indexPath.row];
-        dest.tid = [one objectForKey:@"tid"];
-        dest.bid = [one objectForKey:@"bid"];
-        if ([self.bid isEqualToString: @"hot"] && indexPath.row > globalTopCount) {
-            dest.floor = [one objectForKey:@"pid"];
+        dest.tid = one[@"tid"];
+        dest.bid = one[@"bid"];
+        if ([self.bid isEqualToString: @"hot"] && indexPath.row >= globalTopCount) {
+            dest.floor = one[@"pid"];
             dest.willScroll = YES;
         }
-        dest.title = [one objectForKey:@"text"];
+        dest.title = one[@"text"];
     }
 
     // Get the new view controller using [segue destinationViewController].

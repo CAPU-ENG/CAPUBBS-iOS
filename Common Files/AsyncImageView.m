@@ -7,6 +7,7 @@
 //
 
 #import "AsyncImageView.h"
+#import <MobileCoreServices/MobileCoreServices.h>
 #import "UIImageEffects.h"
 
 @implementation AsyncImageView {
@@ -30,13 +31,13 @@
 }
 
 - (void)setBlurredImage:(UIImage *)image animated:(BOOL)animated {
-    float animationTime = 1.0;
+    float animationTime = 0.5;
     image = [UIImageEffects imageByApplyingExtraLightEffectToImage:image];
     if (animated) {
         if (self.image) { // 原本有图片
             [UIView animateWithDuration:animationTime / 2 animations:^{
                 [self setAlpha:0.25];
-            }completion:^(BOOL finished) {
+            } completion:^(BOOL finished) {
                 [self setImage:image];
                 [UIView animateWithDuration:animationTime / 2 animations:^{
                     [self setAlpha:1.0];
@@ -57,10 +58,10 @@
 - (void)setGif:(NSString *)imageName {
     NSString *filePath = [[NSBundle mainBundle] pathForResource:imageName ofType:nil];
     NSData *fileData = [NSData dataWithContentsOfFile:filePath];
-    [self _setGifWithData:fileData];
+    [self setGifWithData:fileData];
 }
 
-- (void)_setGifWithData:(NSData *)data {
+- (void)setGifWithData:(NSData *)data {
     dispatch_main_async_safe(^{
         SDAnimatedImage *image = [[SDAnimatedImage alloc] initWithData:data];
         [self setImage:image];
@@ -97,12 +98,7 @@
             if (SIMPLE_VIEW == YES) {
                 [self setImage:[UIImage imageWithData:data]];
             } else {
-                int imageType = [AsyncImageView fileType:data];
-                if (imageType == GIF_TYPE) {
-                    [self _setGifWithData:data];
-                } else {
-                    [self setImage:[UIImage imageWithData:data]];
-                }
+                [self setGifWithData:data];
             }
             [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
         });
@@ -138,9 +134,9 @@
         // NSLog(@"Load Img - %@", imageTag);
         NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:url]];
         UIImage *image = [UIImage imageWithData:imageData];
-        int imageType = [AsyncImageView fileType:imageData];
-        if (image) {
-            if (imageType != GIF_TYPE) {
+        ImageFileType imageType = [AsyncImageView fileType:imageData];
+        if (imageType != ImageFileTypeUnknown) {
+            if (imageType != ImageFileTypeGIF) {
                 imageData = [self resizeImage:image imageType:imageType];
             }
             // NSLog(@"Icon Type:%@, Size:%dkb", imageType, (int)(imageData.length/1024));
@@ -159,7 +155,7 @@
     NSLog(@"Icon Load Failed - %@", imageTag);
 }
 
-- (NSData *)resizeImage:(UIImage *)oriImage imageType:(int)type {
+- (NSData *)resizeImage:(UIImage *)oriImage imageType:(ImageFileType)type {
     UIImage *resizeImage = oriImage;
     int maxWidth = 450; // 详细信息界面图片大小150 * 150 @3x模式下450 * 450可保证清晰
     if (oriImage.size.width > maxWidth) {
@@ -168,7 +164,7 @@
         resizeImage = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
     }
-    if (type == PNG_TYPE) { // 带透明信息的png不可转换成jpeg否则丢失透明性
+    if (type == ImageFileTypePNG) { // 带透明信息的png不可转换成jpeg否则丢失透明性
         return UIImagePNGRepresentation(resizeImage);
     } else {
         if (resizeImage.size.width >= maxWidth) {
@@ -179,30 +175,66 @@
     }
 }
 
-+ (int)fileType:(NSData *)imageData {
-    if (imageData.length > 4) {
-        const unsigned char * bytes = [imageData bytes];
-        
-        if (bytes[0] == 0xff &&
-            bytes[1] == 0xd8 &&
-            bytes[2] == 0xff) {
-            return JPEG_TYPE;
-        }
-        
-        if (bytes[0] == 0x89 &&
-            bytes[1] == 0x50 &&
-            bytes[2] == 0x4e &&
-            bytes[3] == 0x47) {
-            return PNG_TYPE;
-        }
-        
-        if (bytes[0] == 0x47 &&
-            bytes[1] == 0x49 &&
-            bytes[2] == 0x46) {
-            return GIF_TYPE;
++ (ImageFileType)fileType:(NSData *)imageData {
+    if (!imageData || imageData.length == 0) {
+        return ImageFileTypeUnknown;
+    }
+
+    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)imageData, NULL);
+    if (!source) {
+        return ImageFileTypeUnknown;
+    }
+
+    CFStringRef uti = CGImageSourceGetType(source);
+    CFRelease(source);
+
+    if (!uti) {
+        return ImageFileTypeUnknown;
+    }
+
+    if (UTTypeConformsTo(uti, kUTTypeJPEG)) {
+        return ImageFileTypeJPEG;
+    }
+    if (UTTypeConformsTo(uti, kUTTypePNG)) {
+        return ImageFileTypePNG;
+    }
+    if (UTTypeConformsTo(uti, kUTTypeGIF)) {
+        return ImageFileTypeGIF;
+    }
+    if (UTTypeConformsTo(uti, (__bridge CFStringRef)@"public.heic")) {
+        return ImageFileTypeHEIC;
+    }
+    if (UTTypeConformsTo(uti, (__bridge CFStringRef)@"public.heif")) {
+        return ImageFileTypeHEIF;
+    }
+    if (@available(iOS 14.0, *)) {
+        // WebP 在 iOS 14+ 才原生支持
+        if (UTTypeConformsTo(uti, (__bridge CFStringRef)@"public.webp")) {
+            return ImageFileTypeWEBP;
         }
     }
-    return -1;
+
+    return ImageFileTypeUnknown;
+}
+
++ (NSString *)fileExtension:(ImageFileType)type {
+    switch (type) {
+        case ImageFileTypeJPEG:
+            return @"jpg";
+        case ImageFileTypePNG:
+            return @"png";
+        case ImageFileTypeGIF:
+            return @"gif";
+        case ImageFileTypeHEIC:
+            return @"heic";
+        case ImageFileTypeHEIF:
+            return @"heif";
+        case ImageFileTypeWEBP:
+            return @"webp";
+        case ImageFileTypeUnknown:
+        default:
+            return nil;
+    }
 }
 
 + (void)checkPath {

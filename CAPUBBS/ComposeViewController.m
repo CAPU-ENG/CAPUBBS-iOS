@@ -227,19 +227,19 @@
         [DEFAULTS setObject:self.textBody.text forKey:@"savedBody"];
     }
     [hud showWithProgressMessage:@"发表中"];
-    NSString *changedText = [self transFormat:self.textBody.text];
+    NSString *content = [ContentViewController toCompatibleFormat:self.textBody.text];
     NSDictionary *dict = self.isEdit ? @{
         @"bid" : self.bid,
         @"tid" : self.tid,
         @"title" : self.textTitle.text,
-        @"text" : changedText,
+        @"text" : content,
         @"sig" : [NSString stringWithFormat:@"%ld", (long)self.segmentedControl.selectedSegmentIndex],
         @"pid" : self.floor
     }: @{
         @"bid" : self.bid,
         @"tid" : self.tid,
         @"title" : self.textTitle.text,
-        @"text" : changedText,
+        @"text" : content,
         @"sig" : [NSString stringWithFormat:@"%ld", (long)self.segmentedControl.selectedSegmentIndex]
     };
     [performer performActionWithDictionary:dict toURL:@"post" withBlock:^(NSArray *result, NSError *err) {
@@ -302,29 +302,6 @@
             }
         }
     }];
-}
-
-- (NSString *)transFormat:(NSString *)text {
-    text = [text stringByReplacingOccurrencesOfString:@"\n" withString:@"<br />"];
-    int index = 0;
-    while (index < text.length) {
-        if ([[text substringWithRange:NSMakeRange(index, 1)] isEqualToString:@"<"]) {
-            index++;
-            while (index < text.length) {
-                if ([[text substringWithRange:NSMakeRange(index, 1)] isEqualToString:@">"]) {
-                    break;
-                }
-                index++;
-            }
-        }
-        if (index < text.length && [[text substringWithRange:NSMakeRange(index, 1)] isEqualToString:@" "]) {
-            text = [text stringByReplacingCharactersInRange:NSMakeRange(index, 1) withString:@"&nbsp;"];
-            index += 5;
-        }
-        index++;
-    }
-//    NSLog(@"%@", text);
-    return text;
 }
 
 - (void)dismiss {
@@ -741,7 +718,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     if ([segue.identifier isEqualToString:@"preview"]) {
         PreviewViewController *dest = [segue destinationViewController];
         dest.textTitle = self.textTitle.text;
-        dest.textBody = [self transFormat:self.textBody.text];
+        dest.textBody = self.textBody.text;
         dest.sig = (int)self.segmentedControl.selectedSegmentIndex;
     }
     if ([segue.identifier isEqualToString:@"addText"]) {

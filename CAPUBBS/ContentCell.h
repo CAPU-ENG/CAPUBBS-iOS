@@ -24,7 +24,7 @@
 @property (weak, nonatomic) IBOutlet UITableView *lzlTableView;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *webviewBottomSpacing;
 
-@property (strong, nonatomic) NSTimer *heightCheckTimer;
+@property (strong, nonatomic) NSTimer *webviewUpdateTimer;
 @property (strong, nonatomic) NSArray *lzlDetail;
 
 @end

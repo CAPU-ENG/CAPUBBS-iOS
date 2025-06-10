@@ -303,7 +303,7 @@ void cleanupBuffer(void *userData, void *buf_data)
 
 @end
 
-@implementation UIImage (CornerRadius)
+@implementation UIImage (Extension)
 
 - (UIImage *)imageByApplyingCornerRadius:(CGFloat)cornerRadius {
     // 1. 开启图形上下文
@@ -326,6 +326,14 @@ void cleanupBuffer(void *userData, void *buf_data)
     UIGraphicsEndImageContext();
 
     return roundedImage;
+}
+
++ (UIImage *)imageWithColor:(UIColor *)color size:(CGSize)size {
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:size];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+        [color setFill];
+        [context fillRect:CGRectMake(0, 0, size.width, size.height)];
+    }];
 }
 
 @end

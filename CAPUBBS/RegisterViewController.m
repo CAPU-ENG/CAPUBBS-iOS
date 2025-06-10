@@ -97,9 +97,15 @@
     if (![dict[@"intro"] isEqualToString:@"Array"]) {
         self.textIntro.text = dict[@"intro"];
     }
-    self.textSig.text = [ContentViewController transFromHTML:[ContentViewController restoreFormat:dict[@"sig1"]]];
-    self.textSig2.text = [ContentViewController transFromHTML:[ContentViewController restoreFormat:dict[@"sig2"]]];
-    self.textSig3.text = [ContentViewController transFromHTML:[ContentViewController restoreFormat:dict[@"sig3"]]];
+    if (![dict[@"sig1"] isEqualToString:@"Array"]) {
+        self.textSig.text = dict[@"sig1"];
+    }
+    if (![dict[@"sig2"] isEqualToString:@"Array"]) {
+        self.textSig2.text = dict[@"sig2"];
+    }
+    if (![dict[@"sig3"] isEqualToString:@"Array"]) {
+        self.textSig3.text = dict[@"sig3"];
+    }
 }
 
 - (IBAction)cancel:(id)sender {

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0100A0D21C0C562C00A1282D /* AsyncImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0100A0D11C0C562C00A1282D /* AsyncImageView.m */; };
 		011509C11BF21B080076D6F3 /* CollectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 011509C01BF21B080076D6F3 /* CollectionViewController.m */; };
+		0117FF772DF7ECE10005F5D2 /* injection.js in Resources */ = {isa = PBXBuildFile; fileRef = 0117FF762DF7ECD20005F5D2 /* injection.js */; };
 		0134178B1AB06CFF0086098F /* IDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0134178A1AB06CFF0086098F /* IDViewController.m */; };
 		0141F9621B03B803003F3186 /* OnlineViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0141F9611B03B803003F3186 /* OnlineViewController.m */; };
 		0141F9651B03C1C1003F3186 /* OnlineViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 0141F9641B03C1C1003F3186 /* OnlineViewCell.m */; };
@@ -274,6 +275,7 @@
 		0100A0D11C0C562C00A1282D /* AsyncImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncImageView.m; sourceTree = "<group>"; };
 		011509BF1BF21B080076D6F3 /* CollectionViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CollectionViewController.h; sourceTree = "<group>"; };
 		011509C01BF21B080076D6F3 /* CollectionViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = CollectionViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
+		0117FF762DF7ECD20005F5D2 /* injection.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = injection.js; sourceTree = "<group>"; };
 		013417891AB06CFF0086098F /* IDViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IDViewController.h; sourceTree = "<group>"; };
 		0134178A1AB06CFF0086098F /* IDViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = IDViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		0141F9601B03B803003F3186 /* OnlineViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OnlineViewController.h; sourceTree = "<group>"; };
@@ -945,6 +947,7 @@
 		8BAC8EA918B0F2BE00F68A62 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				0117FF762DF7ECD20005F5D2 /* injection.js */,
 				019D7E942DEA179500F91E41 /* jquery.min.js */,
 				8BAC8EAA18B0F2BE00F68A62 /* CAPUBBS-Info.plist */,
 				8BAC8EAB18B0F2BE00F68A62 /* InfoPlist.strings */,
@@ -1117,6 +1120,7 @@
 				01D80ED51B4C2E36006F8957 /* 86.gif in Resources */,
 				01D80EB21B4C2E36006F8957 /* 51.gif in Resources */,
 				01D80F331B4C2E56006F8957 /* 15_0.gif in Resources */,
+				0117FF772DF7ECE10005F5D2 /* injection.js in Resources */,
 				01A552BB1C1204AA002317C0 /* Images.xcassets in Resources */,
 				01D80F381B4C2E56006F8957 /* 20_0.gif in Resources */,
 				01D80ED71B4C2E36006F8957 /* 88.gif in Resources */,
@@ -1486,7 +1490,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4005;
+				CURRENT_PROJECT_VERSION = 4006;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1515,7 +1519,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4005;
+				CURRENT_PROJECT_VERSION = 4006;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;

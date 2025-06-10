@@ -23,7 +23,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
-    if (SIMPLE_VIEW == NO) {
+    if (!SIMPLE_VIEW) {
         AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
         [backgroundView setBlurredImage:[UIImage imageNamed:@"bcollection"] animated:NO];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];

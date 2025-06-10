@@ -19,4 +19,6 @@
 
 @property (strong, nonatomic) UIWindow *window;
 
++ (UIViewController *)getTopViewController;
+
 @end

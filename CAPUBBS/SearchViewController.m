@@ -8,6 +8,7 @@
 
 #import "SearchViewController.h"
 #import "ContentViewController.h"
+#import "UIImageEffects.h"
 
 #define MIN_DATE @"1995-10-25"
 
@@ -24,7 +25,7 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    [self refreshBackgroundView:YES];
+    [self refreshBackgroundViewAnimated:NO];
     [self.inputType setTintColor:GREEN_DARK];
     [self.inputText becomeFirstResponder];
     [self setDate];
@@ -41,23 +42,25 @@
     [self.navigationController setToolbarHidden:YES];
 }
 
-- (void)refreshBackgroundView:(BOOL)noAnimation {
-    if (SIMPLE_VIEW == NO) {
-        if (!backgroundView) {
-            backgroundView = [[AsyncImageView alloc] init];
-            [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
-            [self.view addSubview:backgroundView];
-            [self.view sendSubviewToBack:backgroundView];
-            [backgroundView.layer setMasksToBounds:YES];
-            [backgroundView setTranslatesAutoresizingMaskIntoConstraints:NO];
-            int dir[4] = {NSLayoutAttributeTop, NSLayoutAttributeBottom, NSLayoutAttributeLeft, NSLayoutAttributeRight};
-            for (int i = 0; i < 4; i++) {
-                [self.view addConstraint:[NSLayoutConstraint constraintWithItem:backgroundView attribute:dir[i] relatedBy:NSLayoutRelationEqual toItem:self.view attribute:dir[i] multiplier:1.0 constant:0.0]];
-            }
-        }
-        self.view.backgroundColor = [UIColor whiteColor];
-        [backgroundView setBlurredImage:[UIImage imageNamed:[@"b" stringByAppendingString:self.bid]] animated:!noAnimation];
+- (void)refreshBackgroundViewAnimated:(BOOL)animated {
+    if (SIMPLE_VIEW) {
+        return;
     }
+    if (!backgroundView) {
+        backgroundView = [[AsyncImageView alloc] init];
+        [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
+        [self.view addSubview:backgroundView];
+        [self.view sendSubviewToBack:backgroundView];
+        [backgroundView.layer setMasksToBounds:YES];
+        [backgroundView setTranslatesAutoresizingMaskIntoConstraints:NO];
+        int dir[4] = {NSLayoutAttributeTop, NSLayoutAttributeBottom, NSLayoutAttributeLeft, NSLayoutAttributeRight};
+        for (int i = 0; i < 4; i++) {
+            [self.view addConstraint:[NSLayoutConstraint constraintWithItem:backgroundView attribute:dir[i] relatedBy:NSLayoutRelationEqual toItem:self.view attribute:dir[i] multiplier:1.0 constant:0.0]];
+        }
+    }
+    self.view.backgroundColor = [UIColor whiteColor];
+    UIImage *image = [self.bid isEqualToString:@"-1"] ? [UIImage imageWithColor:GREEN_DARK size:CGSizeMake(100, 100)] : [UIImage imageNamed:[@"b" stringByAppendingString:self.bid]];
+    [backgroundView setBlurredImage:image animated:animated];
 }
 
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
@@ -163,15 +166,7 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     if (searchResult.count > 0) {
-        return @"搜索结果";
-    } else {
-        return nil;
-    }
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    if (searchResult.count > 0) {
-        return [NSString stringWithFormat:@"共有%d条结果", (int)searchResult.count];
+        return [NSString stringWithFormat:@"共有%ld条结果", searchResult.count];
     } else {
         return nil;
     }
@@ -188,7 +183,11 @@
     titleText = [ActionPerformer removeRe:titleText];
     cell.titleText.text = titleText;
     cell.authorText.text = dict[@"author"];
-    cell.timeText.text = dict[@"time"];
+    if ([self.bid isEqualToString:@"-1"]) {
+        cell.timeText.text = [NSString stringWithFormat:@"%@ • %@", [ActionPerformer getBoardTitle:dict[@"bid"]], dict[@"time"]];
+    } else {
+        cell.timeText.text = dict[@"time"];
+    }
     // Configure the cell...
     return cell;
 }
@@ -275,14 +274,15 @@
 
 - (IBAction)chooseB:(id)sender {
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"请选择要搜索的讨论区" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-    for (int i = 0; i < 9; i++) {
-        [action addAction:[UIAlertAction actionWithTitle:[ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:i]] style:([self.bid isEqualToString:[NUMBERS objectAtIndex:i]]) ? UIAlertActionStyleDestructive : UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            if (![ActionPerformer checkLogin:NO] && i == 0) {
-                [self showAlertWithTitle:@"错误" message:@"您未登录，不能搜索工作区！"];
+    for (NSString *board in [NUMBERS arrayByAddingObject:@"-1"]) {
+        NSString *boardTitle = [ActionPerformer getBoardTitle:board];
+        [action addAction:[UIAlertAction actionWithTitle:[ActionPerformer getBoardTitle:board] style:([self.bid isEqualToString:board]) ? UIAlertActionStyleDestructive : UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            if (![ActionPerformer checkLogin:NO] && ([board isEqualToString:@"1"] || [board isEqualToString:@"-1"])) {
+                [self showAlertWithTitle:@"错误" message:[NSString stringWithFormat:@"您未登录，不能搜索%@！", boardTitle]];
             } else {
-                self.bid = [NUMBERS objectAtIndex:i];
+                self.bid = board;
                 self.labelB.text = [ActionPerformer getBoardTitle:self.bid];
-                [self refreshBackgroundView:NO];
+                [self refreshBackgroundViewAnimated:YES];
             }
         }]];
     }
@@ -301,12 +301,12 @@
     if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [segue destinationViewController];
         NSDictionary *one = [searchResult objectAtIndex:[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
-        dest.bid = [one objectForKey:@"bid"];
-        dest.tid = [one objectForKey:@"tid"];
-        if ([one objectForKey:@"floor"]) {
-            dest.floor = [one objectForKey:@"floor"];
+        dest.bid = one[@"bid"];
+        dest.tid = one[@"tid"];
+        if (one[@"floor"]) {
+            dest.floor = one[@"floor"];
         }
-        dest.title = [one objectForKey:@"title"] ? [one objectForKey:@"title"] : [one objectForKey:@"text"];
+        dest.title = one[@"title"] ? one[@"title"] : one[@"text"];
         [self.navigationController setToolbarHidden:NO];
     }
 }

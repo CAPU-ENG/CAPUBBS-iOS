@@ -8,6 +8,7 @@
 
 #import "CustomWebViewContainer.h"
 #import <CommonCrypto/CommonCrypto.h>
+#import "AppDelegate.h"
 
 @interface WKWebView (Extension)
 
@@ -135,6 +136,19 @@ static dispatch_once_t onceSharedDataSource;
     config.processPool = processPool;
     config.websiteDataStore = dataStore;
     config.allowsInlineMediaPlayback = YES;
+    
+    NSError *error = nil;
+    NSString *injectionContent = [NSString stringWithContentsOfFile:INJECTION_JS encoding:NSUTF8StringEncoding error:&error];
+    if (!error) {
+        WKUserContentController *userContentController = [[WKUserContentController alloc] init];
+        WKUserScript *userScript = [[WKUserScript alloc] initWithSource:injectionContent
+                                                          injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
+                                                       forMainFrameOnly:NO];
+        [userContentController addUserScript:userScript];
+        config.userContentController = userContentController;
+    } else {
+        NSLog(@"Failed to load injection script: %@", error);
+    }
 
     _webView = [[WKWebView alloc] initWithFrame:self.bounds configuration:config];
     _webView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -150,18 +164,8 @@ static dispatch_once_t onceSharedDataSource;
     ]];
 }
 
-- (UIViewController *)getViewController {
-    UIResponder *responder = self;
-    while ((responder = [responder nextResponder])) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            return (UIViewController *)responder;
-        }
-    }
-    return nil;
-}
-
 - (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(WK_SWIFT_UI_ACTOR void (^)(void))completionHandler {
-    UIViewController *viewController = [self getViewController];
+    UIViewController *viewController = [AppDelegate getTopViewController];
     if (!viewController) {
         completionHandler();
         return;
@@ -172,7 +176,7 @@ static dispatch_once_t onceSharedDataSource;
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(nonnull NSString *)message initiatedByFrame:(nonnull WKFrameInfo *)frame completionHandler:(nonnull WK_SWIFT_UI_ACTOR void (^)(BOOL))completionHandler {
-    UIViewController *viewController = [self getViewController];
+    UIViewController *viewController = [AppDelegate getTopViewController];
     if (!viewController) {
         completionHandler(NO);
         return;
@@ -185,7 +189,7 @@ static dispatch_once_t onceSharedDataSource;
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt defaultText:(NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame completionHandler:(WK_SWIFT_UI_ACTOR void (^)(NSString * _Nullable))completionHandler {
-    UIViewController *viewController = [self getViewController];
+    UIViewController *viewController = [AppDelegate getTopViewController];
     if (!viewController) {
         completionHandler(nil);
         return;

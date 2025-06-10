@@ -30,7 +30,7 @@
     textSize = [[DEFAULTS objectForKey:@"textSize"] intValue];
     if (self.iconData.length > 0) {
         [self.icon setImage:[UIImage imageWithData:self.iconData]];
-        [self refreshBackgroundView:YES];
+        [self refreshBackgroundViewAnimated:NO];
     }
     
     [self.icon setRounded:YES];
@@ -91,20 +91,21 @@
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
         dispatch_main_async_safe(^{
-            [self refreshBackgroundView:NO];
+            [self refreshBackgroundViewAnimated:YES];
         });
     }
 }
 
-- (void)refreshBackgroundView:(BOOL)noAnimation {
-    if (SIMPLE_VIEW == NO) {
-        if (!backgroundView) {
-            backgroundView = [[AsyncImageView alloc] init];
-            [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
-            self.tableView.backgroundView = backgroundView;
-        }
-        [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:!noAnimation];
+- (void)refreshBackgroundViewAnimated:(BOOL)animated {
+    if (SIMPLE_VIEW) {
+        return;
     }
+    if (!backgroundView) {
+        backgroundView = [[AsyncImageView alloc] init];
+        [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
+        self.tableView.backgroundView = backgroundView;
+    }
+    [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:animated];
 }
 
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
@@ -148,7 +149,7 @@
 - (void)getInformation {
     [self setDefault];
     [hud showWithProgressMessage:@"查询中"];
-    [performer performActionWithDictionary:@{@"uid": self.ID, @"recent": @"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [performer performActionWithDictionary:@{@"uid": self.ID, @"recent": @"YES", @"raw": @"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
@@ -215,9 +216,7 @@
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
                     content = @"<font color='gray'>暂无</font>";
                 }
-                if (i == 0) {
-                    content = [ContentViewController transToHTML:content];
-                }
+                content = [ContentViewController transToHTML:content];
                 NSString *html = [ContentViewController htmlStringWithText:nil sig:content textSize:textSize];
                 if (webViewContainer.webView.isLoading) {
                     [webViewContainer.webView stopLoading];
@@ -363,28 +362,32 @@
 - (void)showPic:(NSString *)url {
     NSString *md5Url = [ActionPerformer md5:url];
     NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, md5Url];
-    if ([MANAGER fileExistsAtPath:cachePath] && [AsyncImageView fileType:[MANAGER contentsAtPath:cachePath]] == GIF_TYPE) { // GIF是未压缩的格式 可直接调取
+    if ([MANAGER fileExistsAtPath:cachePath]) { // GIF是未压缩的格式 可直接调取
         NSData *imageData = [MANAGER contentsAtPath:cachePath];
-        [self presentImage:imageData fileName:md5Url extension:@"gif"];
-        return;
+        if ([AsyncImageView fileType:imageData] == ImageFileTypeGIF) {
+            [self presentImage:imageData fileName:[NSString stringWithFormat:@"%@.gif", md5Url]];
+            return;
+        }
     }
     [hud showWithProgressMessage:@"正在载入"];
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        if (error || !idata || ![UIImage imageWithData:idata]) {
+        ImageFileType type = [AsyncImageView fileType:idata];
+        if (error || type == ImageFileTypeUnknown) {
             [hud hideWithFailureMessage:@"载入失败"];
             return;
         }
         [hud hideWithSuccessMessage:@"载入成功"];
-        [self presentImage:idata fileName:md5Url extension:([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
+        [self presentImage:idata fileName:[NSString stringWithFormat:@"%@.%@", md5Url, [AsyncImageView fileExtension:type]]];
     }];
     [task resume];
 }
-- (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName extension:(NSString *)extension {
-    NSString *imagePath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), fileName, extension];
-    [imageData writeToFile:imagePath atomically:YES];
+
+- (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName {
+    NSString *filePath = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), fileName];
+    [imageData writeToFile:filePath atomically:YES];
     [NOTIFICATION postNotificationName:@"previewFile" object:self.icon userInfo:@{
-        @"filePath": imagePath,
+        @"filePath": filePath,
         @"fileName": [NSString stringWithFormat:@"%@的头像", self.ID],
     }];
 }

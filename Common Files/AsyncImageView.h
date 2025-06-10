@@ -14,9 +14,15 @@
 #define PLACEHOLDER [UIImage imageNamed:@"placeholder"]
 #define CACHE_PATH [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingString:@"/IconCache"]
 
-#define JPEG_TYPE 0
-#define PNG_TYPE 1
-#define GIF_TYPE 2
+typedef NS_ENUM(int, ImageFileType) {
+    ImageFileTypeUnknown = 0,
+    ImageFileTypeJPEG,
+    ImageFileTypePNG,
+    ImageFileTypeGIF,
+    ImageFileTypeHEIC,
+    ImageFileTypeHEIF,
+    ImageFileTypeWEBP  // iOS 14+
+};
 
 @interface AsyncImageView : SDAnimatedImageView
 
@@ -27,7 +33,8 @@
 - (void)setUrl:(NSString *)urlToSet withPlaceholder:(BOOL)showPlaceholder;
 - (NSString *)getUrl;
 + (NSString *)transIconURL:(NSString *)iconUrl;
-+ (int)fileType:(NSData *)imageData;
++ (ImageFileType)fileType:(NSData *)imageData;
++ (NSString *)fileExtension:(ImageFileType)type;
 + (void)checkPath;
 
 @end

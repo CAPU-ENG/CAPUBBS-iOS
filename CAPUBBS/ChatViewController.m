@@ -23,7 +23,7 @@
     [targetView addSubview:hud];
     
     if (self.iconData.length > 0) {
-        [self refreshBackgroundView:YES];
+        [self refreshBackgroundViewAnimated:NO];
     }
     
     if (self.shouldHideInfo == YES) {
@@ -89,20 +89,21 @@
     dispatch_main_async_safe(^{
         if (self.iconData.length == 0) {
             self.iconData = noti.userInfo[@"data"];
-            [self refreshBackgroundView:NO];
+            [self refreshBackgroundViewAnimated:YES];
         }
     });
 }
 
-- (void)refreshBackgroundView:(BOOL)noAnimation {
-    if (SIMPLE_VIEW == NO) {
-        if (!backgroundView) {
-            backgroundView = [[AsyncImageView alloc] init];
-            [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
-            self.tableView.backgroundView = backgroundView;
-        }
-        [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:!noAnimation];
+- (void)refreshBackgroundViewAnimated:(BOOL)animated {
+    if (SIMPLE_VIEW) {
+        return;
     }
+    if (!backgroundView) {
+        backgroundView = [[AsyncImageView alloc] init];
+        [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
+        self.tableView.backgroundView = backgroundView;
+    }
+    [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:animated];
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {

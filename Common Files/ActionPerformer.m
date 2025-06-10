@@ -245,6 +245,9 @@
     if ([bid hasPrefix:@"b"]) {
         bid = [bid substringFromIndex:@"b".length];
     }
+    if ([bid isEqualToString:@"-1"]) {
+        return @"全部版面";
+    }
     for (int i = 0; i < NUMBERS.count; i++) {
         if ([bid isEqualToString:[NUMBERS objectAtIndex:i]]) {
             return [titles objectAtIndex:i];
