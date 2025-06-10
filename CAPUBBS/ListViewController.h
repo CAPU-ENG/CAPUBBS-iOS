@@ -13,7 +13,6 @@
     ActionPerformer *performerReply;
     NSMutableArray *data;
     NSInteger globalTopCount;
-    NSArray *numberEmoji;
     MBProgressHUD *hud;
     MBProgressHUD *hudSofa;
     NSInteger page;

@@ -23,6 +23,7 @@
 
 @property NSString *fid;
 @property NSURL *URL;
+@property NSArray *defaultData;
 @property UITextView *textPost;
 @property UILabel *labelByte;
 

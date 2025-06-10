@@ -13,8 +13,8 @@
 #import "UserViewController.h"
 #import "WebViewController.h"
 
-static const float kOtherViewHeight = 118;
-static const float kWebViewMinHeight = 40;
+static const CGFloat kOtherViewHeight = 118;
+static const CGFloat kWebViewMinHeight = 40;
 
 @interface ContentViewController ()
 
@@ -69,6 +69,12 @@ static const float kWebViewMinHeight = 40;
 //        [self showAlertWithTitle:@"新功能！" message:@"底栏中可以调整页面缩放\n设置中还可选择默认大小" cancelTitle:@"我知道了"];
 //        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSize2.1"];
 //    }
+    if (![[DEFAULTS objectForKey:@"FeatureLzl4.0"] boolValue]) {
+        if (SIMPLE_VIEW) {
+            [self showAlertWithTitle:@"新功能！" message:@"帖子中现在会直接展示楼中楼\n关闭简洁版后可用" cancelTitle:@"我知道了"];
+        }
+        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureLzl4.0"];
+    }
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -78,7 +84,7 @@ static const float kWebViewMinHeight = 40;
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    [self clearHeightsAndReloadData:NO];
+    [self clearHeightsAndHTMLCaches:nil];
 }
 
 #pragma mark - Web request
@@ -102,7 +108,8 @@ static const float kWebViewMinHeight = 40;
     NSDictionary *dict = @{
         @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum],
         @"bid" : self.bid,
-        @"tid" : self.tid
+        @"tid" : self.tid,
+        @"lzl" : @"true",
     };
     [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
@@ -124,30 +131,38 @@ static const float kWebViewMinHeight = 40;
         }
         
         // NSLog(@"%@", result);
-        int code = [[result.firstObject objectForKey:@"code"] intValue];
-        data = [NSMutableArray arrayWithArray:result];
-        if ([[result.firstObject objectForKey:@"code"] intValue] != -1 && code != 0) {
+        int code = [result[0][@"code"] intValue];
+        if (code != -1 && code != 0) {
             if (code == 1 && page > 1) {
                 [self jumpTo:page - 1];
                 return;
             }
-            [self showAlertWithTitle:@"读取失败" message:[result.firstObject objectForKey:@"msg"]];
+            [self showAlertWithTitle:@"读取失败" message:result[0][@"msg"]];
             [hud hideWithFailureMessage:@"加载失败"];
-            return ;
+            return;
+        }
+        data = [NSMutableArray array];
+        for (NSDictionary *entry in result) {
+            NSMutableDictionary *fixedEntry = [NSMutableDictionary dictionaryWithDictionary:entry];
+            id lzlDetail = fixedEntry[@"lzldetail"];
+            if (!lzlDetail) {
+                fixedEntry[@"lzldetail"] = @[];
+            } else if (![lzlDetail isKindOfClass:[NSArray class]]) {
+                fixedEntry[@"lzldetail"] = @[lzlDetail];
+            }
+            [data addObject:fixedEntry];
         }
         
         if (!(self.isCollection && page > 1)) {
             [self updateCollection];
         }
-        
-        [hud hideWithSuccessMessage:@"加载成功"];
 
         NSString *titleText = [data.firstObject objectForKey:@"title"];
         self.title = [ActionPerformer removeRe:titleText];
-        isLast = [[data[0] objectForKey:@"nextpage"] isEqualToString:@"false"];
+        isLast = [data[0][@"nextpage"] isEqualToString:@"false"];
         self.buttonForward.enabled = !isLast;
         self.buttonLatest.enabled = !isLast;
-        self.buttonJump.enabled = ([[[data lastObject] objectForKey:@"pages"] integerValue] > 1);
+        self.buttonJump.enabled = ([[data lastObject] [@"pages"] integerValue] > 1);
         self.buttonCompose.enabled = [ActionPerformer checkLogin:NO];
         if (data.count != 0) {
             for (NSDictionary *dict in data) {
@@ -158,17 +173,30 @@ static const float kWebViewMinHeight = 40;
             }
         }
         self.exactFloor = @"";
-        
-        [self clearHeightsAndReloadData:true];
-        if (data.count != 0) {
-            if (self.willScroll) {
-                self.willScroll = NO;
-                // NSLog(@"Scroll To Index %lu", data.count-1); // Scroll问题目前没有很好地解决 不能等在WebView全加载完后再Scroll 之前又无法确定WebView的高度从而不知道滚动的终点 所以暂时取消这个机制
-                // [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:data.count-1 inSection:0] atScrollPosition:UITableViewScrollPositionBottom animated:YES];
-            } else {
-                [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+        [self clearHeightsAndHTMLCaches:^{
+            [hud hideWithSuccessMessage:@"加载成功"];
+            for (int i = 0; i < data.count; i++) {
+                ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
+                if (cell.webViewContainer.webView.isLoading) {
+                    [cell.webViewContainer.webView stopLoading];
+                }
+                if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
+                    [cell.heightCheckTimer invalidate];
+                }
+                // 加载空HTML以快速清空，防止reuse后还短暂显示之前的内容
+                [cell.webViewContainer.webView loadHTMLString:EMPTY_HTML baseURL:[NSURL URLWithString:CHEXIE]];
             }
-        }
+            [self.tableView reloadData];
+            if (data.count != 0) {
+                if (self.willScroll) {
+                    self.willScroll = NO;
+                    // NSLog(@"Scroll To Index %lu", data.count-1); // Scroll问题目前没有很好地解决 不能等在WebView全加载完后再Scroll 之前又无法确定WebView的高度从而不知道滚动的终点 所以暂时取消这个机制
+                    // [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:data.count-1 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+                } else {
+                    [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+                }
+            }
+        }];
     }];
 }
 
@@ -211,36 +239,55 @@ static const float kWebViewMinHeight = 40;
     [self.buttonCollection setImage:[UIImage imageNamed:(self.isCollection ? @"star-full" : @"star-empty")]];
 }
 
-- (void)clearHeightsAndReloadData:(BOOL)reload {
-    [heights removeAllObjects];
-    [HTMLStrings removeAllObjects];
-    for (int i = 0; i < data.count; i++) {
-        NSDictionary *dict = [data objectAtIndex:i];
-        [heights addObject:@0];
-        if (tempHeights.count <= i) {
-            [tempHeights addObject:@0];
+- (void)clearHeightsAndHTMLCaches:(void (^)(void))callback {
+    CGFloat tableViewWidth = self.tableView.frame.size.width;
+    dispatch_global_default_async(^{
+        NSMutableArray *newHTMLStrings = [NSMutableArray array];
+        NSMutableArray *newTempHeights = [NSMutableArray array];
+        for (int i = 0; i < data.count; i++) {
+            if (tempHeights.count <= i) {
+                [tempHeights addObject:@0];
+            }
+            [newTempHeights addObject:@(0)];
+            NSDictionary *dict = [data objectAtIndex:i];
+            NSString *html = [ContentViewController htmlStringWithText:dict[@"text"] sig:dict[@"sig"] textSize:textSize];
+            NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
+            html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
+            // NSLog(@"%@", html);
+            [newHTMLStrings addObject:html];
+            if ([tempHeights[i] floatValue] == 0) {
+                // 这只是一个非常粗略的估计
+                NSError *error = nil;
+                NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:[html dataUsingEncoding:NSUTF8StringEncoding] options:@{
+                    NSDocumentTypeDocumentAttribute: NSHTMLTextDocumentType,
+                    NSCharacterEncodingDocumentAttribute: @(NSUTF8StringEncoding)
+                } documentAttributes:nil error:&error];
+                if (error) {
+                    NSLog(@"HTML height estimation parse error: %@", error);
+                } else {
+                    CGSize constraint = CGSizeMake(tableViewWidth - 40, WEB_VIEW_MAX_HEIGHT);
+                    CGSize size = [attributedString boundingRectWithSize:constraint options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+                    newTempHeights[i] = @(size.height * (textSize / 100.0));
+                }
+            }
         }
-        NSString *html = [ContentViewController htmlStringWithText:dict[@"text"] sig:dict[@"sig"] textSize:textSize];
-        NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:@"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)" options:0 error:nil];
-        html = [regexp stringByReplacingMatchesInString:html options:0 range:NSMakeRange(0, html.length) withTemplate:@"<a href='pic:$2'>$0</a>"];
-        // NSLog(@"%@", html);
-        [HTMLStrings addObject:html];
         
-        if (reload) {
-            ContentCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
-            if (cell.webViewContainer.webView.isLoading) {
-                [cell.webViewContainer.webView stopLoading];
+        // Do not clear tempHeights
+        [heights removeAllObjects];
+        [HTMLStrings removeAllObjects];
+        for (int i = 0; i < data.count; i++) {
+            [heights addObject:@0];
+            [HTMLStrings addObject:newHTMLStrings[i]];
+            if ([newTempHeights[i] floatValue] > 0) {
+                tempHeights[i] = newTempHeights[i];
             }
-            if (cell.heightCheckTimer && [cell.heightCheckTimer isValid]) {
-                [cell.heightCheckTimer invalidate];
-            }
-            // 加载空HTML以快速清空，防止reuse后还短暂显示之前的内容
-            [cell.webViewContainer.webView loadHTMLString:EMPTY_HTML baseURL:[NSURL URLWithString:CHEXIE]];
         }
-    }
-    if (reload) {
-        [self.tableView reloadData];
-    }
+        if (callback) {
+            dispatch_main_sync_safe(^{
+                callback();
+            });
+        }
+    });
 }
 
 - (void)shouldRefresh:(NSNotification *)notification {
@@ -248,7 +295,7 @@ static const float kWebViewMinHeight = 40;
     if ([[notification.userInfo objectForKey:@"isEdit"] boolValue] == YES) {
         [self jumpTo:page];
     } else {
-        [self jumpTo:[[[data lastObject] objectForKey:@"pages"] intValue]];
+        [self jumpTo:[[data lastObject] [@"pages"] intValue]];
     }
 }
 
@@ -262,7 +309,7 @@ static const float kWebViewMinHeight = 40;
 }
 
 - (IBAction)jump:(id)sender {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"跳转页面" message:[NSString stringWithFormat:@"请输入页码(1-%@)",[[data lastObject] objectForKey:@"pages"]] preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"跳转页面" message:[NSString stringWithFormat:@"请输入页码(1-%@)",[data lastObject] [@"pages"]] preferredStyle:UIAlertControllerStyleAlert];
     [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
         textField.placeholder = @"页码";
         textField.keyboardType = UIKeyboardTypeNumberPad;
@@ -275,7 +322,7 @@ static const float kWebViewMinHeight = 40;
                                             handler:^(UIAlertAction * _Nonnull action) {
         NSString *pageip = alert.textFields.firstObject.text;
         int pagen = [pageip intValue];
-        if (pagen <= 0 || pagen > [[[data lastObject] objectForKey:@"pages"] integerValue]) {
+        if (pagen <= 0 || pagen > [[data lastObject] [@"pages"] integerValue]) {
             [self showAlertWithTitle:@"错误" message:@"输入不合法"];
             return;
         }
@@ -286,10 +333,22 @@ static const float kWebViewMinHeight = 40;
 
 - (IBAction)gotoLatest:(id)sender {
     self.willScroll = YES;
-    [self jumpTo:[[[data lastObject] objectForKey:@"pages"] intValue]];
+    [self jumpTo:[[data lastObject] [@"pages"] intValue]];
 }
 
 #pragma mark - Table view data source
+
+- (CGFloat)getLzlHeightForRow:(NSUInteger)row {
+    if (SIMPLE_VIEW) {
+        return 0;
+    }
+    NSArray *lzlDetail = data[row][@"lzldetail"];
+    if (!lzlDetail || lzlDetail.count == 0) {
+        return 0;
+    }
+    // Show at most 5 rows
+    return MIN(8, lzlDetail.count) * 44;
+}
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     // Return the number of sections.
@@ -302,14 +361,15 @@ static const float kWebViewMinHeight = 40;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    float webViewHeight = 0;
+    CGFloat lzlHeight = [self getLzlHeightForRow:indexPath.row];
+    CGFloat webViewHeight = 0;
     for (NSArray *candidate in @[heights, tempHeights]) {
         if (candidate.count > indexPath.row && [candidate[indexPath.row] floatValue] > 0) {
             webViewHeight = [candidate[indexPath.row] floatValue];
             break;
         }
     }
-    return kOtherViewHeight + MIN(MAX(kWebViewMinHeight, webViewHeight), WEB_VIEW_MAX_HEIGHT);
+    return kOtherViewHeight + lzlHeight + (lzlHeight > 0 ? 8 : 0) + MIN(MAX(kWebViewMinHeight, webViewHeight), WEB_VIEW_MAX_HEIGHT);
 }
 
 - (UITableViewCell *)getCellForView:(UIView *)view {
@@ -326,11 +386,9 @@ static const float kWebViewMinHeight = 40;
 - (void)updateWebViewHeight:(WKWebView *)webView {
     NSUInteger row = webView.tag;
     if (!self.isViewLoaded || !self.view.window ||
-        !self.tableView || !self.tableView.window ||
-        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        !self.tableView || !self.tableView.window) { // Fix occasional crash
         return;
     }
-    
     UITableViewCell *cell = [self getCellForView:webView];
     if (!cell || [self.tableView indexPathForCell:cell].row != row) {
         return;
@@ -345,7 +403,7 @@ static const float kWebViewMinHeight = 40;
         if (result && [result isKindOfClass:[NSNumber class]]) {
             height = [result floatValue] * (textSize / 100.0);
         }
-        if (height > 0 && height - [heights[row] floatValue] >= 1) {
+        if (height > 0 && row < heights.count && height - [heights[row] floatValue] >= 1) {
             heights[row] = @(height);
             tempHeights[row] = @(height);
             [self.tableView beginUpdates];
@@ -361,8 +419,7 @@ static const float kWebViewMinHeight = 40;
 - (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation {
     NSUInteger row = webView.tag;
     if (!self.isViewLoaded || !self.view.window ||
-        !self.tableView || !self.tableView.window ||
-        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        !self.tableView || !self.tableView.window) { // Fix occasional crash
         return;
     }
     ContentCell *cell = (ContentCell *)[self getCellForView:webView];
@@ -379,8 +436,7 @@ static const float kWebViewMinHeight = 40;
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     NSUInteger row = webView.tag;
     if (!self.isViewLoaded || !self.view.window ||
-        !self.tableView || !self.tableView.window ||
-        row >= [self.tableView numberOfRowsInSection:0]) { // Fix occasional crash
+        !self.tableView || !self.tableView.window) { // Fix occasional crash
         return;
     }
     ContentCell *cell = (ContentCell *)[self getCellForView:webView];
@@ -393,9 +449,9 @@ static const float kWebViewMinHeight = 40;
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     NSString *header = @"";
     if (SIMPLE_VIEW == NO && data.count > 0) {
-        header = [NSString stringWithFormat:@"%@ 第%ld/%@页", [ActionPerformer getBoardTitle:self.bid], (long)page, [[data lastObject] objectForKey:@"pages"]];
-        if ([[data[0] objectForKey:@"click"] length] > 0) {
-            header = [NSString stringWithFormat:@"%@ 查看：%@ 回复：%@%@", header, [data[0] objectForKey:@"click"], [data[0] objectForKey:@"reply"], self.isCollection ? @" 已收藏": @""];
+        header = [NSString stringWithFormat:@"%@ 第%ld/%@页", [ActionPerformer getBoardTitle:self.bid], (long)page, [data lastObject] [@"pages"]];
+        if ([data[0][@"click"] length] > 0) {
+            header = [NSString stringWithFormat:@"%@ 查看：%@ 回复：%@%@", header, data[0][@"click"], data[0][@"reply"], self.isCollection ? @" 已收藏": @""];
         }
     }
     return header;
@@ -419,7 +475,6 @@ static const float kWebViewMinHeight = 40;
     NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] initWithString:author];
     [attr addAttribute:(NSString *)NSForegroundColorAttributeName value:[UIColor colorWithWhite:0 alpha:0.25] range:NSMakeRange(author.length-star,star)];
     cell.labelAuthor.attributedText = attr;
-    cell.labelDate.text = dict[@"time"];
     NSString *floor;
     switch ([dict[@"floor"] integerValue]) {
         case 1:
@@ -448,15 +503,22 @@ static const float kWebViewMinHeight = 40;
     
     if (SIMPLE_VIEW== NO) {
         if (dict[@"edittime"] && ![dict[@"edittime"] isEqualToString:dict[@"time"]]) {
-            cell.labelDate.text = [cell.labelDate.text stringByAppendingString:[NSString stringWithFormat:@"\n%@", dict[@"edittime"]]];
+            cell.labelDate.text = [NSString stringWithFormat:@"发布: %@\n编辑: %@", dict[@"time"], dict[@"edittime"]];
+        } else {
+            cell.labelDate.text = [NSString stringWithFormat:@"发布: %@", dict[@"time"]];
         }
         if ([dict[@"type"] isEqualToString:@"web"]) {
-            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n🖥"];
+            cell.labelInfo.text = [NSString stringWithFormat:@"%@\n🖥", floor];
         } else if ([dict[@"type"] isEqualToString:@"android"]) {
-            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n📱"];
+            cell.labelInfo.text = [NSString stringWithFormat:@"%@\n📱", floor];
         } else if ([dict[@"type"] isEqualToString:@"ios"]) {
-            cell.labelInfo.text = [cell.labelInfo.text stringByAppendingString:@"\n📱"];
+            cell.labelInfo.text = [NSString stringWithFormat:@"%@\n📱", floor];
+        } else {
+            cell.labelInfo.text = floor;
         }
+    } else {
+        cell.labelDate.text = dict[@"time"];
+        cell.labelInfo.text = floor;
     }
     
     [cell.icon setUrl:dict[@"icon"]];
@@ -465,7 +527,7 @@ static const float kWebViewMinHeight = 40;
     [cell.webViewContainer.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     
     
-    if (([heights[indexPath.row] floatValue] > 0)) {
+    if (heights.count > indexPath.row && [heights[indexPath.row] floatValue] > 0) {
         [cell.indicatorLoading stopAnimating];
     } else {
         [cell.indicatorLoading startAnimating];
@@ -477,6 +539,17 @@ static const float kWebViewMinHeight = 40;
     [cell addGestureRecognizer:tapTwice];
     [cell.topView addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressTop:)]];
     }
+    NSArray *lzlDetail = dict[@"lzldetail"];
+    if (!lzlDetail || lzlDetail.count == 0 || SIMPLE_VIEW) {
+        cell.lzlTableView.hidden = YES;
+    } else {
+        cell.lzlTableView.hidden = NO;
+        cell.lzlDetail = dict[@"lzldetail"];
+        [cell.lzlTableView reloadData];
+    }
+    CGFloat lzlHeight = [self getLzlHeightForRow:indexPath.row];
+    [cell.webviewBottomSpacing setConstant:lzlHeight ? 12 + lzlHeight : 5];
+    [cell layoutIfNeeded];
     
     return cell;
 }
@@ -621,7 +694,7 @@ static const float kWebViewMinHeight = 40;
             [self showAlertWithTitle:@"错误" message:err.localizedDescription];
             return;
         }
-        NSInteger back=[[[result firstObject] objectForKey:@"code"] integerValue];
+        NSInteger back=[result[0][@"code"] integerValue];
         if (back == 0) {
             [hud hideWithSuccessMessage:@"删除成功"];
         } else {
@@ -770,19 +843,19 @@ static const float kWebViewMinHeight = 40;
     if (biggerSize!= 100 && biggerSize <= 200) {
         [action addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"增大缩放至%d%%", biggerSize] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize = biggerSize;
-            [self clearHeightsAndReloadData:false];
+            [self clearHeightsAndHTMLCaches:nil];
         }]];
     }
     if (smallerSize != 100 & smallerSize >= 20) {
         [action addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"减小缩放至%d%%", smallerSize] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize = smallerSize;
-            [self clearHeightsAndReloadData:false];
+            [self clearHeightsAndHTMLCaches:nil];
         }]];
     }
     if (textSize != 100) {
         [action addAction:[UIAlertAction actionWithTitle:@"恢复缩放至100%" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             textSize = 100;
-            [self clearHeightsAndReloadData:false];
+            [self clearHeightsAndHTMLCaches:nil];
         }]];
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
@@ -792,33 +865,37 @@ static const float kWebViewMinHeight = 40;
 
 - (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.buttonForward.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.buttonForward.enabled == YES && swipeDirection == 0)
             [self jumpTo:page + 1];
-        if (self.buttonBack.enabled == YES && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        if (self.buttonBack.enabled == YES && swipeDirection == 1)
             [self jumpTo:page - 1];
     }
 }
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.buttonForward.enabled == YES && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.buttonForward.enabled == YES && swipeDirection == 1)
             [self jumpTo:page + 1];
-        if (self.buttonBack.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        if (self.buttonBack.enabled == YES && swipeDirection == 0)
             [self jumpTo:page - 1];
     }
 }
 
 - (void)refreshLzl:(NSNotification *)notification {
-    if (selectedIndex >= 0 && selectedIndex < data.count && notification && [[notification.userInfo objectForKey:@"fid"] isEqualToString:[data[selectedIndex] objectForKey:@"fid"]]) {
-        __block NSString *num = [notification.userInfo objectForKey:@"num"];
-        [data[selectedIndex] setObject:num forKey:@"lzl"];
-        ContentCell *cell = (ContentCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:selectedIndex inSection:0]];
-        [cell.buttonLzl setTitle:[NSString stringWithFormat:@"评论 (%@)", num] forState:UIControlStateNormal];
-        if ([num isEqualToString:@"0"]) {
-            [cell.buttonLzl setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-        } else {
-            [cell.buttonLzl setTitleColor:BLUE forState:UIControlStateNormal];
-        }
+    if (selectedIndex >= 0 && selectedIndex < data.count && notification && [[notification.userInfo objectForKey:@"fid"] isEqualToString:data[selectedIndex][@"fid"]]) {
+        NSDictionary *details = notification.userInfo[@"details"];
+        int num = (int)details.count;
+        data[selectedIndex][@"lzldetail"] = details;
+        data[selectedIndex][@"lzl"] = [NSString stringWithFormat:@"%d", num];
+        [self.tableView reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:selectedIndex inSection:0]] withRowAnimation:UITableViewRowAnimationAutomatic];
     }
 }
 
@@ -924,7 +1001,7 @@ static const float kWebViewMinHeight = 40;
             "%@"
             "<style type='text/css'>"
             "img{max-width:min(100%%,700px);}"
-            "body{word-wrap:break-word;zoom:%d%%;}"
+            "body{font-size:16px;word-wrap:break-word;zoom:%d%%;}"
             "#body-mask{position:absolute;top:0;bottom:0;left:0;right:0;z-index:-1;background-color:%@;transition:background-color 0.2s linear;}"
             ".textblock,.sig{overflow-x:scroll;}"
             ".textblock{min-height:3em;}"
@@ -987,6 +1064,9 @@ static const float kWebViewMinHeight = 40;
 }
 
 + (NSString *)restoreFormat:(NSString *)text { // 恢复正确的格式
+    if (!text || text.length == 0) {
+        return text;
+    }
     // NSLog(@"%@", text);
     NSArray *oriExp = @[@"(<quote>)(.*?)(<a href=['\"]/bbs/user)(.*?)(>@)(.*?)(</a> ：<br><br>)((.|[\r\n])*?)(<br><br></font></div></quote>)",
                         @"(<a href=['\"]/bbs/user)(.*?)(>@)(.*?)(</a>)",
@@ -1073,6 +1153,9 @@ static const float kWebViewMinHeight = 40;
 }
 
 + (NSString *)transFromHTML:(NSString *)text {
+    if (!text || text.length == 0) {
+        return text;
+    }
     int index = 0;
     while (index < text.length) {
         if ([[text substringWithRange:NSMakeRange(index, 1)] isEqualToString:@"<"]) {
@@ -1107,7 +1190,41 @@ static const float kWebViewMinHeight = 40;
     return text;
 }
 
++ (NSString *)transToHTML:(NSString *)oriString {
+    NSArray *oriExp = @[@"(\\[img])(.+?)(\\[/img])",
+                        @"(\\[quote=)(.+?)(])([\\s\\S]+?)(\\[/quote])",
+                        @"(\\[size=)(.+?)(])([\\s\\S]+?)(\\[/size])",
+                        @"(\\[font=)(.+?)(])([\\s\\S]+?)(\\[/font])",
+                        @"(\\[color=)(.+?)(])([\\s\\S]+?)(\\[/color])",
+                        @"(\\[color=)(.+?)(])([\\s\\S]+?)",
+                        @"(\\[at])(.+?)(\\[/at])",
+                        @"(\\[url])(.+?)(\\[/url])",
+                        @"(\\[url=)(.+?)(])([\\s\\S]+?)(\\[/url])",
+                        @"(\\[b])(.+?)(\\[/b])",
+                        @"(\\[i])(.+?)(\\[/i])"];
+    NSArray *repExp = @[@"<img src='$2'>",
+                        @"<quote><div style=\"background:#F5F5F5;padding:10px\"><font color='gray' size=2>引用自 [at]$2[/at] ：<br><br>$4<br><br></font></div></quote>",
+                        @"<font size='$2'>$4</font>",
+                        @"<font face='$2'>$4</font>",
+                        @"<font color='$2'>$4</font>",
+                        @"<font color='$2'>$4</font>",
+                        @"<a href='/bbs/user?name=$2'>@$2</a>",
+                        @"<a href='$2'>$2</a>",
+                        @"<a href='$2'>$4</a>",
+                        @"<b>$2</b>",
+                        @"<i>$2</i>"];
+    NSRegularExpression *regexp;
+    for (int i = 0; i < oriExp.count; i++) {
+        regexp = [NSRegularExpression regularExpressionWithPattern:[oriExp objectAtIndex:i] options:0 error:nil];
+        oriString = [regexp stringByReplacingMatchesInString:oriString options:0 range:NSMakeRange(0, oriString.length) withTemplate:[repExp objectAtIndex:i]];
+    }
+    return oriString;
+}
+
 + (NSString *)removeHTML:(NSString *)text {
+    if (!text || text.length == 0) {
+        return text;
+    }
     text = [self transFromHTML:text];
     
     NSString *expression = @"<!--((.|[\r\n])*?)-->"; // 去除注释
@@ -1257,7 +1374,7 @@ static const float kWebViewMinHeight = 40;
         dest.isEdit = isEdit;
         
         if (isEdit) {
-            dest.floor=[NSString stringWithFormat:@"%d",[[data[selectedIndex] objectForKey:@"floor"] intValue]];
+            dest.floor=[NSString stringWithFormat:@"%d",[data[selectedIndex][@"floor"] intValue]];
         }
         
         defaultTitle = nil;
@@ -1273,13 +1390,18 @@ static const float kWebViewMinHeight = 40;
             dest.navigationController.popoverPresentationController.sourceView = button;
             dest.navigationController.popoverPresentationController.sourceRect = button.bounds;
         }
-        dest.fid = [data[selectedIndex] objectForKey:@"fid"];
-        dest.URL = [NSURL URLWithString:[NSString stringWithFormat:@"%@#%@", URL, [data[selectedIndex] objectForKey:@"floor"]]];
+        dest.fid = data[selectedIndex][@"fid"];
+        dest.URL = [NSURL URLWithString:[NSString stringWithFormat:@"%@#%@", URL, data[selectedIndex][@"floor"]]];
+        if (data[selectedIndex][@"lzldetail"]) {
+            dest.defaultData = data[selectedIndex][@"lzldetail"];
+        } else {
+            dest.defaultData = @[];
+        }
     } else if ([segue.identifier isEqualToString:@"userInfo"]) {
         UserViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
         if ([sender isKindOfClass:[UIButton class]]) {
             UIButton *button = sender;
-            dest.ID = [data[button.tag] objectForKey:@"author"];
+            dest.ID = data[button.tag][@"author"];
             dest.navigationController.modalPresentationStyle = UIModalPresentationPopover;
             dest.navigationController.popoverPresentationController.sourceView = button;
             dest.navigationController.popoverPresentationController.sourceRect = button.bounds;

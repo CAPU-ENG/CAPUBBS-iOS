@@ -35,6 +35,5 @@
 @property (weak, nonatomic) IBOutlet UITextView *textSig;
 @property (weak, nonatomic) IBOutlet UITextView *textSig2;
 @property (weak, nonatomic) IBOutlet UITextView *textSig3;
-+ (BOOL)isValidateEmail:(NSString *)email;
 
 @end

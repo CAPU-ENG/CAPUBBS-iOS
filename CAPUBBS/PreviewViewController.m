@@ -36,7 +36,7 @@
             sig = dict[[NSString stringWithFormat:@"sig%d", self.sig]];
         }
     }
-    NSString *html = [ContentViewController htmlStringWithText:[self transToHTML:self.textBody] sig:sig textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
+    NSString *html = [ContentViewController htmlStringWithText:[ContentViewController transToHTML:self.textBody] sig:sig textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
     [self.webViewContainer.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     // Do any additional setup after loading the view.
 }
@@ -44,37 +44,6 @@
 - (void)done:(id)sender{
     [NOTIFICATION postNotificationName:@"publishContent" object:nil];
     [self.navigationController popViewControllerAnimated:YES];
-}
-
-- (NSString *)transToHTML:(NSString *)oriString {
-    NSArray *oriExp = @[@"(\\[img])(.+?)(\\[/img])",
-                        @"(\\[quote=)(.+?)(])([\\s\\S]+?)(\\[/quote])",
-                        @"(\\[size=)(.+?)(])([\\s\\S]+?)(\\[/size])",
-                        @"(\\[font=)(.+?)(])([\\s\\S]+?)(\\[/font])",
-                        @"(\\[color=)(.+?)(])([\\s\\S]+?)(\\[/color])",
-                        @"(\\[color=)(.+?)(])([\\s\\S]+?)",
-                        @"(\\[at])(.+?)(\\[/at])",
-                        @"(\\[url])(.+?)(\\[/url])",
-                        @"(\\[url=)(.+?)(])([\\s\\S]+?)(\\[/url])",
-                        @"(\\[b])(.+?)(\\[/b])",
-                        @"(\\[i])(.+?)(\\[/i])"];
-    NSArray *repExp = @[@"<img src='$2'>",
-                        @"<quote><div style=\"background:#F5F5F5;padding:10px\"><font color='gray' size=2>引用自 [at]$2[/at] ：<br><br>$4<br><br></font></div></quote>",
-                        @"<font size='$2'>$4</font>",
-                        @"<font face='$2'>$4</font>",
-                        @"<font color='$2'>$4</font>",
-                        @"<font color='$2'>$4</font>",
-                        @"<a href='/bbs/user?name=$2'>@$2</a>",
-                        @"<a href='$2'>$2</a>",
-                        @"<a href='$2'>$4</a>",
-                        @"<b>$2</b>",
-                        @"<i>$2</i>"];
-    NSRegularExpression *regexp;
-    for (int i = 0; i < oriExp.count; i++) {
-        regexp = [NSRegularExpression regularExpressionWithPattern:[oriExp objectAtIndex:i] options:0 error:nil];
-        oriString = [regexp stringByReplacingMatchesInString:oriString options:0 range:NSMakeRange(0, oriString.length) withTemplate:[repExp objectAtIndex:i]];
-    }
-    return oriString;
 }
 
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {

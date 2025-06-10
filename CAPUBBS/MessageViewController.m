@@ -160,11 +160,15 @@
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.segmentType.selectedSegmentIndex == 0 && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.segmentType.selectedSegmentIndex == 0 && swipeDirection == 1) {
             [self.segmentType setSelectedSegmentIndex:1];
             [self typeChanged:self.segmentType];
         }
-        if (self.segmentType.selectedSegmentIndex == 1 && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        if (self.segmentType.selectedSegmentIndex == 1 && swipeDirection == 0) {
             [self.segmentType setSelectedSegmentIndex:0];
             [self typeChanged:self.segmentType];
         }
@@ -173,11 +177,15 @@
 
 - (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.segmentType.selectedSegmentIndex == 0 && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.segmentType.selectedSegmentIndex == 0 && swipeDirection == 0) {
             [self.segmentType setSelectedSegmentIndex:1];
             [self typeChanged:self.segmentType];
         }
-        if (self.segmentType.selectedSegmentIndex == 1 && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        if (self.segmentType.selectedSegmentIndex == 1 && swipeDirection == 1) {
             [self.segmentType setSelectedSegmentIndex:0];
             [self typeChanged:self.segmentType];
         }
@@ -249,6 +257,8 @@
     }
 }
 
+#pragma mark - Table view data source
+
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     // Return the number of sections.
     return 1;
@@ -257,6 +267,10 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     // Return the number of rows in the section.
     return data.count - 1;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return data && data.count <= 1 ? @"您还没有消息" : nil;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -290,8 +304,8 @@
             textLenth = 0;
         }
         for (NSDictionary *mdic in [DEFAULTS objectForKey:@"collection"]) {
-            if ([dict[@"bid"] isEqualToString:[mdic objectForKey:@"bid"]] && [dict[@"tid"] isEqualToString:[mdic objectForKey:@"tid"]]) {
-                [text addAttribute:NSFontAttributeName value:[UIFont boldSystemFontOfSize:14.0] range:NSMakeRange(textLenth, titleText.length)];
+            if ([dict[@"bid"] isEqualToString:mdic[@"bid"]] && [dict[@"tid"] isEqualToString:mdic[@"tid"]]) {
+                [text addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:cell.labelText.font.pointSize weight:UIFontWeightBold] range:NSMakeRange(textLenth, titleText.length)];
                 break;
             }
         }

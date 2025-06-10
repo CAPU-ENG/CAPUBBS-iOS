@@ -42,7 +42,7 @@
     //[self.segmentProxy setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"proxy"] integerValue]];
     [self.autoLogin setOn:[[DEFAULTS objectForKey:@"autoLogin"] boolValue]];
     [self.switchVibrate setOn:[[DEFAULTS objectForKey:@"vibrate"] boolValue]];
-    [self.segmentDirection setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]];
+    [self.segmentDirection setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"oppositeSwipe"] intValue]];
     [self.segmentEditTool setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"toolbarEditor"] intValue]];
     [self.switchPic setOn:[[DEFAULTS objectForKey:@"picOnlyInWifi"] boolValue]];
     [self.switchIcon setOn:[[GROUP_DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue]];
@@ -166,8 +166,11 @@
                 @"fallbackMessage": @"请前往网络维护板块反馈"
             }];
         } else if (indexPath.row == 4) {
-            NSString *str = @"itms-apps://itunes.apple.com/app/id826386033";
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:str] options:@{} completionHandler:nil];
+            NSURL *storeLink = [NSURL URLWithString:@"itms-apps://itunes.apple.com/app/id826386033?action=write-review"];
+            if (![[UIApplication sharedApplication] canOpenURL:storeLink]) {
+                storeLink = [NSURL URLWithString:@"https://itunes.apple.com/sg/app/capubbs/id826386033"];
+            }
+            [[UIApplication sharedApplication] openURL:storeLink options:@{} completionHandler:nil];
         } else if (indexPath.row == 5) {
             [self showAlertWithTitle:@"🚲关于本软件🚲" message:[NSString stringWithFormat:@"\nCAPUBBS iOS客户端\n版本：%@\nBuild：%@\n版本创建日期：%s\n\n原作：熊典|I2\n协助开发：陈章|维茨C\n更新与维护：范志康|好男人\n\n%@\n\n%@", APP_VERSION, APP_BUILD, __DATE__, COPYRIGHT, EULA]];
         }
@@ -212,7 +215,7 @@
 - (IBAction)simpleViewChanged:(id)sender {
     [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchSimpleView.isOn] forKey:@"simpleView"];
     if (self.switchSimpleView.isOn) {
-        [self showAlertWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n动图头像将静态显示\n模糊效果将禁用"];
+        [self showAlertWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n楼中楼不默认展示\n动图头像将静态显示\n模糊效果将禁用"];
     }
 }
 
@@ -262,7 +265,7 @@
         ContentViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
         dest.bid = @"4";
         dest.tid = @"17637";
-        dest.title = @"CAPUBBS客户端 帮助与意见反馈";
+        dest.title = @"CAPUBBS客户端  帮助与意见反馈";
         dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done:)];
     }
     // Get the new view controller using [segue destinationViewController].

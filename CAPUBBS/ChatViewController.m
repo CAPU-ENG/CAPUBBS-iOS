@@ -47,9 +47,6 @@
         [self loadChat];
     }
     
-    // Auto height
-    self.tableView.estimatedRowHeight = 100;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     

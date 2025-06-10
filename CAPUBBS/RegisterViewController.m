@@ -10,10 +10,6 @@
 #import "ContentViewController.h"
 #import "IconViewController.h"
 
-#define UID_GUIDE @"如何才能取一个好的ID？"
-#define UID_WARNING @"该ID已经存在！"
-#define UID_CHANGE_HINT @"用户名一经注册无法更改"
-
 @interface RegisterViewController ()
 
 @end
@@ -71,7 +67,7 @@
     [uid addAttribute:NSForegroundColorAttributeName value:[UIColor darkGrayColor] range:NSMakeRange(0, uid.length)];
     self.textUid.attributedText = uid;
     self.textUid.userInteractionEnabled = NO;
-    [self.labelUidGuide setText:UID_CHANGE_HINT];
+    [self.labelUidGuide setText:@"用户名一经注册无法更改"];
     [self.labelUidGuide setTextColor:[UIColor darkGrayColor]];
     self.cellUidGuide.userInteractionEnabled = NO;
     self.cellUidGuide.accessoryType = UITableViewCellAccessoryNone;
@@ -164,7 +160,7 @@
 //        }];
 //        return;
 //    }
-    if (email.length > 0 && [RegisterViewController isValidateEmail:email] == NO) {
+    if (email.length > 0 && [self isValidateEmail:email] == NO) {
         [self showAlertWithTitle:@"错误" message:@"邮箱格式错误！" cancelAction:^(UIAlertAction *action) {
             [self.textEmail becomeFirstResponder];
         }];
@@ -398,9 +394,9 @@
             self.navigationItem.rightBarButtonItem.enabled = YES;
         } else {
             [self.imageUidAvailable setImage:FAILMARK];
-            [self.labelUidGuide setText:UID_WARNING];
+            [self.labelUidGuide setText:@"该ID已经存在！"];
             [self.labelUidGuide setTextColor:[UIColor redColor]];
-            [self.labelUidGuide performSelector:@selector(setText:) withObject:UID_GUIDE afterDelay:1.0];
+            [self.labelUidGuide performSelector:@selector(setText:) withObject:@"如何才能取一个好的ID？" afterDelay:1.0];
             [self.labelUidGuide performSelector:@selector(setTextColor:) withObject:BLUE afterDelay:1.0];
         }
     }];
@@ -414,24 +410,16 @@
     [sender resignFirstResponder];
 }
 
-+ (BOOL)isValidateEmail:(NSString *)email {
-    NSString *emailRegex = @"[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}";
-    NSRange range = [email rangeOfString:emailRegex options:NSRegularExpressionSearch];
-    return (range.location != NSNotFound);
+- (BOOL)string:(NSString *)string passRegex:(NSString *)regex {
+    return [[NSPredicate predicateWithFormat:@"SELF MATCHES %@", regex] evaluateWithObject:string];
 }
 
-- (BOOL)isValidQQ:(NSString *)QQ {
-    const char *cvalue = [QQ UTF8String];
-    int len = (int)strlen(cvalue);
-    if (len < 5 || len > 11) {
-        return NO;
-    }
-    for (int i = 0; i < len; i++) {
-        if (isnumber(cvalue[i]) == NO) {
-            return NO;
-        }
-    }
-    return YES;
+- (BOOL)isValidateEmail:(NSString *)email {
+    return [self string:email passRegex:@"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"];
+}
+
+- (BOOL)isValidQQ:(NSString *)qq {
+    return [self string:qq passRegex:@"^[1-9][0-9]{4,10}$"];
 }
 
 - (int)getByte:(NSString*)text {

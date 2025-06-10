@@ -33,10 +33,6 @@
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self viewOnline];
     
-    // Auto height
-    self.tableView.estimatedRowHeight = 40;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
-    
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     

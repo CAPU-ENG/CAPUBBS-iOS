@@ -21,6 +21,9 @@
 @interface CustomMailComposeViewController : MFMailComposeViewController
 @end
 
+@interface CustomSearchController : UISearchController
+@end
+
 @interface UIViewController (Extension)
 
 - (void)presentViewControllerSafe:(UIViewController *)view;
@@ -66,4 +69,7 @@
 @end
 
 @interface CustomMailComposeViewController (Customize)
+@end
+
+@interface CustomSearchController (Customize)
 @end

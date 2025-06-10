@@ -23,7 +23,6 @@
     NSArray<CustomWebViewContainer *> *webViewContainers;
     NSMutableArray *webData;
     NSString *iconURL;
-    NSString *imgPath;
     NSArray *property;
     NSMutableArray *heights;
     UIDocumentInteractionController *dic;

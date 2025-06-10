@@ -192,10 +192,12 @@
         previewFrame = noti.object;
     }
     
-    QLPreviewController *previewController = [[QLPreviewController alloc] init];
-    previewController.dataSource = self;
-    previewController.delegate = self;
-    [[self getTopViewController] presentViewControllerSafe:previewController];
+    dispatch_main_sync_safe(^{
+        QLPreviewController *previewController = [[QLPreviewController alloc] init];
+        previewController.dataSource = self;
+        previewController.delegate = self;
+        [[self getTopViewController] presentViewControllerSafe:previewController];
+    });
 }
 
 - (NSInteger)numberOfPreviewItemsInPreviewController:(QLPreviewController *)controller {
@@ -587,9 +589,8 @@
 
 - (void)checkUpdate:(void (^)(BOOL success))callback {
     NSString *currentVersion = APP_VERSION;
-//    NSString *currentVersion = @"3.9";
+//    currentVersion = @"3.9.5";
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-    //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
     [request setURL:[NSURL URLWithString:@"https://itunes.apple.com/lookup?id=826386033"]];
     [request setHTTPMethod:@"POST"];
     
@@ -622,11 +623,12 @@
         
         callback(YES);
         NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
-        NSString *lastVersion = [releaseInfo objectForKey:@"version"];
-        NSLog(@"App Store latest version: %@",lastVersion);
-        if ([currentVersion compare:lastVersion options:NSNumericSearch] == NSOrderedAscending) {
+        NSString *latestVersion = [releaseInfo objectForKey:@"version"];
+//        latestVersion = @"3.9.6";
+        NSLog(@"App Store latest version: %@", latestVersion);
+        if ([currentVersion compare:latestVersion options:NSNumericSearch] == NSOrderedAscending) {
             NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
-            [[self getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", lastVersion] message:[releaseInfo objectForKey:@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
+            [[self getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", latestVersion] message:[releaseInfo objectForKey:@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
                 [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
             } cancelTitle:@"暂不"];
         }

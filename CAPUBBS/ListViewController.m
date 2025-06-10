@@ -14,6 +14,8 @@
 #import "WebViewController.h"
 #import "AsyncImageView.h"
 
+#define NUMBER_EMOJI @[@"1⃣️", @"2⃣️", @"3⃣️", @"4⃣️", @"5⃣️", @"6⃣️", @"7⃣️", @"8⃣️", @"9⃣️", @"🔟"]
+
 @interface ListViewController ()
 
 @end
@@ -23,9 +25,6 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
-    // Auto height
-    self.tableView.estimatedRowHeight = 50;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
     hud = [[MBProgressHUD alloc] initWithView:targetView];
@@ -45,12 +44,12 @@
             self.tableView.backgroundView = backgroundView;
         }
     }
-//    numberEmoji = @[@"1⃣️", @"2⃣️", @"3⃣️", @"4⃣️", @"5⃣️", @"6⃣️", @"7⃣️", @"8⃣️", @"9⃣️", @"🔟"];
     isFirstTime = YES;
     page = 1;
     performer = [[ActionPerformer alloc] init];
     performerReply = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(shouldRefresh) name:@"refreshList" object:nil];
+    [NOTIFICATION addObserver:self.tableView selector:@selector(reloadData) name:@"collectionChanged" object:nil];
     self.title = ([self.bid isEqualToString:@"hot"] ? @"🔥论坛热点🔥" : [ActionPerformer getBoardTitle:self.bid]);
     oriTitle = self.title;
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
@@ -258,6 +257,15 @@
     }];
 }
 
+- (BOOL)isCollection:(NSString *)bid tid:(NSString *)tid {
+    for (NSDictionary *dic in [DEFAULTS objectForKey:@"collection"]) {
+        if ([dic[@"bid"] isEqualToString:bid] && [dic[@"tid"] isEqualToString:tid]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -274,27 +282,21 @@
     ListCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"list"];
     
     NSDictionary *dict = data[indexPath.row];
-    NSString *titleText = dict[@"text"];
-    titleText = [ActionPerformer removeRe:titleText];
-    if ([dict[@"top"] integerValue] == 1 || [dict[@"extr"] integerValue] == 1 || [dict[@"lock"] integerValue] == 1) {
-        titleText = [@" " stringByAppendingString:titleText];
-        if ([dict[@"top"] integerValue] == 1) {
-            titleText = [@"⬆️" stringByAppendingString:titleText];
-        }
-        if ([dict[@"extr"] integerValue] == 1) {
-            titleText = [@"⭐️" stringByAppendingString:titleText];
-        }
-        if ([dict[@"lock"] integerValue] == 1) {
-            titleText = [@"🔒" stringByAppendingString:titleText];
-        }
-    }
-    if (!titleText) {
-        titleText = @"";
+    NSString *titleText = [ActionPerformer removeRe:dict[@"text"]] ?: @"";
+    BOOL isTop = NO;
+    BOOL isCollection = [self isCollection:dict[@"bid"] tid:dict[@"tid"]];
+    NSMutableArray *titlePrefixes = [NSMutableArray array];
+    if (isCollection) {
+        [titlePrefixes addObject:@"💙"];
     }
     if ([self.bid isEqualToString:@"hot"]) {
         if (indexPath.row < globalTopCount) {
-            titleText = [@"⬆️ " stringByAppendingString:titleText];
+            isTop = YES;
+            [titlePrefixes addObject:@"⬆️"];
         }
+//        else if (indexPath.row < globalTopCount + 10) {
+//            [titlePrefixes addObject:NUMBER_EMOJI[indexPath.row - globalTopCount]];
+//        }
         
         NSString *author = dict[@"author"];
         NSString *replyer = dict[@"replyer"];
@@ -303,10 +305,20 @@
         } else {
             cell.authorText.text = [NSString stringWithFormat:@"%@/%@", author, replyer];
         }
-//        else if (indexPath.row < globalTopCount + 10) {
-//            titleText = [numberEmoji[indexPath.row - globalTopCount] stringByAppendingString:[@" " stringByAppendingString:titleText]];
-//        }
     } else {
+        if ([dict[@"top"] integerValue] == 1 || [dict[@"extr"] integerValue] == 1 || [dict[@"lock"] integerValue] == 1 || isCollection) {
+            if ([dict[@"top"] integerValue] == 1) {
+                isTop = YES;
+                [titlePrefixes addObject:@"⬆️"];
+            }
+            if ([dict[@"lock"] integerValue] == 1) {
+                [titlePrefixes addObject:@"🔒"];
+            }
+            if ([dict[@"extr"] integerValue] == 1) {
+                [titlePrefixes addObject:@"⭐️"];
+            }
+        }
+        
         NSString *author = [dict[@"author"] stringByReplacingOccurrencesOfString:@" " withString:@""];
         if ([author hasSuffix:@"/"]) {
             cell.authorText.text = [author substringToIndex:author.length - 1];
@@ -314,7 +326,15 @@
             cell.authorText.text = author;
         }
     }
-    cell.titleText.text = titleText;
+    if (titlePrefixes.count > 0) {
+        cell.titleText.text = [NSString stringWithFormat:@"%@ %@", [titlePrefixes componentsJoinedByString:@""], titleText];
+    } else {
+        cell.titleText.text = titleText;
+    }
+    if (!SIMPLE_VIEW) {
+        cell.backgroundColor = isTop ? [UIColor colorWithWhite:1.0 alpha:0.5] : [UIColor clearColor];
+        cell.titleText.font = isTop ? [UIFont systemFontOfSize:cell.titleText.font.pointSize weight:UIFontWeightMedium] : [UIFont systemFontOfSize:cell.titleText.font.pointSize weight:UIFontWeightRegular];
+    }
     cell.timeText.text = dict[@"time"];
     
     if (cell.gestureRecognizers.count == 0) {
@@ -419,18 +439,26 @@
 
 - (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.buttonForward.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.buttonForward.enabled == YES && swipeDirection == 0)
             [self jumpTo:page + 1];
-        if (self.buttonBack.enabled == YES && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        if (self.buttonBack.enabled == YES && swipeDirection == 1)
             [self jumpTo:page - 1];
     }
 }
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.buttonForward.enabled == YES && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.buttonForward.enabled == YES && swipeDirection == 1)
             [self jumpTo:page + 1];
-        if (self.buttonBack.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
+        if (self.buttonBack.enabled == YES && swipeDirection == 0)
             [self jumpTo:page - 1];
     }
 }

@@ -134,6 +134,7 @@ static dispatch_once_t onceSharedDataSource;
     config.dataDetectorTypes = WKDataDetectorTypeAll;
     config.processPool = processPool;
     config.websiteDataStore = dataStore;
+    config.allowsInlineMediaPlayback = YES;
 
     _webView = [[WKWebView alloc] initWithFrame:self.bounds configuration:config];
     _webView.translatesAutoresizingMaskIntoConstraints = NO;

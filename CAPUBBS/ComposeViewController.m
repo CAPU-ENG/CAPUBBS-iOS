@@ -8,9 +8,11 @@
 
 #import "ComposeViewController.h"
 #import <MobileCoreServices/MobileCoreServices.h>
+#import <StoreKit/StoreKit.h>
 #import "PreviewViewController.h"
 #import "TextViewController.h"
 #import "ContentViewController.h"
+#import "UIImageEffects.h"
 
 @interface ComposeViewController ()
 
@@ -249,6 +251,7 @@
         NSInteger back = [[[result firstObject] objectForKey:@"code"] integerValue];
         if (back == 0) {
             [hud hideWithSuccessMessage:@"发表成功"];
+            [SKStoreReviewController requestReview];
         } else {
             [hud hideWithFailureMessage:@"发表失败"];
         }
@@ -415,12 +418,12 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     [picker dismissViewControllerAnimated:YES completion:nil];
     UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    [self.textBody resignFirstResponder];
     [self uploadOneImage:image withCallback:^(NSString *url) {
         if (url) {
             [self.textBody insertText:[NSString stringWithFormat:@"\n[img]%@[/img]\n",url]];
-        } else {
-            [self.textBody becomeFirstResponder];
         }
+        [self.textBody becomeFirstResponder];
     }];
 }
 
@@ -445,6 +448,7 @@
     
     // 所有图片加载完后开始上传
     dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        [self.textBody resignFirstResponder];
         [self uploadImages:selectedImages index:0];
     });
 }
@@ -463,7 +467,13 @@
 }
 
 - (void)uploadOneImage:(UIImage *)image withCallback:(void (^)(NSString *url))callback {
-    if (image.size.width <= 800 && image.size.height <= 800) {
+    if (!image || image.size.width <= 0 || image.size.height <= 0) {
+        [self showAlertWithTitle:@"警告" message:@"图片不合法，无法获取长度 / 宽度！" confirmTitle:@"好" confirmAction:^(UIAlertAction *action) {
+            callback(nil);
+        }];
+        return;
+    }
+    if (image.size.width <= 1000 && image.size.height <= 1000) {
         [self compressAndUploadImage:image withCallback:callback];
     } else {
         [self askForResizeImage:image withCallback:callback];
@@ -486,29 +496,32 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     return CGSizeMake(width * scale, height * scale);
 }
 
+
 - (void)askForResizeImage:(UIImage *)image withCallback:(void (^)(NSString *url))callback {
-    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"图片大小" message:nil preferredStyle:UIAlertControllerStyleAlert];
-    // 添加预览图
-    UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
-    imageView.translatesAutoresizingMaskIntoConstraints = NO;
-    imageView.contentMode = UIViewContentModeScaleAspectFit;
-    imageView.layer.cornerRadius = 8;
-    imageView.clipsToBounds = YES;
-    [action.view addSubview:imageView];
-    CGSize previewSize = scaledSizeForImage(image, 250);
-    [NSLayoutConstraint activateConstraints:@[
-        [imageView.bottomAnchor constraintEqualToAnchor:action.view.topAnchor constant:-16],
-        [imageView.centerXAnchor constraintEqualToAnchor:action.view.centerXAnchor],
-        [imageView.widthAnchor constraintEqualToConstant:previewSize.width ?: image.size.width],
-        [imageView.heightAnchor constraintEqualToConstant:previewSize.height ?: image.size.height],
-    ]];
+    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"选择图片大小" message:nil preferredStyle:UIAlertControllerStyleAlert];
     
-    [action addAction:[UIAlertAction actionWithTitle:
-        [NSString stringWithFormat:@"上传原图 (%d×%d)", (int)image.size.width, (int)image.size.height]
-                                                 style:UIAlertActionStyleDefault
-                                               handler:^(UIAlertAction * _Nonnull action) {
-        [self compressAndUploadImage:image withCallback:callback];
-    }]];
+    // 添加预览图
+    // 1. 获取压缩后的图片
+    UIImage *thumbnailImage = image;
+    CGSize thumbnailSize = scaledSizeForImage(image, 500);
+    if (!CGSizeEqualToSize(thumbnailSize, CGSizeZero)) {
+        thumbnailImage = [self reSizeImage:image toSize:thumbnailSize];
+    }
+    // 2. 创建图片附件 (Text Attachment)
+    NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+    CGFloat targetHeight = 150.0;
+    CGFloat targetCornerRadius = 8.0;
+    CGFloat scaleFactor = thumbnailImage.size.height / targetHeight;
+    attachment.image = [thumbnailImage imageByApplyingCornerRadius:targetCornerRadius * scaleFactor];
+    attachment.bounds = CGRectMake(0, 0, targetHeight * attachment.image.size.width / attachment.image.size.height, targetHeight); // 保持图片宽高比
+    // 3. 将附件转为富文本
+    NSAttributedString *imageAttributedString = [NSAttributedString attributedStringWithAttachment:attachment];
+    // 4. 创建完整的富文本消息
+    NSMutableAttributedString *finalMessage = [[NSMutableAttributedString alloc] initWithString:@"\n"];
+    [finalMessage appendAttributedString:imageAttributedString];
+    // 5. 使用 KVC 设置 attributedMessage
+    [action setValue:finalMessage forKey:@"attributedMessage"];
+
     // 多种缩图尺寸（最长边限制）
     NSArray<NSNumber *> *sizes = @[@800, @1600, @2400];
     for (NSNumber *size in sizes) {
@@ -516,7 +529,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
         if (CGSizeEqualToSize(newSize, CGSizeZero)) {
             continue; // 跳过，无需缩放
         }
-        NSString *title = [NSString stringWithFormat:@"上传压缩图 (%d×%d)", (int)newSize.width, (int)newSize.height];
+        NSString *title = [NSString stringWithFormat:@"压缩图 (%d×%d)", (int)newSize.width, (int)newSize.height];
         [action addAction:[UIAlertAction actionWithTitle:title
                                                    style:UIAlertActionStyleDefault
                                                  handler:^(UIAlertAction * _Nonnull action) {
@@ -524,6 +537,12 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
             [self compressAndUploadImage:resizedImage withCallback:callback];
         }]];
     }
+    [action addAction:[UIAlertAction actionWithTitle:
+        [NSString stringWithFormat:@"原图 (%d×%d)", (int)image.size.width, (int)image.size.height]
+                                                 style:UIAlertActionStyleDefault
+                                               handler:^(UIAlertAction * _Nonnull action) {
+        [self compressAndUploadImage:image withCallback:callback];
+    }]];
     [action addAction:[UIAlertAction actionWithTitle:@"取消上传" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
         callback(nil);
     }]];

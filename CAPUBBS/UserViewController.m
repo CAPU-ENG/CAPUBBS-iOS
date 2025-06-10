@@ -60,15 +60,13 @@
         [webViewContainer.webView.scrollView setScrollEnabled:NO];
     }
     
-    recentPost = @[];
-    recentReply = @[];
+    recentPost = [NSMutableArray array];
+    recentReply = [NSMutableArray array];
     property = @[@"rights", @"sign", @"hobby", @"qq", @"mail", @"place", @"regdate", @"lastdate", @"post", @"reply", @"water", @"extr"];
     performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(getInformation) name:@"userUpdated" object:nil];
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
-    [self.tableView addSubview:control];
-    self.tableView.estimatedRowHeight = 100;
 //    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     [self getInformation];
@@ -134,6 +132,19 @@
     }
 }
 
+- (NSString *)extractValidEmail:(NSString *)rawEmailString {
+    if (!rawEmailString || rawEmailString.length == 0) {
+        return @"";
+    }
+    
+    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}" options:0 error:nil];
+    NSTextCheckingResult *match = [regex firstMatchInString:rawEmailString options:0 range:NSMakeRange(0, rawEmailString.length)];
+    if (match) {
+        return [rawEmailString substringWithRange:match.range];
+    }
+    return @"";
+}
+
 - (void)getInformation {
     [self setDefault];
     [hud showWithProgressMessage:@"查询中"];
@@ -180,8 +191,14 @@
                     } else {
                         UIButton *button = [labels objectAtIndex:i];
                         NSString *email = dict[[property objectAtIndex:i]];
-                        [button setTitle:email forState:UIControlStateNormal];
-                        [button setEnabled:[RegisterViewController isValidateEmail:email]];
+                        NSString *validEmail = [self extractValidEmail:email];
+                        if (validEmail) {
+                            [button setTitle:validEmail forState:UIControlStateNormal];
+                            [button setEnabled:YES];
+                        } else {
+                            [button setTitle:email forState:UIControlStateNormal];
+                            [button setEnabled:NO];
+                        }
                     }
                 }
             }
@@ -198,6 +215,9 @@
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
                     content = @"<font color='gray'>暂无</font>";
                 }
+                if (i == 0) {
+                    content = [ContentViewController transToHTML:content];
+                }
                 NSString *html = [ContentViewController htmlStringWithText:nil sig:content textSize:textSize];
                 if (webViewContainer.webView.isLoading) {
                     [webViewContainer.webView stopLoading];
@@ -209,9 +229,18 @@
             }
             // Do not trigger immediately, the webview might still be showing the previous content.
             heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updateWebViewHeight) userInfo:nil repeats:YES];
-            
-            recentPost = result[1][@"info"];
-            recentReply = result[2][@"info"];
+            for (int i = 1; i < result.count; i++) {
+                if (result[i] && result[i][@"info"]) {
+                    for (NSDictionary *dict in result[i][@"info"]) {
+                        if ([dict[@"type"] isEqualToString:@"post"]) {
+                            [recentPost addObject:dict];
+                        }
+                        if ([dict[@"type"] isEqualToString:@"reply"]) {
+                            [recentReply addObject:dict];
+                        }
+                    }
+                }
+            }
         }
     }];
 }
@@ -328,39 +357,34 @@
 
 - (IBAction)tapPic:(UIButton *)sender {
     if (iconURL.length > 0) {
-        [self showPic:[NSURL URLWithString:[AsyncImageView transIconURL:iconURL]]];
+        [self showPic:[AsyncImageView transIconURL:iconURL]];
     }
 }
-- (void)showPic:(NSURL *)url {
-    [hud showWithProgressMessage:@"正在载入"];
-    NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url.absoluteString]];
+- (void)showPic:(NSString *)url {
+    NSString *md5Url = [ActionPerformer md5:url];
+    NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, md5Url];
     if ([MANAGER fileExistsAtPath:cachePath] && [AsyncImageView fileType:[MANAGER contentsAtPath:cachePath]] == GIF_TYPE) { // GIF是未压缩的格式 可直接调取
         NSData *imageData = [MANAGER contentsAtPath:cachePath];
-        imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:imageData] == GIF_TYPE) ? @"gif" : @"png"];
-        [self presentImage:imageData];
-    } else {
-        NSURLRequest *request = [NSURLRequest requestWithURL:url];
-        NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            if (idata) {
-                imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
-            }
-            dispatch_main_async_safe(^{
-                [self presentImage:idata];
-            });
-        }];
-        [task resume];
-    }
-}
-- (void)presentImage:(NSData *)image {
-    if (!image || ![UIImage imageWithData:image]) {
-        [hud hideWithFailureMessage:@"载入失败"];
+        [self presentImage:imageData fileName:md5Url extension:@"gif"];
         return;
-    } else {
-        [hud hideWithSuccessMessage:@"载入成功"];
     }
-    [image writeToFile:imgPath atomically:YES];
+    [hud showWithProgressMessage:@"正在载入"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (error || !idata || ![UIImage imageWithData:idata]) {
+            [hud hideWithFailureMessage:@"载入失败"];
+            return;
+        }
+        [hud hideWithSuccessMessage:@"载入成功"];
+        [self presentImage:idata fileName:md5Url extension:([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
+    }];
+    [task resume];
+}
+- (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName extension:(NSString *)extension {
+    NSString *imagePath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), fileName, extension];
+    [imageData writeToFile:imagePath atomically:YES];
     [NOTIFICATION postNotificationName:@"previewFile" object:self.icon userInfo:@{
-        @"filePath": imgPath,
+        @"filePath": imagePath,
         @"fileName": [NSString stringWithFormat:@"%@的头像", self.ID],
     }];
 }

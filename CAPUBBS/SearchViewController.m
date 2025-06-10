@@ -32,9 +32,6 @@
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableview addSubview:control];
-    // Auto height
-    self.tableview.estimatedRowHeight = 50;
-    self.tableview.rowHeight = UITableViewAutomaticDimension;
     performer = [[ActionPerformer alloc] init];
     // Do any additional setup after loading the view.
 }

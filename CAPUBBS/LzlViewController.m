@@ -7,6 +7,7 @@
 //
 
 #import "LzlViewController.h"
+#import <StoreKit/StoreKit.h>
 #import "UserViewController.h"
 #import "ContentViewController.h"
 #import "WebViewController.h"
@@ -32,9 +33,9 @@
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     shouldShowHud = YES;
     
-    // Auto height
-    self.tableView.estimatedRowHeight = 100;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    if (self.defaultData) {
+        data = [self.defaultData mutableCopy];
+    }
     
     // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
@@ -42,7 +43,9 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    [self loadData];
+    if (!data) {
+        [self loadData];
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -118,8 +121,8 @@
 
 - (void)postRefreshLzlNotification {
     [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:@{
-        @"num" : [NSString stringWithFormat:@"%i", (int)data.count],
-        @"fid" : self.fid
+        @"fid" : self.fid,
+        @"details": data,
     }];
 }
 
@@ -148,8 +151,7 @@
         [cell.imageBottom setImage:[[UIImage imageNamed:[dict[@"author"] isEqualToString:UID] ? @"balloon_white" : @"balloon_green"] stretchableImageWithLeftCapWidth:15 topCapHeight:15]];
         cell.textTime.text = dict[@"time"];
         cell.textMain.text = dict[@"text"];
-        NSString *url = dict[@"icon"];
-        [cell.icon setUrl:url];
+        [cell.icon setUrl:dict[@"icon"]];
         cell.buttonIcon.tag = indexPath.row;
         
         if (cell.gestureRecognizers.count == 0) {
@@ -304,6 +306,7 @@
         }
             if ([[[result firstObject] objectForKey:@"code"] integerValue]==0) {
                 [hud hideWithSuccessMessage:@"发布成功"];
+                [SKStoreReviewController requestReview];
                 self.textPost.text = @"";
                 [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
             } else {

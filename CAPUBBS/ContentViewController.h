@@ -49,6 +49,7 @@
 + (NSString *)htmlStringWithText:(NSString *)text sig:(NSString *)sig textSize:(int)textSize;
 + (NSString *)restoreFormat:(NSString *)text;
 + (NSString *)transFromHTML:(NSString *)text;
++ (NSString *)transToHTML:(NSString *)oriString;
 + (NSString *)removeHTML:(NSString *)text;
 + (NSDictionary *)getLink:(NSString *)path;
 @end

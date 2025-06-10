@@ -6,6 +6,7 @@
 //  Copyright © 2025 熊典. All rights reserved.
 //
 
+#import "CustomViewControllers.h"
 #import <objc/runtime.h>
 
 @implementation CustomViewController
@@ -21,6 +22,10 @@
 @end
 
 @implementation CustomMailComposeViewController
+
+@end
+
+@implementation CustomSearchController
 
 @end
 
@@ -165,6 +170,14 @@ static char kPresentTimerKey;
 @end
 
 @implementation CustomMailComposeViewController (Customize)
+
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    return UIStatusBarStyleLightContent;
+}
+
+@end
+
+@implementation CustomSearchController (Customize)
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
     return UIStatusBarStyleLightContent;

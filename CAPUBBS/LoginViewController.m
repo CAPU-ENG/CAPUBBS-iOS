@@ -39,9 +39,6 @@
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableview addSubview:control];
-    // Auto height
-    self.tableview.estimatedRowHeight = 40;
-    self.tableview.rowHeight = UITableViewAutomaticDimension;
     
     [self userChanged];
     // Uncomment the following line to preserve selection between presentations.

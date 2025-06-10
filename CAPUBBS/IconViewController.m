@@ -245,7 +245,9 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     [picker dismissViewControllerAnimated:YES completion:nil];
     UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
-    if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
+    if (!image || image.size.width <= 0 || image.size.height <= 0) {
+        [self showAlertWithTitle:@"警告" message:@"图片不合法，无法获取长度 / 宽度！"];
+    } else if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
         [self showAlertWithTitle:@"警告" message:@"所选图片偏离正方形\n建议裁剪处理后使用" confirmTitle:@"继续上传" confirmAction:^(UIAlertAction *action) {
             [self compressAndUploadImage:image];
         } cancelTitle:@"取消上传"];

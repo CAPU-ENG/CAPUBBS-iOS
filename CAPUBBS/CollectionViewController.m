@@ -33,7 +33,7 @@
     [NOTIFICATION addObserver:self selector:@selector(refresh) name:@"collectionChanged" object:nil];
     sortType = [[DEFAULTS objectForKey:@"viewCollectionType"] intValue];
     
-    self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
+    self.searchController = [[CustomSearchController alloc] initWithSearchResultsController:nil];
     self.searchController.delegate = self;
     self.searchController.searchResultsUpdater = self;
     self.searchController.obscuresBackgroundDuringPresentation = NO;
@@ -44,9 +44,6 @@
     self.searchController.searchBar.delegate = self;
     
     self.tableView.tableHeaderView = self.searchController.searchBar;
-    // Auto height
-    self.tableView.estimatedRowHeight = 90;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     self.definesPresentationContext = YES;
     // self.tableView.backgroundView = [[UIView alloc] init]; // 否则顶部颜色不一样

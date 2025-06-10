@@ -81,3 +81,8 @@
 
 @end
 
+@interface UIImage (CornerRadius)
+
+- (UIImage *)imageByApplyingCornerRadius:(CGFloat)cornerRadius;
+
+@end
