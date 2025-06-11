@@ -392,7 +392,8 @@
                 dest.floor = [NSString stringWithFormat:@"%d", [dict[@"page"] intValue] * 12];
             }
             if (dict[@"floor"]) {
-                dest.exactFloor = dict[@"floor"];
+                dest.destinationFloor = dict[@"floor"];
+//                dest.openDestinationLzl = YES; // Do we need it? not tested yet
             }
             if (dict[@"naviTitle"]) {
                 dest.title = dict[@"naviTitle"];

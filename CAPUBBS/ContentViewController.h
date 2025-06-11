@@ -29,13 +29,18 @@
     NSString *tempPath;
     CGFloat contentOffsetY;
     BOOL isAtEnd;
+    NSInteger scrollTargetRow;
 }
 
 @property NSString *bid;
 @property NSString *tid;
 @property NSString *floor;
-@property NSString *exactFloor;
-@property BOOL willScroll;
+/// If set, will try to scroll to the desired flor
+@property NSString *destinationFloor;
+/// If set, will popup lzl for the desired floor
+@property BOOL openDestinationLzl;
+/// If set, will try to scroll to the last flor
+@property BOOL willScrollToBottom;
 @property BOOL isCollection;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *barFreeSpace;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCollection;
@@ -54,7 +59,7 @@
 /// 把空格和换行转换成 \<br\> 和 \&nbsp; 目的是兼容网页版编辑器，纯客户端其实不需要这个功能
 + (NSString *)toCompatibleFormat:(NSString *)text;
 /// restoreHTML 逆操作，例如 [font=][/font] 变成 \<font>xxx\</font>
-+ (NSString *)transToHTML:(NSString *)oriString;
++ (NSString *)transToHTML:(NSString *)text;
 /// 清除 HTML 标签并恢复成论坛格式的文本，有损操作，可能丢失信息
 + (NSString *)removeHTML:(NSString *)text;
 /// 提取论坛的链接，获取bid，tid，p，floor

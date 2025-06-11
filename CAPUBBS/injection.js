@@ -1,5 +1,5 @@
+// Click to open images
 (() => {
-    // Click to open images
     document.addEventListener('click', (event) => {
         const target = event.target;
         if (target.tagName.toLowerCase() === 'img') {
@@ -11,52 +11,78 @@
                 return;
             }
             event.preventDefault();
-            window.webkit.messageHandlers.imageClickHandler.postMessage({
-                loading: true
-            });
-            fetch(imgSrc)
-                .then((response) => response.blob())
-                .then((blob) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64data = reader.result;
-                        window.webkit.messageHandlers.imageClickHandler.postMessage({
-                            loading: false,
-                            src: imgSrc,
-                            data: base64data
-                        });
-                    };
-                    reader.readAsDataURL(blob);
-                })
-                .catch((error) => {
-                    window.webkit.messageHandlers.imageLoadingHandler.postMessage({
-                        loading: false
-                    });
-                    console.error('Image fetch error:', error);
+            
+            // Add a very short delay in case the load is very fast so we don't need to show loading hud
+            const sendLoadingSignal = setTimeout(() => {
+                window.webkit.messageHandlers.imageClickHandler.postMessage({
+                    loading: true
                 });
+            }, 50);
+            
+            const options = {};
+            let timeoutId;
+            if (typeof AbortController === 'function') {
+                const controller = new AbortController();
+                options.signal = controller.signal;
+                timeoutId = setTimeout(() => controller.abort(), 10 * 1000); // 10s
+            }
+            fetch(imgSrc, options)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} 错误`);
+                }
+                return response.blob();
+            })
+            .then((blob) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64data = reader.result;
+                    clearTimeout(sendLoadingSignal);
+                    window.webkit.messageHandlers.imageClickHandler.postMessage({
+                        loading: false,
+                        src: imgSrc,
+                        data: base64data,
+                        alt: target.alt || ''
+                    });
+                };
+                reader.onerror = () => {
+                    clearTimeout(sendLoadingSignal);
+                    window.webkit.messageHandlers.imageClickHandler.postMessage({
+                        loading: false,
+                        src: imgSrc,
+                        error: reader.error?.message || '图片格式错误',
+                    });
+                };
+                reader.readAsDataURL(blob);
+            })
+            .catch((error) => {
+                let message = error.message || '未知错误';
+                if (error.name === 'AbortError') {
+                    message = '图片加载超时'
+                } else if (message.includes('Failed to fetch')) {
+                    message = '网络连接失败';
+                }
+                clearTimeout(sendLoadingSignal);
+                window.webkit.messageHandlers.imageClickHandler.postMessage({
+                    loading: false,
+                    src: imgSrc,
+                    error: message,
+                });
+            })
+            .finally(() => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            });
         }
     }, true);
-    
-    // Show / hide images
-    const styleId = '_hide_images_style_';
-    const hiddenClass = 'image-blocked';
+})();
 
-    const createCSS = () => {
-        if (document.getElementById(styleId)) {
-            return;
-        }
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `
-            img.${hiddenClass} {
-                display: block !important;
-                background-color: #f0f0f0 !important;
-                border: 1px solid #ccc !important;
-            }
-        `;
-        document.head.appendChild(style);
+// Show / hide images
+(() => {
+    if (!window._hideAllImages) {
+        return;
     }
-
     const hideImage = (img) => {
         if (img.dataset._originalSrc || !img.src) {
             return;
@@ -65,38 +91,12 @@
         img.dataset._originalSrc = img.src;
         img.removeAttribute('src');
         img.alt = '🚫';
-        img.classList.add(hiddenClass);
+        img.classList.add('image-hidden');
     }
+    
+    document.querySelectorAll('img').forEach(hideImage);
 
-    const restoreImage = (img) => {
-        if (!img.dataset._originalSrc) {
-            return;
-        }
-
-        img.src = img.dataset._originalSrc;
-        delete img.dataset._originalSrc;
-        img.classList.remove(hiddenClass);
-    }
-
-    window.hideAllImages = (shouldHide) => {
-        if (window._hideAllImages === shouldHide) {
-            return;
-        }
-        window._hideAllImages = shouldHide;
-
-        if (shouldHide) {
-            createCSS();
-            document.querySelectorAll('img').forEach(hideImage);
-        } else {
-            document.querySelectorAll('img').forEach(restoreImage);
-        }
-    };
-
-    const observer = new MutationObserver(mutations => {
-        if (!window._hideAllImages) {
-            return;
-        }
-        
+    const observer = new MutationObserver((mutations) => {
         mutations.forEach((m) => {
             m.addedNodes.forEach((node) => {
                 if (node.tagName === 'IMG') {
@@ -107,8 +107,5 @@
             });
         });
     });
-    
     observer.observe(document.body, { childList: true, subtree: true });
 })();
-
-window.hideAllImages(window._hideAllImages);

@@ -97,7 +97,8 @@
         self.buttonBack.enabled = (page != 1);
         NSDictionary *dict = @{
             @"bid" : self.bid,
-            @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum]
+            @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum],
+            @"raw": @"YES"
         };
         [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
             if (self.refreshControl.isRefreshing) {
@@ -303,7 +304,13 @@
         if ([dict[@"pid"] integerValue] == 0 || [replyer isEqualToString:@"Array"]) {
             cell.authorText.text = author;
         } else {
-            cell.authorText.text = [NSString stringWithFormat:@"%@/%@", author, replyer];
+            cell.authorText.text = [NSString stringWithFormat:@"%@ / %@", author, replyer];
+        }
+        NSString *time = [dict[@"time"] substringFromIndex:5];
+        if (SIMPLE_VIEW) {
+            cell.timeText.text = time;
+        } else {
+            cell.timeText.text = [NSString stringWithFormat:@"%@ • %@", [ActionPerformer getBoardTitle:dict[@"bid"]], time];
         }
     } else {
         if ([dict[@"top"] integerValue] == 1 || [dict[@"extr"] integerValue] == 1 || [dict[@"lock"] integerValue] == 1 || isCollection) {
@@ -319,11 +326,24 @@
             }
         }
         
-        NSString *author = [dict[@"author"] stringByReplacingOccurrencesOfString:@" " withString:@""];
-        if ([author hasSuffix:@"/"]) {
-            cell.authorText.text = [author substringToIndex:author.length - 1];
+        NSString *author = dict[@"author"];
+        NSString *replyer = dict[@"replyer"];
+        if (SIMPLE_VIEW) {
+            if (replyer.length > 0) {
+                cell.authorText.text = [NSString stringWithFormat:@"%@ / %@", author, replyer];
+            } else {
+                cell.authorText.text = author;
+            }
+            cell.timeText.text = dict[@"time"];
         } else {
-            cell.authorText.text = author;
+            cell.authorText.numberOfLines = 2;
+            cell.timeText.numberOfLines = 2;
+            cell.timeText.text = [NSString stringWithFormat:@"%@ • %@\n查看：%@ 回复：%@", author, dict[@"postdate"], dict[@"click"], dict[@"reply"]];
+            if (replyer) {
+                cell.authorText.text = [NSString stringWithFormat:@"%@\n%@", replyer, dict[@"time"]];
+            } else {
+                cell.authorText.text = @"";
+            }
         }
     }
     if (titlePrefixes.count > 0) {
@@ -335,7 +355,6 @@
         cell.backgroundColor = isTop ? [UIColor colorWithWhite:1.0 alpha:0.5] : [UIColor clearColor];
         cell.titleText.font = isTop ? [UIFont systemFontOfSize:cell.titleText.font.pointSize weight:UIFontWeightMedium] : [UIFont systemFontOfSize:cell.titleText.font.pointSize weight:UIFontWeightRegular];
     }
-    cell.timeText.text = dict[@"time"];
     
     if (cell.gestureRecognizers.count == 0) {
         [cell addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPress:)]];
@@ -583,7 +602,7 @@
         dest.bid = one[@"bid"];
         if ([self.bid isEqualToString: @"hot"] && indexPath.row >= globalTopCount) {
             dest.floor = one[@"pid"];
-            dest.willScroll = YES;
+            dest.willScrollToBottom = YES;
         }
         dest.title = one[@"text"];
     }

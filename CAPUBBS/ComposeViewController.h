@@ -34,5 +34,6 @@
 @property NSString *defaultContent;
 @property NSString *floor;
 @property BOOL isEdit;
+@property BOOL showEditOthersAlert;
 
 @end

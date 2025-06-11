@@ -368,14 +368,17 @@
         }
     } else if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [segue destinationViewController];
-        if ([dict[@"type"] hasPrefix:@"replylzl"]) {
-            dict = [ContentViewController getLink:dict[@"url"]];
-        }
         dest.tid = dict[@"tid"];
         dest.bid = dict[@"bid"];
         dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
         // NSLog(@"%@", dict[@"url"]);
-        dest.exactFloor = dict[@"floor"];
+        NSString *floor = [ContentViewController getLink:dict[@"url"]][@"floor"];
+        if ([floor intValue] > 0) {
+            dest.destinationFloor = floor;
+            if ([dict[@"type"] hasPrefix:@"replylzl"]) {
+                dest.openDestinationLzl = YES;
+            }
+        }
         dest.title = @"帖子跳转中";
         NSMutableArray *tempData = [data mutableCopy];
         if ([tempData[indexPath.row + 1][@"hasread"] isEqualToString:@"0"]) {

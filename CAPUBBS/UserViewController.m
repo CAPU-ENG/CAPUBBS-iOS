@@ -230,7 +230,11 @@
             heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updateWebViewHeight) userInfo:nil repeats:YES];
             for (int i = 1; i < result.count; i++) {
                 if (result[i] && result[i][@"info"]) {
-                    for (NSDictionary *dict in result[i][@"info"]) {
+                    id info = result[i][@"info"];
+                    if (![info isKindOfClass:[NSArray class]]) {
+                        info = @[info];
+                    }
+                    for (NSDictionary *dict in info) {
                         if ([dict[@"type"] isEqualToString:@"post"]) {
                             [recentPost addObject:dict];
                         }
@@ -370,7 +374,7 @@
         }
     }
     [hud showWithProgressMessage:@"正在载入"];
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         ImageFileType type = [AsyncImageView fileType:idata];
         if (error || type == ImageFileTypeUnknown) {

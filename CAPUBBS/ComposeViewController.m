@@ -99,6 +99,11 @@
         [self presentViewControllerSafe:action];
     }
     
+    if (self.showEditOthersAlert) {
+        [self showAlertWithTitle:@"提醒" message:@"您在编辑他人的帖子。如果成功发布，作者将被替换成您，签名档也将被替换。请确保您有权限操作！" cancelTitle:@"我知道了"];
+        self.showEditOthersAlert = NO;
+    }
+    
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".compose"]];
     [self updateActivity];
     [activity becomeCurrent];
@@ -111,7 +116,7 @@
 
 - (void)updateActivity {
     if (self.bid.length > 0 && self.tid.length > 0) {
-        activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@&p=%ld", CHEXIE, self.tid, self.bid, (long)self.floor]];
+        activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@", CHEXIE, self.tid, self.bid]];
     } else {
         activity.webpageURL = nil;
     }
@@ -258,7 +263,8 @@
         switch (back) {
             case 0:{
                 [NOTIFICATION postNotificationName:@"refreshContent" object:nil userInfo:@{
-                    @"isEdit" : @(self.isEdit)
+                    @"isEdit" : @(self.isEdit),
+                    @"floor" : self.isEdit ? self.floor : @"",
                 }];
                 [NOTIFICATION postNotificationName:@"refreshList" object:nil userInfo:nil];
                 [self performSelector:@selector(dismiss) withObject:nil afterDelay:0.5];
@@ -689,16 +695,67 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     [self performSegueWithIdentifier:@"addFace" sender:nil];
 }
 
+-(void)clearWithFunction:(NSString *(^)(NSString *text))function {
+    [self save];
+    if (self.textBody.selectedRange.length > 0) {
+        [self.textBody replaceRange:self.textBody.selectedTextRange withText:function([self.textBody.text substringWithRange:self.textBody.selectedRange])];
+    } else {
+        self.textBody.text = function(self.textBody.text);
+    }
+    [hud showAndHideWithSuccessMessage:@"清除成功"];
+}
+
 - (IBAction)clearFormat:(id)sender {
-    [self showAlertWithTitle:@"警告" message:[NSString stringWithFormat:@"确认要清除%@的HTML代码吗？\n图片、链接、字体等会得到保留\n清除前会自动保存草稿", self.textBody.selectedRange.length > 0 ? @"选定范围" : @"所有"] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
-        [self save];
-        if (self.textBody.selectedRange.length > 0) {
-            [self.textBody replaceRange:self.textBody.selectedTextRange withText:[ContentViewController removeHTML:[self.textBody.text substringWithRange:self.textBody.selectedRange]]];
-        } else {
-            self.textBody.text = [ContentViewController removeHTML:self.textBody.text];
-        }
-        [hud showAndHideWithSuccessMessage:@"清除成功"];
-    }];
+    NSString *hint = self.textBody.selectedRange.length > 0 ? @"选定范围" : @"所有";
+    
+    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"请选择操作" message:@"清除前会自动保存草稿\n发帖前建议预览以确保格式正确" preferredStyle:UIAlertControllerStyleAlert];
+    [action addAction:[UIAlertAction actionWithTitle:@"清除HTML标签"
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction * _Nonnull action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的HTML标签吗？\n图片、链接、字体等会得到保留", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+            [self clearWithFunction:^NSString *(NSString *text) {
+                return [ContentViewController removeHTML:text];
+            }];
+        }];
+    }]];
+    [action addAction:[UIAlertAction actionWithTitle:@"清除文字字体"
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction * _Nonnull action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的字体（[font=?][/font]）吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+            [self clearWithFunction:^NSString *(NSString *text) {
+                return [text stringByReplacingOccurrencesOfString:@"\\[/?font(?:=[^\\]]+)?\\]"
+                                                                    withString:@""
+                                                                       options:NSRegularExpressionSearch
+                                                                         range:NSMakeRange(0, text.length)];
+            }];
+        }];
+    }]];
+    [action addAction:[UIAlertAction actionWithTitle:@"清除文字大小"
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction * _Nonnull action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的大小（[size=?][/size]）吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+            [self clearWithFunction:^NSString *(NSString *text) {
+                return [text stringByReplacingOccurrencesOfString:@"\\[/?size(?:=[^\\]]+)?\\]"
+                                                                    withString:@""
+                                                                       options:NSRegularExpressionSearch
+                                                                         range:NSMakeRange(0, text.length)];
+            }];
+        }];
+    }]];
+    [action addAction:[UIAlertAction actionWithTitle:@"清除文字颜色"
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction * _Nonnull action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的颜色（[color=?][/color]）吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+            [self clearWithFunction:^NSString *(NSString *text) {
+                return [text stringByReplacingOccurrencesOfString:@"\\[/?color(?:=[^\\]]+)?\\]"
+                                                                    withString:@""
+                                                                       options:NSRegularExpressionSearch
+                                                                         range:NSMakeRange(0, text.length)];
+            }];
+        }];
+    }]];
+    [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [self presentViewControllerSafe:action];
 }
 
 - (IBAction)setToolbar:(id)sender {

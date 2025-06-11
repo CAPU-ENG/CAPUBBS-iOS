@@ -183,7 +183,7 @@
     titleText = [ActionPerformer removeRe:titleText];
     cell.titleText.text = titleText;
     cell.authorText.text = dict[@"author"];
-    if ([self.bid isEqualToString:@"-1"]) {
+    if ([self.bid isEqualToString:@"-1"] && !SIMPLE_VIEW) {
         cell.timeText.text = [NSString stringWithFormat:@"%@ • %@", [ActionPerformer getBoardTitle:dict[@"bid"]], dict[@"time"]];
     } else {
         cell.timeText.text = dict[@"time"];

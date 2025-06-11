@@ -40,10 +40,14 @@ static const CGFloat kWebViewMinHeight = 40;
     }
     selectedIndex = -1;
     isEdit = NO;
+    scrollTargetRow = -1;
     heights = [[NSMutableArray alloc] init];
     tempHeights = [[NSMutableArray alloc] init];
     HTMLStrings = [[NSMutableArray alloc] init];
     
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(cancelScroll)];
+    tapGesture.cancelsTouchesInView = NO; // 不阻断 tableView 的点击行为
+    [self.tableView addGestureRecognizer:tapGesture];
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [NOTIFICATION addObserver:self selector:@selector(refreshLzl:) name:@"refreshLzl" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(shouldRefresh:) name:@"refreshContent" object:nil];
@@ -109,7 +113,7 @@ static const CGFloat kWebViewMinHeight = 40;
         @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum],
         @"bid" : self.bid,
         @"tid" : self.tid,
-        @"lzl" : @"YES",
+        @"raw" : @"YES",
     };
     [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
@@ -150,6 +154,9 @@ static const CGFloat kWebViewMinHeight = 40;
             } else if (![lzlDetail isKindOfClass:[NSArray class]]) {
                 fixedEntry[@"lzldetail"] = @[lzlDetail];
             }
+            if (!fixedEntry[@"sigraw"] || [fixedEntry[@"sigraw"] isEqualToString:@"Array"]) {
+                fixedEntry[@"sigraw"] = @"";
+            }
             [data addObject:fixedEntry];
         }
         
@@ -157,22 +164,13 @@ static const CGFloat kWebViewMinHeight = 40;
             [self updateCollection];
         }
 
-        NSString *titleText = [data.firstObject objectForKey:@"title"];
+        NSString *titleText = data.firstObject[@"title"];
         self.title = [ActionPerformer removeRe:titleText];
         isLast = [data[0][@"nextpage"] isEqualToString:@"false"];
         self.buttonForward.enabled = !isLast;
         self.buttonLatest.enabled = !isLast;
-        self.buttonJump.enabled = ([[data lastObject] [@"pages"] integerValue] > 1);
+        self.buttonJump.enabled = ([[data lastObject][@"pages"] integerValue] > 1);
         self.buttonCompose.enabled = [ActionPerformer checkLogin:NO];
-        if (data.count != 0) {
-            for (NSDictionary *dict in data) {
-                if (self.exactFloor.length > 0 && [dict[@"floor"] isEqualToString:self.exactFloor]) {
-                    selectedIndex = [data indexOfObject:dict];
-                    [self performSegueWithIdentifier:@"lzl" sender:nil];
-                }
-            }
-        }
-        self.exactFloor = @"";
         [self clearHeightsAndHTMLCaches:^{
             [hud hideWithSuccessMessage:@"加载成功"];
             for (int i = 0; i < data.count; i++) {
@@ -188,13 +186,24 @@ static const CGFloat kWebViewMinHeight = 40;
             }
             [self.tableView reloadData];
             if (data.count != 0) {
-                if (self.willScroll) {
-                    self.willScroll = NO;
-                    // NSLog(@"Scroll To Index %lu", data.count-1); // Scroll问题目前没有很好地解决 不能等在WebView全加载完后再Scroll 之前又无法确定WebView的高度从而不知道滚动的终点 所以暂时取消这个机制
-                    // [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:data.count-1 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+                if (self.willScrollToBottom) {
+                    self.willScrollToBottom = NO;
+                    [self tryScrollTo:data.count - 1 animated:NO];
                 } else {
-                    [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+                    [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:NO];
                 }
+                for (int i = 0; i < data.count; i++) {
+                    NSDictionary *dict = data[i];
+                    if (self.destinationFloor.length > 0 && [dict[@"floor"] isEqualToString:self.destinationFloor]) {
+                        [self tryScrollTo:i animated:NO];
+                        if (self.openDestinationLzl) {
+                            selectedIndex = [data indexOfObject:dict];
+                            [self performSegueWithIdentifier:@"lzl" sender:nil];
+                        }
+                    }
+                }
+                self.openDestinationLzl = NO;
+                self.destinationFloor = @"";
             }
         }];
     }];
@@ -205,15 +214,17 @@ static const CGFloat kWebViewMinHeight = 40;
     for (NSMutableDictionary *mdic in array) {
         if ([self.bid isEqualToString:[mdic objectForKey:@"bid"]] && [self.tid isEqualToString:[mdic objectForKey:@"tid"]]) {
             if (page == 1) { // 更新楼主信息
-                NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:mdic];
-                [tmp addEntriesFromDictionary:data[0]];
+                NSMutableDictionary *post = [data[0] mutableCopy];
+                // map to the new field
+                post[@"text"] = post[@"textraw"];
+                [post removeObjectForKey:@"textraw"];
+                post[@"sig"] = post[@"sigraw"];
+                [post removeObjectForKey:@"sigraw"];
                 
-                NSString *text = [tmp objectForKey:@"text"];
-                text = [self getCollectionText:text];
-                [tmp setObject:text forKey:@"text"];
-                text = [tmp objectForKey:@"title"];
-                text = [ActionPerformer removeRe:text];
-                [tmp setObject:text forKey:@"title"];
+                NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:mdic];
+                [tmp addEntriesFromDictionary:post];
+                tmp[@"text"] = [self getCollectionText:tmp[@"text"]];
+                tmp[@"title"] = [ActionPerformer removeRe:tmp[@"title"]];
                 
                 BOOL hasChange = NO;
                 NSArray *keywords = @[@"title", @"text", @"author", @"icon"];
@@ -250,13 +261,18 @@ static const CGFloat kWebViewMinHeight = 40;
             }
             [newTempHeights addObject:@(0)];
             NSDictionary *dict = [data objectAtIndex:i];
-            NSString *html = [ContentViewController htmlStringWithText:dict[@"text"] sig:dict[@"sig"] textSize:textSize];
+            NSString *text = [ContentViewController transToHTML:dict[@"textraw"]];
+            NSString *sig = [ContentViewController transToHTML:dict[@"sigraw"]];
+            NSString *html = [ContentViewController htmlStringWithText:text sig:sig textSize:textSize];
             // NSLog(@"%@", html);
             [newHTMLStrings addObject:html];
             if ([tempHeights[i] floatValue] == 0) {
                 // 这只是一个非常粗略的估计
                 NSError *error = nil;
-                NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:[html dataUsingEncoding:NSUTF8StringEncoding] options:@{
+                // 去除img和iframe，严重拖慢速度
+                NSString *sanitizedHTML = [html stringByReplacingOccurrencesOfString:@"(?i)(<img\\b[^>]*?>|<iframe\\b[^>]*>[\\s\\S]*?<\\/iframe>)" withString:@"<div>block placeholder</div>" options:NSRegularExpressionSearch range:NSMakeRange(0, html.length)];
+
+                NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:[sanitizedHTML dataUsingEncoding:NSUTF8StringEncoding] options:@{
                     NSDocumentTypeDocumentAttribute: NSHTMLTextDocumentType,
                     NSCharacterEncodingDocumentAttribute: @(NSUTF8StringEncoding)
                 } documentAttributes:nil error:&error];
@@ -281,7 +297,7 @@ static const CGFloat kWebViewMinHeight = 40;
             }
         }
         if (callback) {
-            dispatch_main_sync_safe(^{
+            dispatch_main_async_safe(^{
                 callback();
             });
         }
@@ -289,10 +305,13 @@ static const CGFloat kWebViewMinHeight = 40;
 }
 
 - (void)shouldRefresh:(NSNotification *)notification {
-    self.willScroll = YES;
-    if ([[notification.userInfo objectForKey:@"isEdit"] boolValue] == YES) {
+    NSDictionary *userInfo = notification.userInfo;
+    if ([userInfo[@"isEdit"] boolValue] == YES) {
+        self.destinationFloor = userInfo[@"floor"];
         [self jumpTo:page];
     } else {
+        // User just sent a new post
+        self.willScrollToBottom = YES;
         [self jumpTo:[[data lastObject] [@"pages"] intValue]];
     }
 }
@@ -330,7 +349,7 @@ static const CGFloat kWebViewMinHeight = 40;
 }
 
 - (IBAction)gotoLatest:(id)sender {
-    self.willScroll = YES;
+    self.willScrollToBottom = YES;
     [self jumpTo:[[data lastObject] [@"pages"] intValue]];
 }
 
@@ -381,6 +400,16 @@ static const CGFloat kWebViewMinHeight = 40;
     return nil;
 }
 
+- (BOOL)tableViewIsAtTop {
+    UITableView *tableView = self.tableView;
+    return tableView.contentOffset.y <= 1.0;
+}
+
+- (BOOL)tableViewIsAtBottom {
+    UITableView *tableView = self.tableView;
+    return tableView.contentOffset.y >= tableView.contentSize.height - tableView.bounds.size.height - 1.0;
+}
+
 - (void)updateWebView:(WKWebView *)webView {
     NSUInteger row = webView.tag;
     if (!self.isViewLoaded || !self.view.window ||
@@ -404,8 +433,27 @@ static const CGFloat kWebViewMinHeight = 40;
         if (height > 0 && row < heights.count && height - [heights[row] floatValue] >= 1) {
             heights[row] = @(height);
             tempHeights[row] = @(height);
-            [self.tableView beginUpdates];
-            [self.tableView endUpdates];
+            BOOL shouldAnimateUpdates = YES;
+            if (scrollTargetRow >= 0) {
+                shouldAnimateUpdates = NO;
+                if (scrollTargetRow == 0 && [self tableViewIsAtTop]) {
+                    shouldAnimateUpdates = YES;
+                } else if (scrollTargetRow == data.count - 1 && [self tableViewIsAtBottom]) {
+                    shouldAnimateUpdates = YES;
+                }
+            }
+            
+            if (shouldAnimateUpdates) {
+                [self.tableView beginUpdates];
+                [self.tableView endUpdates];
+                [self maybeTriggerTableViewScrollAnimated:NO];
+            } else {
+                [UIView performWithoutAnimation:^{
+                    [self.tableView beginUpdates];
+                    [self.tableView endUpdates];
+                    [self maybeTriggerTableViewScrollAnimated:NO];
+                }];
+            }
         }
     }];
 }
@@ -535,10 +583,10 @@ static const CGFloat kWebViewMinHeight = 40;
     }
     
     if (cell.gestureRecognizers.count == 0 && cell.topView.gestureRecognizers.count == 0) {
-    UITapGestureRecognizer *tapTwice = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapWeb:)];
-    [tapTwice setNumberOfTapsRequired:2];
-    [cell addGestureRecognizer:tapTwice];
-    [cell.topView addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressTop:)]];
+        UITapGestureRecognizer *tapTwice = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapWeb:)];
+        [tapTwice setNumberOfTapsRequired:2];
+        [cell addGestureRecognizer:tapTwice];
+        [cell.topView addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressTop:)]];
     }
     NSArray *lzlDetail = dict[@"lzldetail"];
     if (!lzlDetail || lzlDetail.count == 0 || SIMPLE_VIEW) {
@@ -557,10 +605,34 @@ static const CGFloat kWebViewMinHeight = 40;
 
 #pragma mark - Content view
 
+/// Recommend to set animated to false as animation could be very choppy
+- (void)tryScrollTo:(NSUInteger)row animated:(BOOL)animated {
+    scrollTargetRow = row;
+    [self maybeTriggerTableViewScrollAnimated:animated];
+}
+
+- (void)maybeTriggerTableViewScrollAnimated:(BOOL)animated {
+    if (scrollTargetRow < 0 || scrollTargetRow >= data.count) {
+        return;
+    }
+    dispatch_main_sync_safe(^{
+        if ([self.tableView numberOfRowsInSection:0] < scrollTargetRow) {
+            return;
+        }
+        [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:scrollTargetRow inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:animated];
+    });
+}
+
+- (void)cancelScroll {
+    // 用户有任何操作都取消scroll
+    scrollTargetRow = -1;
+}
+
 // 开始拖拽视图
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
     contentOffsetY = scrollView.contentOffset.y;
     isAtEnd = NO;
+    [self cancelScroll];
 }
 
 // 滚动时调用此方法
@@ -584,37 +656,61 @@ static const CGFloat kWebViewMinHeight = 40;
 - (void)userContentController:(WKUserContentController *)userContentController
       didReceiveScriptMessage:(WKScriptMessage *)message {
     if ([message.name isEqualToString:@"imageClickHandler"]) {
-        NSDictionary *payload = message.body;
-        BOOL loading = [payload[@"loading"] boolValue];
-        if (loading) {
-            [hud showWithProgressMessage:@"图片加载中"];
-            return;
-        }
-        NSString *base64Data = payload[@"data"];
-        NSString *imgSrc = payload[@"src"];
-
-        // 去掉前缀
-        NSRange range = [base64Data rangeOfString:@","];
-        if (range.location != NSNotFound) {
-            NSString *base64String = [base64Data substringFromIndex:range.location + 1];
-            NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
-            ImageFileType type = [AsyncImageView fileType:imageData];
-            if (type != ImageFileTypeUnknown) {
-                [hud hideWithSuccessMessage:@"图片加载成功"];
-                [self presentImage:imageData fileName:[NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AsyncImageView fileExtension:type]]];
-                return;
-            }
-        }
-        [hud hideWithFailureMessage:@"图片加载失败"];
+        [self handleImageClickWithPayload:message.body];
     }
 }
 
-- (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName {
+- (void)handleImageClickWithPayload:(NSDictionary *)payload {
+    if ([payload[@"loading"] boolValue]) {
+        [hud showWithProgressMessage:@"图片加载中"];
+        return;
+    }
+    NSString *base64Data = payload[@"data"] ?: @"";
+    NSString *imgSrc = payload[@"src"] ?: @"";
+    NSString *alt = payload[@"alt"] ?: @"";
+    // 去掉前缀
+    NSRange range = [base64Data rangeOfString:@","];
+    if (range.location != NSNotFound) {
+        NSString *alt = payload[@"alt"];
+        NSString *base64String = [base64Data substringFromIndex:range.location + 1];
+        NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
+        ImageFileType type = [AsyncImageView fileType:imageData];
+        if (type != ImageFileTypeUnknown) {
+            [hud hideWithSuccessMessage:@"图片加载成功"];
+            NSString *fileName = [NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AsyncImageView fileExtension:type]];
+            [self presentImage:imageData fileName:fileName alt:alt];
+            return;
+        }
+    }
+    
+    NSString *errorMessage = payload[@"error"] ?: @"图片加载失败";
+    // Try reload in app to overcome CORS. (Most external sites will fail the fetch request)
+    NSURL *imageUrl = [NSURL URLWithString:imgSrc];
+    if (imageUrl) {
+        [hud showWithProgressMessage:@"图片加载中"];
+        NSURLRequest *request = [NSURLRequest requestWithURL:imageUrl cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
+        NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            ImageFileType type = [AsyncImageView fileType:idata];
+            if (error || type == ImageFileTypeUnknown) {
+                [hud hideWithFailureMessage:!error ? errorMessage : @"未知图片格式"];
+                return;
+            }
+            [hud hideWithSuccessMessage:@"图片加载成功"];
+            NSString *fileName = [NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AsyncImageView fileExtension:type]];
+            [self presentImage:idata fileName:fileName alt:alt];
+        }];
+        [task resume];
+    } else {
+        [hud hideWithFailureMessage:errorMessage];
+    }
+}
+
+- (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName alt:(NSString *)alt {
     NSString *filePath = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), fileName];
     [imageData writeToFile:filePath atomically:YES];
     [NOTIFICATION postNotificationName:@"previewFile" object:nil userInfo:@{
         @"filePath": filePath,
-        @"fileName": @"查看帖子图片",
+        @"fileName": alt.length > 0 ? alt : @"查看帖子图片",
     }];
 }
 
@@ -662,12 +758,33 @@ static const CGFloat kWebViewMinHeight = 40;
     
     NSDictionary *dict = [ContentViewController getLink:path];
     if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
-        ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
-        next.bid = dict[@"bid"];
-        next.tid = dict[@"tid"];
-        next.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
-        next.title = @"帖子跳转中";
-        [self.navigationController pushViewController:next animated:YES];
+        int p = [dict[@"p"] intValue];
+        int floor = [dict[@"floor"] intValue];
+        if ([dict[@"bid"] isEqualToString:self.bid] && [dict[@"tid"] isEqualToString:self.tid] && p > 0) {
+            if (p == page) {
+                BOOL hasScrolled = NO;
+                if (floor > 0) {
+                    for (int i = 0; i < data.count; i++) {
+                        if ([data[i][@"floor"] intValue] == floor) {
+                            hasScrolled = YES;
+                            [self tryScrollTo:i animated:NO];
+                        }
+                    }
+                }
+                if (!hasScrolled) {
+                    [self showAlertWithTitle:@"提示" message:floor > 0 ? [NSString stringWithFormat:@"该链接指向本页第%d楼", floor] : @"该链接指向本页"];
+                }
+            } else {
+                [self jumpTo:p];
+            }
+        } else {
+            ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
+            next.bid = dict[@"bid"];
+            next.tid = dict[@"tid"];
+            next.floor = [NSString stringWithFormat:@"%d", page * 12];
+            next.title = @"帖子跳转中";
+            [self.navigationController pushViewController:next animated:YES];
+        }
         decisionHandler(WKNavigationActionPolicyCancel);
         return;
     }
@@ -919,19 +1036,18 @@ static const CGFloat kWebViewMinHeight = 40;
 
 - (void)showMoreAction:(UIView *)view {
     NSDictionary *item = data[selectedIndex];
+    NSString *textRaw = item[@"textraw"];
     UIAlertController *action = [UIAlertController alertControllerWithTitle:@"更多操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"引用" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         if ([ActionPerformer checkLogin:YES]) {
-            NSString *content = item[@"text"];
+            NSString *content = textRaw;
             content = [self getValidQuote:content];
-            content = [ContentViewController restoreHTML:content];
             defaultContent = [NSString stringWithFormat:@"[quote=%@]%@[/quote]\n", item[@"author"], content];
             [self performSegueWithIdentifier:@"compose" sender:self.buttonCompose];
         }
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"复制" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        NSString *content = item[@"text"];
-        content = [ContentViewController restoreHTML:content];
+        NSString *content = textRaw;
         content = [ContentViewController removeHTML:content];
         [[UIPasteboard generalPasteboard] setString:content];
         [hud showAndHideWithSuccessMessage:@"复制完成"];
@@ -940,17 +1056,15 @@ static const CGFloat kWebViewMinHeight = 40;
         [action addAction:[UIAlertAction actionWithTitle:@"编辑" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             defaultTitle = [item[@"floor"] isEqualToString:@"1"]?self.title:[NSString stringWithFormat:@"Re: %@",self.title];
             isEdit = YES;
-            NSString *content = item[@"text"];
-            // NSLog(@"%@", content);
-            content = [ContentViewController restoreHTML:content];
+            NSString *content = textRaw;
             content = [ContentViewController simpleEscapeHTML:content];
             defaultContent = content;
             [self performSegueWithIdentifier:@"compose" sender:nil];
         }]];
         [action addAction:[UIAlertAction actionWithTitle:@"删除" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
             if ([ActionPerformer checkLogin:YES]) {
-                NSString *content = item[@"text"];
-                content = [self getCollectionText:item[@"text"]];
+                NSString *content = textRaw;
+                content = [self getCollectionText:content];
                 if (content.length > 50) {
                     content = [[content substringToIndex:49] stringByAppendingString:@"..."];
                 }
@@ -993,18 +1107,29 @@ static const CGFloat kWebViewMinHeight = 40;
         }
     }
     
+    NSString *hideImageHeaders = [self shouldHideImages] ?
+    @"<style type='text/css'>"
+    "img{display:none;}img.image-hidden{display:block !important;background-color:#f0f0f0 !important;border:1px solid #ccc !important;}"
+    "</style>"
+    "<script>window._hideAllImages=true</script>"
+    : @"";
     NSString *sigBlockStyle = text ? @".sigblock{color:gray;font-size:small;margin-top:1em;}" : @"";
     NSString *bodyBackground = text ? @"rgba(255,255,255,0.75)" : @"transparent";
     
     return [NSString stringWithFormat:@"<html>"
             "<head>"
             "<meta name='viewport' content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no'>"
-            "<script>window._hideAllImages=%@</script>"
+            "%@"
             "%@"
             "<style type='text/css'>"
             "img{max-width:min(100%%,700px);}"
             "body{font-size:16px;word-wrap:break-word;zoom:%d%%;}"
+            "#body-wrapper{padding:0 0.25em;}"
             "#body-mask{position:absolute;top:0;bottom:0;left:0;right:0;z-index:-1;background-color:%@;transition:background-color 0.2s linear;}"
+            ".quoteblock{background-color:#f5f5f5;color:gray;font-size:small;padding:0.6em 2em 0;margin:0.6em 0;border-radius:0.5em;border:1px solid #ddd;position:relative;}"
+            ".quoteblock::before,.quoteblock::after{position:absolute;font-size:4em;color:#d8e7f1;font-family:sans-serif;pointer-events:none;line-height:1;}"
+            ".quoteblock::before{content:'“';top:0.05em;left:0.1em;}"
+            ".quoteblock::after{content:'”';bottom:-0.5em;right:0.15em;}"
             ".textblock,.sig{overflow-x:scroll;}"
             ".textblock{min-height:3em;}"
             "%@"
@@ -1012,7 +1137,7 @@ static const CGFloat kWebViewMinHeight = 40;
             "</style>"
             "</head>"
             "<body><div id='body-mask'></div><div id='body-wrapper'>%@</div></body>"
-            "</html>", [ContentViewController shouldHideImages] ? @"true" : @"false", jQueryScript, textSize, bodyBackground, sigBlockStyle, body];
+            "</html>", jQueryScript, hideImageHeaders, textSize, bodyBackground, sigBlockStyle, body];
 }
 
 + (NSDictionary *)getLink:(NSString *)path {
@@ -1022,11 +1147,11 @@ static const CGFloat kWebViewMinHeight = 40;
     if (matchs.count != 0) {
         NSTextCheckingResult *result = matchs.firstObject;
         NSString *getstr = [path substringWithRange:[result rangeAtIndex:5]];
-        bid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(bid=)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        tid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(tid=)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+        bid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(bid=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+        tid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(tid=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
         if (bid.length > 0 && tid.length > 0) {
-            p = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(p=)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-            floor = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(#)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+            p = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(p=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+            floor = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(#)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
         }
     }
     
@@ -1035,16 +1160,16 @@ static const CGFloat kWebViewMinHeight = 40;
     if (matchs.count != 0) {
         NSTextCheckingResult *result = matchs.firstObject;
         NSString *getstr = [path substringWithRange:[result rangeAtIndex:3]];
-        bid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(b=)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        tid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(see=)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        NSString *oldbid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(id=)([^&]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+        bid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(b=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+        tid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(see=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+        NSString *oldbid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(id=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
         
         NSDictionary *trans = @{@"act": @1, @"capu": @2, @"bike": @3, @"water": @4, @"acad": @5, @"asso": @6, @"skill": @7, @"race": @9, @"web": @28};
         if (oldbid&&oldbid.length != 0) {
             bid = [trans objectForKey:oldbid];
         }
         
-        if (![tid isEqualToString:@""]) {
+        if (tid.length > 0) {
             long count = 0; // 转换26进制tid
             for (int i = 0; i < tid.length; i++) {
                 count += ([tid characterAtIndex:tid.length - 1 - i] - 'a') * pow(26, i);
@@ -1054,7 +1179,7 @@ static const CGFloat kWebViewMinHeight = 40;
         }
     }
     
-    if ([p isEqualToString:@""]) {
+    if (p.length == 0) {
         p = @"1";
     }
     return @{
@@ -1192,9 +1317,11 @@ static const CGFloat kWebViewMinHeight = 40;
     return text;
 }
 
-+ (NSString *)toCompatibleFormat:(NSString *)oriString {
++ (NSString *)toCompatibleFormat:(NSString *)text {
+    if (!text || text.length == 0) {
+        return @"";
+    }
     // Restore spaces & new lines
-    NSString *text = oriString;
     text = [text stringByReplacingOccurrencesOfString:@"\n<br>" withString:@"<br>"];
     text = [text stringByReplacingOccurrencesOfString:@"\n\r" withString:@"<br>"];
     text = [text stringByReplacingOccurrencesOfString:@"\r" withString:@"<br>"];
@@ -1219,9 +1346,12 @@ static const CGFloat kWebViewMinHeight = 40;
     return text;
 }
 
-+ (NSString *)transToHTML:(NSString *)oriString {
++ (NSString *)transToHTML:(NSString *)text {
+    if (!text || text.length == 0) {
+        return @"";
+    }
     // Restore spaces & new lines
-    NSString *text = [ContentViewController toCompatibleFormat:oriString];
+    text = [self toCompatibleFormat:text];
 
     NSArray *oriExp = @[@"(\\[img])(.+?)(\\[/img])",
                         @"(\\[quote=)(.+?)(])([\\s\\S]+?)(\\[/quote])",
@@ -1234,8 +1364,8 @@ static const CGFloat kWebViewMinHeight = 40;
                         @"(\\[url=)(.+?)(])([\\s\\S]+?)(\\[/url])",
                         @"(\\[b])(.+?)(\\[/b])",
                         @"(\\[i])(.+?)(\\[/i])"];
-    NSArray *repExp = @[@"<img src='$2'>",
-                        @"<quote><div style=\"background:#F5F5F5;padding:10px\"><font color='gray' size=2>引用自 [at]$2[/at] ：<br><br>$4<br><br></font></div></quote>",
+    NSArray *newExp = @[@"<img src='$2'>",
+                        @"<quote><div class='quoteblock'><font>引用自 [at]$2[/at] ：<br><br>$4<br><br></font></div></quote>",
                         @"<font size='$2'>$4</font>",
                         @"<font face='$2'>$4</font>",
                         @"<font color='$2'>$4</font>",
@@ -1245,10 +1375,9 @@ static const CGFloat kWebViewMinHeight = 40;
                         @"<a href='$2'>$4</a>",
                         @"<b>$2</b>",
                         @"<i>$2</i>"];
-    NSRegularExpression *regexp;
     for (int i = 0; i < oriExp.count; i++) {
-        regexp = [NSRegularExpression regularExpressionWithPattern:[oriExp objectAtIndex:i] options:0 error:nil];
-        text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:[repExp objectAtIndex:i]];
+        NSRegularExpression *regExp = [NSRegularExpression regularExpressionWithPattern:[oriExp objectAtIndex:i] options:0 error:nil];
+        text = [regExp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:[newExp objectAtIndex:i]];
     }
     return text;
 }
@@ -1259,24 +1388,36 @@ static const CGFloat kWebViewMinHeight = 40;
     }
     text = [self simpleEscapeHTML:text];
     
-    NSString *expression = @"<!--((.|[\r\n])*?)-->"; // 去除注释
-    NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
+    NSRegularExpressionOptions options = NSRegularExpressionCaseInsensitive | NSRegularExpressionDotMatchesLineSeparators;
+
+    // 去除注释
+    NSString *expression = @"<!--.*?-->";
+    NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:expression options:options error:nil];
     text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@""];
+
+    // 处理 <div> 为换行
+    expression = @"<div[^>]*>(.*?)</div>";
+    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:options error:nil];
+    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"$1\n"];
+
+    // 处理 <p> 为换行
+    expression = @"<p[^>]*>(.*?)</p>";
+    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:options error:nil];
+    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"$1\n"];
+
+    // 处理 <span> 为不换行
+    expression = @"<span[^>]*>(.*?)</span>";
+    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:options error:nil];
+    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"$1"];
     
-    expression = @"<div(.*?)>(.*?)</div>"; // <div xxx>xxx</div>标签处理为换行
-    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
-    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"$2\n"];
+    // <img> -> [img]xxx[/img]
+    expression = @"<img[^>]*?\\bsrc=['\"]([^'\"]+)['\"][^>]*?>";
+    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:options error:nil];
+    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"[img]$1[/img]"];
     
-    expression = @"<span(.*?)>(.*?)</span>"; // <span xxx>xxx</span>标签处理为换行
-    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
-    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"$2\n"];
-    
-    expression = @"(<img[^>]+?src=['\"])(.+?)(['\"][^>]*>)"; // 恢复所有图片链接
-    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
-    text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"[img]$2[/img]"];
-    
-    expression = @"<(.*?)>"; // 去除所有HTML标签
-    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
+    // 去除所有HTML标签
+    expression = @"<[^>]+>";
+    regexp = [NSRegularExpression regularExpressionWithPattern:expression options:options error:nil];
     text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@""];
     
     text = [text stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
@@ -1285,15 +1426,23 @@ static const CGFloat kWebViewMinHeight = 40;
     return text;
 }
 
-- (NSString *)getCollectionText:(NSString *)text{
-    text = [[ContentViewController removeHTML:text] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
-    while ([text hasPrefix:@" "] || [text hasPrefix:@"\t"]) {
-        text = [text substringFromIndex:@" ".length];
+- (NSString *)getCollectionText:(NSString *)text {
+    if (!text || text.length == 0) {
+        return @"";
     }
-    return text;
+    NSString *content = [ContentViewController transToHTML:text];
+    content = [ContentViewController removeHTML:content];
+    content = [content stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
+    while ([content hasPrefix:@" "] || [content hasPrefix:@"\t"]) {
+        content = [content substringFromIndex:@" ".length];
+    }
+    return content;
 }
 
 - (NSString *)getValidQuote:(NSString *)text {
+    if (!text || text.length == 0) {
+        return @"";
+    }
     text = [ContentViewController simpleEscapeHTML:text];
     
     NSString *expression = @"<quote>((.|[\r\n])*?)</quote>"; // 去除帖子中的引用
@@ -1406,7 +1555,8 @@ static const CGFloat kWebViewMinHeight = 40;
         dest.isEdit = isEdit;
         
         if (isEdit) {
-            dest.floor=[NSString stringWithFormat:@"%d",[data[selectedIndex][@"floor"] intValue]];
+            dest.floor = [NSString stringWithFormat:@"%d",[data[selectedIndex][@"floor"] intValue]];
+            dest.showEditOthersAlert = ![data[selectedIndex][@"author"] isEqualToString:UID];
         }
         
         defaultTitle = nil;

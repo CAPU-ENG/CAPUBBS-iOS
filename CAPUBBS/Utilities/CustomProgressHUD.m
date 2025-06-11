@@ -43,10 +43,10 @@
 }
 
 - (void)hideWithImage:(UIImage *)image message:(NSString *)message delay:(NSTimeInterval)delay {
-    if (self.hidden) {
-        return;
-    }
     dispatch_main_async_safe(^{
+        if (self.hidden) {
+            return;
+        }
         self.label.text = message;
         self.mode = MBProgressHUDModeCustomView;
         self.customView = [[UIImageView alloc] initWithImage:image];

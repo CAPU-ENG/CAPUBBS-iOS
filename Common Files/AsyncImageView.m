@@ -209,7 +209,8 @@
     }
     if (@available(iOS 14.0, *)) {
         // WebP 在 iOS 14+ 才原生支持
-        if (UTTypeConformsTo(uti, (__bridge CFStringRef)@"public.webp")) {
+        if (UTTypeConformsTo(uti, (__bridge CFStringRef)@"public.webp") ||
+            UTTypeConformsTo(uti, (__bridge CFStringRef)@"org.webmproject.webp")) {
             return ImageFileTypeWEBP;
         }
     }
