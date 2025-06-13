@@ -372,7 +372,7 @@
         dest.bid = dict[@"bid"];
         dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
         // NSLog(@"%@", dict[@"url"]);
-        NSString *floor = [ContentViewController getLink:dict[@"url"]][@"floor"];
+        NSString *floor = [ActionPerformer getLink:dict[@"url"]][@"floor"];
         if ([floor intValue] > 0) {
             dest.destinationFloor = floor;
             if ([dict[@"type"] hasPrefix:@"replylzl"]) {
@@ -398,8 +398,8 @@
         dest.navigationController.popoverPresentationController.sourceView = button;
         dest.navigationController.popoverPresentationController.sourceRect = button.bounds;
         dest.ID = data[button.tag + 1][@"username"];
-        MessageCell *cell = (MessageCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForItem:button.tag inSection:0]];
-        if (![cell.imageIcon.image isEqual:PLACEHOLDER]) {
+        MessageCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForItem:button.tag inSection:0]];
+        if (cell && ![cell.imageIcon.image isEqual:PLACEHOLDER]) {
             dest.iconData = UIImagePNGRepresentation(cell.imageIcon.image);
         }
     }

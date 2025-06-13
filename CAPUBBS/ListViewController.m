@@ -62,12 +62,12 @@
     if (![self.bid isEqualToString:@"hot"]) {
 //        if (![[DEFAULTS objectForKey:@"FeatureSwipe2.0"] boolValue]) {
 //            [self showAlertWithTitle:@"新功能！" message:@"帖子和列表界面可以左右滑动翻页" cancelTitle:@"我知道了"];
-//            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSwipe2.0"];
+//            [DEFAULTS setObject:@(YES) forKey:@"FeatureSwipe2.0"];
 //        }
     } else {
         if (![[DEFAULTS objectForKey:@"FeatureViewOnline3.0"] boolValue]) {
             [self showAlertWithTitle:@"新功能！" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" cancelTitle:@"我知道了"];
-            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureViewOnline3.0"];
+            [DEFAULTS setObject:@(YES) forKey:@"FeatureViewOnline3.0"];
         }
     }
 }
@@ -168,7 +168,7 @@
                     data = [NSMutableArray arrayWithArray:topResult];
                     globalTopCount = data.count;
                     [data addObjectsFromArray:hotResult];
-                    [GROUP_DEFAULTS setObject:[NSNumber numberWithLong:globalTopCount] forKey:@"globalTopCount"];
+                    [GROUP_DEFAULTS setObject:@(globalTopCount) forKey:@"globalTopCount"];
                     [GROUP_DEFAULTS setObject:data forKey:@"hotPosts"];
                     if (isFirstTime) {
                         [self.tableView reloadData];
@@ -604,7 +604,7 @@
             dest.floor = one[@"pid"];
             dest.willScrollToBottom = YES;
         }
-        dest.title = one[@"text"];
+        dest.title = [ActionPerformer removeRe:one[@"text"]];
     }
 
     // Get the new view controller using [segue destinationViewController].

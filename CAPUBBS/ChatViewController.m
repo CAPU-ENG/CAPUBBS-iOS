@@ -261,7 +261,7 @@
 }
 
 - (IBAction)buttonSend:(id)sender {
-    ChatCell *cell = (ChatCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
+    ChatCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
     NSString *text = cell.textSend.text;
     if (text.length == 0) {
         [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！" cancelAction:^(UIAlertAction *action) {

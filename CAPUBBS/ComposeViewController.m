@@ -32,6 +32,9 @@
     [targetView addSubview:hud];
     
     [self initiateToolBar];
+    if (!self.bid) {
+        self.bid = @"";
+    }
     if (!self.tid) {
         self.tid = @"";
     }
@@ -66,6 +69,7 @@
     
     self.textTitle.delegate = self;
     self.textBody.delegate = self;
+    [self updateDismissable];
     // Do any additional setup after loading the view.
 }
 
@@ -73,14 +77,19 @@
     [super viewDidAppear:animated];
 //    if (![[DEFAULTS objectForKey:@"FeatureText2.1"] boolValue]) {
 //        [self showAlertWithTitle:@"新功能！" message:@"新增插入带颜色、字号、样式字体的功能" cancelTitle:@"我知道了"];
-//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureText2.1"];
+//        [DEFAULTS setObject:@(YES) forKey:@"FeatureText2.1"];
 //    }
     if (![[DEFAULTS objectForKey:@"FeaturePreview2.2"] boolValue]) {
         [self showAlertWithTitle:@"Tips" message:@"发帖前可以预览，所见即所得\n向左滑动或者点击右上方▶︎前往" cancelTitle:@"我知道了"];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePreview2.2"];
+        [DEFAULTS setObject:@(YES) forKey:@"FeaturePreview2.2"];
     }
     
-    if (![NUMBERS containsObject:self.bid]) {
+    if (![ActionPerformer checkLogin:NO]) {
+        [self showAlertWithTitle:@"您尚未登录" message:@"请先登录再发帖" cancelAction:^(UIAlertAction *action) {
+            [self dismiss];
+        }];
+        return;
+    } else if (![NUMBERS containsObject:self.bid]) {
         self.isEdit = NO;
         UIAlertController *action = [UIAlertController alertControllerWithTitle:@"请选择发帖的版块" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
         for (int i = 0; i < 9; i++) {
@@ -92,10 +101,10 @@
             }]];
         }
         [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-            [self dismissViewControllerAnimated:YES completion:nil];
+            [self dismiss];
         }]];
-        action.popoverPresentationController.sourceView = self.buttonTools;
-        action.popoverPresentationController.sourceRect = self.buttonTools.bounds;
+        action.popoverPresentationController.sourceView = self.navigationController.navigationBar;
+        action.popoverPresentationController.sourceRect = self.navigationController.navigationBar.bounds;
         [self presentViewControllerSafe:action];
     }
     
@@ -137,12 +146,16 @@
     activity.title = self.title;
 }
 
-- (void)textViewDidChange:(UITextView *)textView {
-    [self updateActivity];
+- (void)updateDismissable {
+    // 如果有输入文字，不允许点击外部关闭
+    if (@available(iOS 13.0, *)) {
+        [self setModalInPresentation:[self shouldShowDismissWarning]];
+    }
 }
 
-- (void)textFieldDidEndEditing:(UITextField *)textField {
+- (void)textViewDidChange:(UITextView *)textView {
     [self updateActivity];
+    [self updateDismissable];
 }
 
 - (void)keyboardChange:(NSNotification *)info {
@@ -232,7 +245,7 @@
         [DEFAULTS setObject:self.textBody.text forKey:@"savedBody"];
     }
     [hud showWithProgressMessage:@"发表中"];
-    NSString *content = [ContentViewController toCompatibleFormat:self.textBody.text];
+    NSString *content = [ActionPerformer toCompatibleFormat:self.textBody.text];
     NSDictionary *dict = self.isEdit ? @{
         @"bid" : self.bid,
         @"tid" : self.tid,
@@ -314,18 +327,28 @@
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (IBAction)cancel:(id)sender {
-    if (self.textBody.text.length > 0 && !([self.textTitle.text isEqualToString:[DEFAULTS objectForKey:@"savedTitle"]] && [self.textBody.text isEqualToString:[DEFAULTS objectForKey:@"savedBody"]])) {
-        [self showAlertWithTitle:@"确定退出" message:@"您编辑了正文内容，建议先保存草稿，确定要直接退出吗？" confirmTitle:@"退出" confirmAction:^(UIAlertAction *action) {
-            [self dismissViewControllerAnimated:YES completion:nil];
-        } cancelTitle:@"返回"];
-    } else {
-        [self dismissViewControllerAnimated:YES completion:nil];
+- (BOOL)shouldShowDismissWarning {
+    NSString *title = self.textTitle.text;
+    NSString *content = self.textBody.text;
+    if (content.length > 0 && ![content isEqualToString:self.defaultContent] &&
+        ![content isEqualToString:[DEFAULTS objectForKey:@"savedBody"]]) {
+        return YES;
     }
+    if (title.length > 0 && ![title isEqualToString:self.defaultTitle] &&
+        ![title isEqualToString:[DEFAULTS objectForKey:@"savedTitle"]]) {
+        return YES;
+    }
+    return NO;
 }
 
-- (void)dismissKeyboard:(id)sender {
-    [self.textBody resignFirstResponder];
+- (IBAction)cancel:(id)sender {
+    if ([self shouldShowDismissWarning]) {
+        [self showAlertWithTitle:@"确定退出" message:@"您有尚未发表的内容，建议先保存草稿，确定继续退出？" confirmTitle:@"退出" confirmAction:^(UIAlertAction *action) {
+            [self dismiss];
+        } cancelTitle:@"返回"];
+    } else {
+        [self dismiss];
+    }
 }
 
 - (IBAction)addPic:(id)sender {
@@ -401,6 +424,7 @@
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     [picker dismissViewControllerAnimated:YES completion:nil];
     UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    [self.textTitle resignFirstResponder];
     [self.textBody resignFirstResponder];
     [self uploadOneImage:image withCallback:^(NSString *url) {
         if (url) {
@@ -431,6 +455,7 @@
     
     // 所有图片加载完后开始上传
     dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        [self.textTitle resignFirstResponder];
         [self.textBody resignFirstResponder];
         [self uploadImages:selectedImages index:0];
     });
@@ -600,6 +625,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     [DEFAULTS setObject:self.textTitle.text forKey:@"savedTitle"];
     [DEFAULTS setObject:self.textBody.text forKey:@"savedBody"];
     self.restoreDraft.enabled = YES;
+    [self updateDismissable];
     if ([[DEFAULTS objectForKey:@"savedTitle"] length] == 0 && [[DEFAULTS objectForKey:@"savedBody"] length] == 0) {
         self.restoreDraft.enabled = NO;
     }
@@ -609,6 +635,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     self.textTitle.text = [DEFAULTS objectForKey:@"savedTitle"];
     self.textBody.text = [DEFAULTS objectForKey:@"savedBody"];
     [self.textBody becomeFirstResponder];
+    [self updateDismissable];
     [hud showAndHideWithSuccessMessage:@"恢复成功"];
 }
 
@@ -707,21 +734,23 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
 
 - (IBAction)clearFormat:(id)sender {
     NSString *hint = self.textBody.selectedRange.length > 0 ? @"选定范围" : @"所有";
+    [self.textTitle resignFirstResponder];
+    [self.textBody resignFirstResponder];
     
-    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"请选择操作" message:@"清除前会自动保存草稿\n发帖前建议预览以确保格式正确" preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *action = [UIAlertController alertControllerWithTitle:@"请选择操作" message:@"清除前会自动保存草稿\n发帖前建议预览以确保格式正确" preferredStyle:UIAlertControllerStyleActionSheet];
     [action addAction:[UIAlertAction actionWithTitle:@"清除HTML标签"
                                                style:UIAlertActionStyleDefault
                                              handler:^(UIAlertAction * _Nonnull action) {
-        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的HTML标签吗？\n图片、链接、字体等会得到保留", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的HTML标签吗？\n图片、链接、字体、颜色等会被尽量保留", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
             [self clearWithFunction:^NSString *(NSString *text) {
-                return [ContentViewController removeHTML:text];
+                return [ActionPerformer removeHTML:[ActionPerformer restoreFormat:text]];
             }];
         }];
     }]];
     [action addAction:[UIAlertAction actionWithTitle:@"清除文字字体"
                                                style:UIAlertActionStyleDefault
                                              handler:^(UIAlertAction * _Nonnull action) {
-        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的字体（[font=?][/font]）吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的字体 [font] 标记吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
             [self clearWithFunction:^NSString *(NSString *text) {
                 return [text stringByReplacingOccurrencesOfString:@"\\[/?font(?:=[^\\]]+)?\\]"
                                                                     withString:@""
@@ -733,7 +762,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     [action addAction:[UIAlertAction actionWithTitle:@"清除文字大小"
                                                style:UIAlertActionStyleDefault
                                              handler:^(UIAlertAction * _Nonnull action) {
-        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的大小（[size=?][/size]）吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的大小 [size] 标记吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
             [self clearWithFunction:^NSString *(NSString *text) {
                 return [text stringByReplacingOccurrencesOfString:@"\\[/?size(?:=[^\\]]+)?\\]"
                                                                     withString:@""
@@ -745,7 +774,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
     [action addAction:[UIAlertAction actionWithTitle:@"清除文字颜色"
                                                style:UIAlertActionStyleDefault
                                              handler:^(UIAlertAction * _Nonnull action) {
-        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的颜色（[color=?][/color]）吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的颜色 [color] 标记吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
             [self clearWithFunction:^NSString *(NSString *text) {
                 return [text stringByReplacingOccurrencesOfString:@"\\[/?color(?:=[^\\]]+)?\\]"
                                                                     withString:@""
@@ -754,7 +783,34 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
             }];
         }];
     }]];
+    [action addAction:[UIAlertAction actionWithTitle:@"清除文字粗体"
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction * _Nonnull action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的粗体 [b] 标记吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+            [self clearWithFunction:^NSString *(NSString *text) {
+                return [text stringByReplacingOccurrencesOfString:@"\\[/?b\\]"
+                                                                    withString:@""
+                                                                       options:NSRegularExpressionSearch
+                                                                         range:NSMakeRange(0, text.length)];
+            }];
+        }];
+    }]];
+    [action addAction:[UIAlertAction actionWithTitle:@"清除文字斜体"
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction * _Nonnull action) {
+        [self showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"确认要清除%@的斜体 [i] 标记吗", hint] confirmTitle:@"清除" confirmAction:^(UIAlertAction *action) {
+            [self clearWithFunction:^NSString *(NSString *text) {
+                return [text stringByReplacingOccurrencesOfString:@"\\[/?i\\]"
+                                                                    withString:@""
+                                                                       options:NSRegularExpressionSearch
+                                                                         range:NSMakeRange(0, text.length)];
+            }];
+        }];
+    }]];
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    UIButton *button = sender;
+    action.popoverPresentationController.sourceView = button;
+    action.popoverPresentationController.sourceRect = button.bounds;
     [self presentViewControllerSafe:action];
 }
 

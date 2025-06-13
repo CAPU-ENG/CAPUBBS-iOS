@@ -98,9 +98,7 @@
         if (data.count + 1 == MAX_ID_NUM) {
             [self.tableView performSelector:@selector(reloadData) withObject:nil afterDelay:0.5];
         }
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-    }   
+    }  
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {

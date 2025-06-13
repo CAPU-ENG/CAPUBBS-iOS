@@ -168,8 +168,6 @@
                 [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
             }];
         }];
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
     }
 }
 
@@ -280,7 +278,7 @@
         if (![ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"enterLogin"] boolValue] == YES && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
             NSLog(@"Autolog in Login Page");
             [self login:nil];
-            [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"enterLogin"];
+            [DEFAULTS setObject:@(NO) forKey:@"enterLogin"];
         } else {
             [self getNewsAndInfo];
             if ([ActionPerformer checkLogin:NO]) {
@@ -476,7 +474,7 @@
     [alert addAction:[UIAlertAction actionWithTitle:@"我同意以上协议"
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction * _Nonnull action) {
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"hasShownEULA"];
+        [DEFAULTS setObject:@(YES) forKey:@"hasShownEULA"];
     }]];
     
     [alert addAction:[UIAlertAction actionWithTitle:@"我拒绝以上协议"

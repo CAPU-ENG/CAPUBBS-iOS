@@ -162,7 +162,7 @@
             [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
                 @"recipients": FEEDBACK_EMAIL,
                 @"subject": @"CAPUBBS iOS客户端反馈",
-                @"body": [NSString stringWithFormat:@"设备：%@ 系统：iOS %@ 客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], APP_VERSION, APP_BUILD],
+                @"body": [NSString stringWithFormat:@"\n设备：%@\n系统：iOS %@\n客户端版本：%@ Build %@", [ActionPerformer doDevicePlatform], [[UIDevice currentDevice] systemVersion], APP_VERSION, APP_BUILD],
                 @"fallbackMessage": @"请前往网络维护板块反馈"
             }];
         } else if (indexPath.row == 4) {
@@ -178,54 +178,53 @@
 }
 
 /*- (IBAction)proxyChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithInteger:self.segmentProxy.selectedSegmentIndex] forKey:@"proxy"];
+    [DEFAULTS setObject:@(self.segmentProxy.selectedSegmentIndex) forKey:@"proxy"];
 }*/
 
 - (IBAction)loginChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithBool:self.autoLogin.isOn] forKey:@"autoLogin"];
+    [DEFAULTS setObject:@(self.autoLogin.isOn) forKey:@"autoLogin"];
 }
 
 - (IBAction)vibrateChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithBool:self.switchVibrate.isOn] forKey:@"vibrate"];
+    [DEFAULTS setObject:@(self.switchVibrate.isOn) forKey:@"vibrate"];
 }
 
 - (IBAction)picChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithBool:self.switchPic.isOn] forKey:@"picOnlyInWifi"];
+    [DEFAULTS setObject:@(self.switchPic.isOn) forKey:@"picOnlyInWifi"];
     if (self.switchPic.isOn) {
         [self showAlertWithTitle:@"图片显示已关闭" message:@"使用流量时\n帖子图片将以🚫代替\n点击🚫可以加载图片"];
     }
 }
 
 - (IBAction)iconChanged:(id)sender {
-    [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchIcon.isOn] forKey:@"iconOnlyInWifi"];
+    [GROUP_DEFAULTS setObject:@(self.switchIcon.isOn) forKey:@"iconOnlyInWifi"];
     if (self.switchIcon.isOn) {
         [self showAlertWithTitle:@"头像显示已关闭" message:@"使用流量时\n未缓存过的头像将以会标代替\n已缓存过的头像将会正常加载"];
     }
 }
 
 - (IBAction)saveChanged:(id)sender {
-    [DEFAULTS setObject:[NSNumber numberWithBool:self.autoSave.isOn] forKey:@"autoSave"];
+    [DEFAULTS setObject:@(self.autoSave.isOn) forKey:@"autoSave"];
 }
 
 - (IBAction)sizeChanged:(UIStepper *)sender {
-    [DEFAULTS setObject:[NSNumber numberWithInt:(int)self.stepperSize.value] forKey:@"textSize"];
+    [DEFAULTS setObject:@((int)self.stepperSize.value) forKey:@"textSize"];
     self.defaultSize.text = [NSString stringWithFormat:@"默认页面缩放 - %d%%", (int)self.stepperSize.value];
 }
 
 - (IBAction)simpleViewChanged:(id)sender {
-    [GROUP_DEFAULTS setObject:[NSNumber numberWithBool:self.switchSimpleView.isOn] forKey:@"simpleView"];
+    [GROUP_DEFAULTS setObject:@(self.switchSimpleView.isOn) forKey:@"simpleView"];
     if (self.switchSimpleView.isOn) {
         [self showAlertWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n楼中楼不默认展示\n动图头像将静态显示\n模糊效果将禁用"];
     }
 }
 
-
 - (IBAction)selectDirection:(UISegmentedControl *)sender {
-    [DEFAULTS setObject:[NSNumber numberWithLong:sender.selectedSegmentIndex] forKey:@"oppositeSwipe"];
+    [DEFAULTS setObject:@(sender.selectedSegmentIndex) forKey:@"oppositeSwipe"];
 }
 
 - (IBAction)selectEditTool:(UISegmentedControl *)sender {
-    [DEFAULTS setObject:[NSNumber numberWithLong:sender.selectedSegmentIndex] forKey:@"toolbarEditor"];
+    [DEFAULTS setObject:@(sender.selectedSegmentIndex) forKey:@"toolbarEditor"];
 }
 
 - (IBAction)done:(id)sender {

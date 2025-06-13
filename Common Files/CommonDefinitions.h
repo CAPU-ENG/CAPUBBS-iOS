@@ -21,7 +21,6 @@
 
 #define NOTIFICATION [NSNotificationCenter defaultCenter]
 #define MANAGER [NSFileManager defaultManager]
-
 #define DEFAULTS [NSUserDefaults standardUserDefaults]
 #define GROUP_DEFAULTS [[NSUserDefaults alloc] initWithSuiteName:APP_GROUP_IDENTIFIER]
 #define CHEXIE [GROUP_DEFAULTS objectForKey:@"URL"]
@@ -75,5 +74,6 @@ static inline void dispatch_global_default_async(dispatch_block_t block) {
 #define EMPTY_HTML @"<html><head></head><body></body></html>"
 #define JQUERY_MIN_JS [[NSBundle mainBundle] pathForResource:@"jquery.min" ofType:@"js"]
 #define INJECTION_JS [[NSBundle mainBundle] pathForResource:@"injection" ofType:@"js"]
+#define SALT @"3UhvI9LXQy69lrUd"
 
 #endif /* CommonDefinitions_h */

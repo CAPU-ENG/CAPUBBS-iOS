@@ -33,6 +33,7 @@
 
 static char kViewControllerQueueKey;
 static char kPresentTimerKey;
+static char kIsAttemptingToPresentKey;
 
 - (NSMutableArray<UIViewController *> *)_getVcQueue {
     NSMutableArray *queue = objc_getAssociatedObject(self, &kViewControllerQueueKey);
@@ -51,8 +52,17 @@ static char kPresentTimerKey;
     objc_setAssociatedObject(self, &kPresentTimerKey, timer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+// 2. 新增一个BOOL属性的 getter/setter
+- (BOOL)_isAttemptingToPresent {
+    return [objc_getAssociatedObject(self, &kIsAttemptingToPresentKey) boolValue];
+}
+
+- (void)_setAttemptingToPresent:(BOOL)isAttempting {
+    objc_setAssociatedObject(self, &kIsAttemptingToPresentKey, @(isAttempting), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 - (BOOL)_tryPresentNextVc {
-    if (self.presentedViewController) {
+    if ([self _isAttemptingToPresent] || self.presentedViewController) {
         return NO;
     }
     
@@ -65,10 +75,13 @@ static char kPresentTimerKey;
         return NO;
     }
     
+    [self _setAttemptingToPresent:YES];
     UIViewController *item = queue.firstObject;
     [queue removeObjectAtIndex:0];
     dispatch_main_async_safe(^{
-        [self presentViewController:item animated:YES completion:nil];
+        [self presentViewController:item animated:YES completion:^{
+            [self _setAttemptingToPresent:NO];
+        }];
     });
     return YES;
 }

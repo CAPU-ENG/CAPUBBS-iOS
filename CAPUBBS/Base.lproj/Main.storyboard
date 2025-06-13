@@ -1085,8 +1085,8 @@
         <!--个人收藏-->
         <scene sceneID="dIs-xS-OBn">
             <objects>
-                <tableViewController storyboardIdentifier="collection" hidesBottomBarWhenPushed="YES" id="obI-Ao-Tke" userLabel="个人收藏" customClass="CollectionViewController" sceneMemberID="viewController">
-                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="90" sectionHeaderHeight="10" sectionFooterHeight="10" id="iw6-9C-BQL">
+                <tableViewController storyboardIdentifier="collection" id="obI-Ao-Tke" userLabel="个人收藏" customClass="CollectionViewController" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" allowsSelectionDuringEditing="YES" allowsMultipleSelection="YES" allowsMultipleSelectionDuringEditing="YES" rowHeight="-1" estimatedRowHeight="90" sectionHeaderHeight="10" sectionFooterHeight="10" id="iw6-9C-BQL">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" red="0.93725490199999995" green="0.93725490199999995" blue="0.95686274510000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -1162,22 +1162,53 @@
                         </connections>
                     </tableView>
                     <toolbarItems>
-                        <barButtonItem title="全部删除" id="zl0-qY-vMC">
+                        <barButtonItem title="全选" id="Wut-bV-nQh">
                             <connections>
-                                <action selector="clearAll:" destination="obI-Ao-Tke" id="B7S-hV-JPi"/>
+                                <action selector="selectAll:" destination="obI-Ao-Tke" id="qYw-nH-ezB"/>
+                            </connections>
+                        </barButtonItem>
+                        <barButtonItem width="12" systemItem="fixedSpace" id="NSp-Rx-jX2"/>
+                        <barButtonItem title="反选" width="42" id="cZi-m9-hEm">
+                            <connections>
+                                <action selector="selectReverse:" destination="obI-Ao-Tke" id="3NI-ox-g8a"/>
+                            </connections>
+                        </barButtonItem>
+                        <barButtonItem systemItem="flexibleSpace" id="Q7L-o1-OG8"/>
+                        <barButtonItem systemItem="action" id="2ki-ne-M2y">
+                            <connections>
+                                <action selector="shareSelection:" destination="obI-Ao-Tke" id="FTd-QM-8Wg"/>
+                            </connections>
+                        </barButtonItem>
+                        <barButtonItem width="24" systemItem="fixedSpace" id="EJO-4y-W95"/>
+                        <barButtonItem systemItem="trash" id="zl0-qY-vMC">
+                            <color key="tintColor" systemColor="systemRedColor"/>
+                            <connections>
+                                <action selector="deleteSelection:" destination="obI-Ao-Tke" id="B7S-hV-JPi"/>
                             </connections>
                         </barButtonItem>
                     </toolbarItems>
                     <navigationItem key="navigationItem" title="个人收藏" id="qWj-d2-UXu">
-                        <barButtonItem key="rightBarButtonItem" systemItem="organize" id="Txn-W2-yS4">
-                            <connections>
-                                <action selector="organize:" destination="obI-Ao-Tke" id="Zee-HF-F3r"/>
-                            </connections>
-                        </barButtonItem>
+                        <rightBarButtonItems>
+                            <barButtonItem systemItem="organize" id="Txn-W2-yS4">
+                                <connections>
+                                    <action selector="toggleOrganize:" destination="obI-Ao-Tke" id="Zee-HF-F3r"/>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem systemItem="stop" id="I5I-1Q-vSn">
+                                <connections>
+                                    <action selector="toggleOrganize:" destination="obI-Ao-Tke" id="DLq-1f-P5o"/>
+                                </connections>
+                            </barButtonItem>
+                        </rightBarButtonItems>
                     </navigationItem>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="buttonDeleteAll" destination="zl0-qY-vMC" id="8Kb-8P-BFT"/>
+                        <outlet property="buttonCancelOrganize" destination="I5I-1Q-vSn" id="OKr-uV-odI"/>
                         <outlet property="buttonOrganize" destination="Txn-W2-yS4" id="T39-zh-6Fe"/>
+                        <outlet property="buttonSelectAll" destination="Wut-bV-nQh" id="bdk-KD-6td"/>
+                        <outlet property="buttonSelectReverse" destination="cZi-m9-hEm" id="J29-qV-LIP"/>
+                        <outlet property="buttonShare" destination="2ki-ne-M2y" id="4kK-aw-P0n"/>
+                        <outlet property="buttonTrash" destination="zl0-qY-vMC" id="Bvk-lE-NDf"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="eP5-89-5S1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2806,8 +2837,7 @@ Cg
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eeR-j8-dCy">
                                 <rect key="frame" x="334" y="760" width="60" height="30"/>
-                                <state key="normal" title="清除格式">
-                                    <color key="titleColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <state key="normal" title="清除样式">
                                     <color key="titleShadowColor" red="0.5" green="0.5" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 </state>
                                 <connections>
@@ -5139,7 +5169,7 @@ Cg
         <segue reference="ftB-bq-E4r"/>
         <segue reference="Je3-pI-pju"/>
         <segue reference="5wZ-RT-jhw"/>
-        <segue reference="Cr6-On-DSR"/>
+        <segue reference="kGD-nG-mgk"/>
         <segue reference="d4L-EK-lF4"/>
         <segue reference="nvR-pU-fEO"/>
         <segue reference="ZFk-VU-EwR"/>
@@ -5189,6 +5219,9 @@ Cg
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

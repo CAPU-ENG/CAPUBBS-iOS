@@ -82,7 +82,7 @@
     if ([self.ID isEqualToString:UID]) {
 //        if (![[DEFAULTS objectForKey:@"FeatureEditUser3.0"] boolValue]) {
 //            [self showAlertWithTitle:@"新功能！" message:@"可以编辑个人信息\n点击右上方铅笔前往" cancelTitle:@"我知道了"];
-//            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureEditUser3.0"];
+//            [DEFAULTS setObject:@(YES) forKey:@"FeatureEditUser3.0"];
 //        }
     }
 }
@@ -176,9 +176,9 @@
                 });
             }
             if ([dict[@"sex"] isEqualToString:@"男"]) {
-                self.username.text = [dict[@"username"] stringByAppendingString:@" 🚹"];
-            } else if ([[[result objectAtIndex:0] objectForKey:@"sex"] isEqualToString:@"女"]) {
-                self.username.text = [dict[@"username"] stringByAppendingString:@" 🚺"];
+                self.username.text = [dict[@"username"] stringByAppendingString:@" ♂"];
+            } else if ([dict[@"sex"] isEqualToString:@"女"]) {
+                self.username.text = [dict[@"username"] stringByAppendingString:@" ♀"];
             }
             self.star.text = @"";
             for (int i = 1; i<= [dict[@"star"] intValue]; i++) {
@@ -216,8 +216,8 @@
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
                     content = @"<font color='gray'>暂无</font>";
                 }
-                content = [ContentViewController transToHTML:content];
-                NSString *html = [ContentViewController htmlStringWithText:nil sig:content textSize:textSize];
+                content = [ActionPerformer transToHTML:content];
+                NSString *html = [ActionPerformer htmlStringWithText:nil sig:content textSize:textSize];
                 if (webViewContainer.webView.isLoading) {
                     [webViewContainer.webView stopLoading];
                 }

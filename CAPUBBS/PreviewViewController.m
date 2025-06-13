@@ -36,7 +36,7 @@
             sig = dict[[NSString stringWithFormat:@"sig%d", self.sig]];
         }
     }
-    NSString *html = [ContentViewController htmlStringWithText:[ContentViewController transToHTML:self.textBody] sig:sig textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
+    NSString *html = [ActionPerformer htmlStringWithText:[ActionPerformer transToHTML:self.textBody] sig:sig textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
     [self.webViewContainer.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     // Do any additional setup after loading the view.
 }

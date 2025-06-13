@@ -113,11 +113,11 @@
     
     [[NSURLCache sharedURLCache] setMemoryCapacity:128.0 * 1024 * 1024];
     [[NSURLCache sharedURLCache] setDiskCapacity:512.0 * 1024 * 1024];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     dispatch_global_default_async(^{
         [self transport];
     });
     performer = [[ActionPerformer alloc] init];
+    [NOTIFICATION addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(sendEmail:) name:@"sendEmail" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(previewFile:) name:@"previewFile" object:nil];
@@ -127,15 +127,55 @@
     return YES;
 }
 
+- (void)applicationWillResignActive:(UIApplication *)application {
+    [[ReachabilityManager sharedManager] stopMonitoring];
+    // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
+    // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
+    // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+    // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    NSLog(@"Become Active");
+    // 返回后自动登录
+    // 条件为 已登录 或 不是第一次打开软件且开启了自动登录
+    if (([ActionPerformer checkLogin:NO] || [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) && [[DEFAULTS objectForKey:@"wakeLogin"] boolValue] == YES) {
+        [self loginAsync:YES];
+    }
+    [DEFAULTS setObject:@(YES) forKey:@"wakeLogin"];
+    [[ReachabilityManager sharedManager] startMonitoring];
+    [self maybeCheckUpdate];
+    
+    static dispatch_once_t addTapListenerToken;
+    dispatch_once(&addTapListenerToken, ^{
+        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        UITapGestureRecognizer *globalTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGlobalTap:)];
+        globalTapGesture.cancelsTouchesInView = NO;
+        [keyWindow addGestureRecognizer:globalTapGesture];
+    });
+    
+    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
 - (void)transferDefaults {
-    NSUserDefaults *appGroup = [[NSUserDefaults alloc] initWithSuiteName:APP_GROUP_IDENTIFIER];
+    NSUserDefaults *appGroup = GROUP_DEFAULTS;
     if ([[appGroup objectForKey:@"activated"] boolValue] == NO) {
-        NSUserDefaults *standard = [NSUserDefaults standardUserDefaults];
         for (NSString *key in @[@"URL", @"uid", @"pass", @"token", @"userInfo", @"iconOnlyInWifi", @"simpleView"]) {
-            id obj = [standard objectForKey:key];
+            id obj = [DEFAULTS objectForKey:key];
             if (obj) {
                 [appGroup setObject:obj forKey:key];
-                [standard removeObjectForKey:key];
+                [DEFAULTS removeObjectForKey:key];
             }
         }
         [appGroup setObject:@(YES) forKey:@"activated"];
@@ -241,44 +281,49 @@
 }
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
-    NSString *identifier = userActivity.userInfo[@"kCSSearchableItemActivityIdentifier"];
-    NSArray *info = [identifier componentsSeparatedByString:@"\n"];
-    NSDictionary *dict;
-    if (userActivity.webpageURL.absoluteString.length > 0) {
-        dict = [ContentViewController getLink:userActivity.webpageURL.absoluteString];
+    NSArray *collectionParts = @[];
+    if ([userActivity.activityType isEqualToString:CSSearchableItemActionType]) {
+        NSString *identifier = userActivity.userInfo[CSSearchableItemActivityIdentifier];
+        if (identifier.length > 0) {
+            collectionParts = [identifier componentsSeparatedByString:@"\n"];
+        }
+    }
+    NSDictionary *linkInfo;
+    if (userActivity.webpageURL && userActivity.webpageURL.absoluteString.length > 0) {
+        linkInfo = [ActionPerformer getLink:userActivity.webpageURL.absoluteString];
     }
     
-    BOOL continueFronCollectionSearch = ([info[0] isEqualToString:@"collection"]);
-    BOOL continueFromHandoff = (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]);
-    if (continueFronCollectionSearch || continueFromHandoff) {
+    BOOL continueFronCollectionSearch = (collectionParts.count > 0 && [collectionParts[0] isEqualToString:@"collection"]);
+    BOOL continueFromHandoffOrWebpage = (linkInfo.count > 0 && ![linkInfo[@"tid"] isEqualToString:@""]);
+    if (continueFronCollectionSearch || continueFromHandoffOrWebpage) {
         dispatch_global_default_async(^{
             NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"post"}];
             if (continueFronCollectionSearch) {
-                naviDict[@"bid"] = info[1];
-                naviDict[@"tid"] = info[2];
-                naviDict[@"naviTitle"] = info[3];
-            } else if (continueFromHandoff) {
-                naviDict[@"bid"] = dict[@"bid"];
-                naviDict[@"tid"] = dict[@"tid"];
-                naviDict[@"page"] = dict[@"p"];
-                naviDict[@"floor"] = dict[@"floor"];
+                naviDict[@"bid"] = collectionParts[1];
+                naviDict[@"tid"] = collectionParts[2];
+                naviDict[@"naviTitle"] = collectionParts[3];
+            } else if (continueFromHandoffOrWebpage) {
+                naviDict[@"bid"] = linkInfo[@"bid"];
+                naviDict[@"tid"] = linkInfo[@"tid"];
+                naviDict[@"page"] = linkInfo[@"p"];
+                naviDict[@"floor"] = linkInfo[@"floor"];
                 naviDict[@"naviTitle"] = userActivity.title;
             }
             [self _handleUrlRequestWithDictionary:naviDict];
         });
     }
     
-    dict = userActivity.userInfo;
-    if ([dict[@"type"] isEqualToString:@"compose"]) {
+    NSDictionary *activityInfo = userActivity.userInfo;
+    if ([activityInfo[@"type"] isEqualToString:@"compose"]) {
         dispatch_global_default_async(^{
-            if (userActivity.webpageURL.absoluteString.length == 0 && [dict[@"bid"] length] > 0) {
+            if (userActivity.webpageURL.absoluteString.length == 0 && [activityInfo[@"bid"] length] > 0) {
                 NSMutableDictionary *listDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"list"}];
-                listDict[@"bid"] = dict[@"bid"];
+                listDict[@"bid"] = activityInfo[@"bid"];
                 [self _handleUrlRequestWithDictionary:listDict];
             }
             
             NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
-            [naviDict addEntriesFromDictionary:dict];
+            [naviDict addEntriesFromDictionary:activityInfo];
             naviDict[@"naviTitle"] = userActivity.title;
             [self _handleUrlRequestWithDictionary:naviDict];
         });
@@ -303,6 +348,44 @@
 }
 
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    if (url.isFileURL) {
+        BOOL secured = [url startAccessingSecurityScopedResource];
+        if (!secured) {
+            NSLog(@"Handle file error - unable to start access");
+            return NO;
+        }
+        NSError *error = nil;
+        NSData *jsonData = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&error];
+        if (error) {
+            NSLog(@"Handle file error - %@", error);
+            [url stopAccessingSecurityScopedResource];
+            return NO;
+        }
+        
+        NSArray *importData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+        if (error) {
+            NSLog(@"Handle file error - wrong json format");
+            [url stopAccessingSecurityScopedResource];
+            return NO;
+        }
+        
+        BOOL hasValidCollection = NO;
+        if ([importData isKindOfClass:[NSArray class]]) {
+            for (id item in importData) {
+                if ([item isKindOfClass:[NSDictionary class]] && item[@"type"] && item[@"data"] && item[@"sig"] && [[ActionPerformer getSigForData:item[@"data"]] isEqualToString:item[@"sig"]]) {
+                    if (!hasValidCollection && [item[@"type"] isEqualToString:@"capubbs_collection"] && [item[@"data"] isKindOfClass:[NSArray class]]) {
+                        hasValidCollection = YES;
+                        [self _handleImportCollectionData:item[@"data"]];
+                    }
+                }
+            }
+        }
+        if (!hasValidCollection) {
+            [[AppDelegate getTopViewController] showAlertWithTitle:@"提示" message:@"您打开了一个JSON文件，但里面不包含有效的导入内容"];
+        }
+        return hasValidCollection;
+    }
+    
     if (![url.scheme isEqualToString:@"capubbs"]) {
         return NO;
     }
@@ -331,34 +414,93 @@
     return YES;
 }
 
+- (void)_handleImportCollectionData:(NSArray *)data {
+    [[AppDelegate getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现%ld项收藏", data.count] message:@"是否导入？\n导入时会自动排除重复项。" confirmTitle:@"导入" confirmAction:^(UIAlertAction *action) {
+        dispatch_global_default_async(^{
+            int successCount = 0;
+            int duplicateCount = 0;
+            int failCount = 0;
+            NSMutableArray *collections = [[DEFAULTS objectForKey:@"collection"] mutableCopy];
+            for (id newItem in data) {
+                if (![newItem isKindOfClass:[NSDictionary class]]) {
+                    failCount++;
+                    continue;
+                }
+                
+                NSString *bid = newItem[@"bid"];
+                NSString *tid = newItem[@"tid"];
+                NSString *collectionTime = newItem[@"collectionTime"];
+                NSString *title = newItem[@"title"];
+                if (!bid.length || !tid.length || !collectionTime.length || !title.length) {
+                    failCount++;
+                    continue;
+                }
+                
+                BOOL hasDuplicate = NO;
+                for (NSDictionary *myItem in collections) {
+                    if ([myItem[@"bid"] isEqualToString:bid] && [myItem[@"tid"] isEqualToString:tid]) {
+                        hasDuplicate = YES;
+                        break;
+                    }
+                }
+                if (hasDuplicate) {
+                    duplicateCount++;
+                } else {
+                    successCount++;
+                    [collections addObject:newItem];
+                }
+            }
+            if (successCount > 0) {
+                [DEFAULTS setObject:collections forKey:@"collection"];
+                [NOTIFICATION postNotificationName:@"collectionChanged" object:nil];
+            }
+            [[AppDelegate getTopViewController] showAlertWithTitle:@"导入结束" message:[NSString stringWithFormat:@"成功：%d\n重复：%d\n失败：%d", successCount, duplicateCount, failCount]];
+        });
+    }];
+}
+
 - (void)_handleUrlRequestWithDictionary:(NSDictionary *)dict {
     NSString *open = dict[@"open"];
-    if (open) {
-        UIViewController *view = [AppDelegate getTopViewController];
-        CustomNavigationController *navi;
-        if ([open isEqualToString:@"message"]) {
-            // 同步登陆
-            [self loginAsync:NO];
-            [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"wakeLogin"];
-            
+    if (open.length == 0) {
+        return;
+    }
+    UIViewController *view = [AppDelegate getTopViewController];
+    if ([open isEqualToString:@"message"]) {
+        // 同步登陆
+        [self loginAsync:NO];
+        [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
+        
+        dispatch_main_sync_safe(^{
             MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-            [navi setToolbarHidden:NO];
-        } else if ([open isEqualToString:@"hot"]) {
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFullScreen;
+            navi.toolbarHidden = NO;
+            [view presentViewControllerSafe:navi];
+        });
+    } else if ([open isEqualToString:@"hot"]) {
+        dispatch_main_sync_safe(^{
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = @"hot";
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-            [navi setToolbarHidden:NO];
-        } else if ([open isEqualToString:@"collection"]) {
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFullScreen;
+            navi.toolbarHidden = NO;
+            [view presentViewControllerSafe:navi];
+        });
+    } else if ([open isEqualToString:@"collection"]) {
+        dispatch_main_sync_safe(^{
             CollectionViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"collection"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-        } else if ([open isEqualToString:@"compose"]) {
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFullScreen;
+            [view presentViewControllerSafe:navi];
+        });
+    } else if ([open isEqualToString:@"compose"]) {
+        dispatch_main_sync_safe(^{
             ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
             
             if (dict[@"bid"] && dict[@"pid"]) {
@@ -370,20 +512,27 @@
                 dest.title = dict[@"naviTitle"];
             }
             
-            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
             navi.modalPresentationStyle = UIModalPresentationFormSheet;
-        } else if ([open isEqualToString:@"list"]) {
+            [view presentViewControllerSafe:navi];
+        });
+    } else if ([open isEqualToString:@"list"]) {
+        dispatch_main_sync_safe(^{
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = dict[@"bid"];
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-            [navi setToolbarHidden:NO];
-        } else if ([open isEqualToString:@"post"]) {
-            // 同步登陆
-            [self loginAsync:NO];
-            [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"wakeLogin"];
-            
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFullScreen;
+            navi.toolbarHidden = NO;
+            [view presentViewControllerSafe:navi];
+        });
+    } else if ([open isEqualToString:@"post"]) {
+        // 同步登陆
+        [self loginAsync:NO];
+        [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
+        
+        dispatch_main_sync_safe(^{
             ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
             
             dest.bid = dict[@"bid"];
@@ -393,7 +542,7 @@
             }
             if (dict[@"floor"]) {
                 dest.destinationFloor = dict[@"floor"];
-//                dest.openDestinationLzl = YES; // Do we need it? not tested yet
+                // dest.openDestinationLzl = YES; // Do we need it? not tested yet
             }
             if (dict[@"naviTitle"]) {
                 dest.title = dict[@"naviTitle"];
@@ -402,11 +551,12 @@
             }
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-        }
-        [view presentViewControllerSafe:navi];
-        NSLog(@"Open with %@", open);
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFullScreen;
+            [view presentViewControllerSafe:navi];
+        });
     }
+    NSLog(@"Open with %@", open);
 }
 
 - (void)back {
@@ -478,7 +628,7 @@
         // 清除旧缓存
         [DEFAULTS removeObjectForKey:@"iconCache"];
         [DEFAULTS removeObjectForKey:@"iconSize"];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"clearDirtyData3.2"];
+        [DEFAULTS setObject:@(YES) forKey:@"clearDirtyData3.2"];
     }
     
     if ([[DEFAULTS objectForKey:@"transportID3.3"] boolValue] == NO) { // 3.3之后版本ID储存采用一个Dictionary
@@ -495,55 +645,28 @@
             }
         }
         [DEFAULTS setObject:IDs forKey:@"ID"];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"transportID3.3"];
+        [DEFAULTS setObject:@(YES) forKey:@"transportID3.3"];
     }
     
     if ([[DEFAULTS objectForKey:@"clearIconCache3.5"] boolValue] == NO) { // 3.5之后链接全更改为https 缓存失效
         [MANAGER removeItemAtPath:CACHE_PATH error:nil];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"clearIconCache3.5"];
+        [DEFAULTS setObject:@(YES) forKey:@"clearIconCache3.5"];
     }
 }
 
-- (void)applicationWillResignActive:(UIApplication *)application {
-    [[ReachabilityManager sharedManager] stopMonitoring];
-    // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-    // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
-}
-
-- (void)applicationDidEnterBackground:(UIApplication *)application {
-    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-    // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-}
-
-- (void)applicationWillEnterForeground:(UIApplication *)application {
-    // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-    NSLog(@"Become Active");
-    // 返回后自动登录
-    // 条件为 已登录 或 不是第一次打开软件且开启了自动登录
-    if (([ActionPerformer checkLogin:NO] || [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) && [[DEFAULTS objectForKey:@"wakeLogin"] boolValue] == YES) {
-        [self loginAsync:YES];
-    }
-    [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"wakeLogin"];
-    [[ReachabilityManager sharedManager] startMonitoring];
-    [self maybeCheckUpdate];
-    
-    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+- (void)handleGlobalTap:(UITapGestureRecognizer *)gesture {
+    [NOTIFICATION postNotificationName:@"globalTap" object:nil];
 }
 
 - (void)loginAsync:(BOOL)async {
     NSString *uid = UID;
     if (uid.length > 0) {
-        [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
         NSDictionary *dict = @{
             @"username" : uid,
             @"password" : [ActionPerformer md5:PASS],
         };
         dispatch_semaphore_t signal = dispatch_semaphore_create(0);
         [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
-            [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
             if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
                 [[AppDelegate getTopViewController] showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
@@ -635,10 +758,6 @@
         }
     }];
     [task resume];
-}
-
-- (void)applicationWillTerminate:(UIApplication *)application {
-    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
 @end

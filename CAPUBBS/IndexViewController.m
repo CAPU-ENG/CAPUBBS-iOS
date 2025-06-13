@@ -45,11 +45,11 @@
     [super viewDidAppear:animated];
 //    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
 //        [self showAlertWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" cancelTitle:@"我知道了"];
-//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
+//        [DEFAULTS setObject:@(YES) forKey:@"FeatureHot2.0"];
 //    }
 //    if (![[DEFAULTS objectForKey:@"FeaturePersonalCenter3.0"] boolValue]) {
 //        [self showAlertWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" cancelTitle:@"我知道了"];
-//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePersonalCenter3.0"];
+//        [DEFAULTS setObject:@(YES) forKey:@"FeaturePersonalCenter3.0"];
 //    }
 }
 
@@ -190,7 +190,7 @@
         return;
     }
     
-    NSDictionary *dict = [ContentViewController getLink:text];
+    NSDictionary *dict = [ActionPerformer getLink:text];
     if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
         ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
         next.bid = dict[@"bid"];
@@ -207,8 +207,8 @@
         && ![text containsString:@"不"]
         ) {
             [hud showAndHideWithSuccessMessage:@"~\(≧▽≦)/~" delay:1]; // (>^ω^<)
-            [DEFAULTS setObject:[NSNumber numberWithInt:MAX_ID_NUM] forKey:@"IDNum"];
-            [DEFAULTS setObject:[NSNumber numberWithInt:MAX_HOT_NUM] forKey:@"hotNum"];
+            [DEFAULTS setObject:@(MAX_ID_NUM) forKey:@"IDNum"];
+            [DEFAULTS setObject:@(MAX_HOT_NUM) forKey:@"hotNum"];
         } else {
             if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"] || [text rangeOfString:@"[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" options:NSRegularExpressionSearch].location != NSNotFound)) {
                 [DEFAULTS removeObjectForKey:@"IDNum"];

@@ -5,6 +5,9 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>webcredentials:chexie.net</string>
+		<string>applinks:chexie.net</string>
+		<string>webcredentials:www.chexie.net</string>
+		<string>applinks:www.chexie.net</string>
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>

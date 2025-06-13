@@ -12,7 +12,6 @@
 @interface CollectionViewCell : UITableViewCell {
 }
 
-@property NSDictionary *infoDict;
 @property (weak, nonatomic) IBOutlet AsyncImageView *icon;
 @property (weak, nonatomic) IBOutlet UILabel *labelTitle;
 @property (weak, nonatomic) IBOutlet UILabel *labelSubtitle;

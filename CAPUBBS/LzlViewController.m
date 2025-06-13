@@ -52,7 +52,7 @@
     [super viewDidAppear:animated];
     if (![[DEFAULTS objectForKey:@"Featurelzl1.3"] boolValue]) {
         [self showAlertWithTitle:@"Tips" message:@"长按某层楼中楼可以快捷回复" cancelTitle:@"我知道了"];
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"Featurelzl1.3"];
+        [DEFAULTS setObject:@(YES) forKey:@"Featurelzl1.3"];
     }
     activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".lzl"]];
     activity.webpageURL = self.URL;
@@ -74,7 +74,7 @@
     if (self.textPost.text.length == 0) {
         [self dismissViewControllerAnimated:YES completion:nil];
     } else {
-        [self showAlertWithTitle:@"确定退出" message:@"您输入了尚未发表的楼中楼内容，确定继续退出？" confirmTitle:@"退出" confirmAction:^(UIAlertAction *action) {
+        [self showAlertWithTitle:@"确定退出" message:@"您有尚未发表的楼中楼内容，确定继续退出？" confirmTitle:@"退出" confirmAction:^(UIAlertAction *action) {
             [self dismissViewControllerAnimated:YES completion:nil];
         } cancelTitle:@"返回"];
     }
@@ -199,7 +199,7 @@
         if (range.location != NSNotFound) {
             lzlUrl = [lzlText substringWithRange:range];
             [action addAction:[UIAlertAction actionWithTitle:@"打开连接" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                NSDictionary *dict = [ContentViewController getLink:lzlUrl];
+                NSDictionary *dict = [ActionPerformer getLink:lzlUrl];
                 if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
                     ContentViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
                     dest.bid = dict[@"bid"];
@@ -273,8 +273,6 @@
                 }
             }];
         }];
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
     }
 }
 
@@ -337,6 +335,10 @@
         [self.labelByte setTextColor:[UIColor orangeColor]];
     } else {
         [self.labelByte setTextColor:[UIColor redColor]];
+    }
+    // 如果有输入文字，不允许点击外部关闭
+    if (@available(iOS 13.0, *)) {
+        [self setModalInPresentation:length > 0];
     }
 }
 

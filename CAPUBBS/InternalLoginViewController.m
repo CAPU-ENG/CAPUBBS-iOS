@@ -111,7 +111,7 @@
             });
             [ActionPerformer checkPasswordLength];
             shouldPop = YES;
-            [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:[NSNumber numberWithBool:YES] afterDelay:0.5];
+            [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:@(YES) afterDelay:0.5];
         } else {
             [self showAlertWithTitle:@"登录失败" message:@"发生未知错误！"];
         }

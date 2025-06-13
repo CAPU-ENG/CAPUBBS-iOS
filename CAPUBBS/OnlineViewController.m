@@ -127,7 +127,7 @@
     self.navigationItem.rightBarButtonItem.enabled = YES;
     if (HTMLString && [HTMLString containsString:@"签到统计"]) {
         [hud hideWithSuccessMessage:@"加载成功"];
-        HTMLString = [[ContentViewController removeHTML:HTMLString] substringFromIndex:@"签到统计\n".length];
+        HTMLString = [[ActionPerformer removeHTML:HTMLString] substringFromIndex:@"签到统计\n".length];
         HTMLString = [HTMLString stringByReplacingOccurrencesOfString:@"\n#" withString:@"\n"];
         [self showAlertWithTitle:@"签到统计" message:HTMLString];
     } else {
