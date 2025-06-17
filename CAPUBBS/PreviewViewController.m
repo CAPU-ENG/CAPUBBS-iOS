@@ -20,7 +20,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(done:)];
-    [self.webViewContainer initiateWebViewForToken:nil];
+    [self.webViewContainer initiateWebViewWithToken:NO];
     [self.webViewContainer.layer setBorderColor:GREEN_LIGHT.CGColor];
     [self.webViewContainer.layer setBorderWidth:1.0];
     [self.webViewContainer.layer setMasksToBounds:YES];

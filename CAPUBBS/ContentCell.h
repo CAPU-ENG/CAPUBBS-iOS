@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 #import "CustomWebViewContainer.h"
 
 @interface ContentCell : UITableViewCell <UITableViewDataSource>
@@ -18,7 +18,7 @@
 @property (weak, nonatomic) IBOutlet CustomWebViewContainer *webViewContainer;
 @property (weak, nonatomic) IBOutlet UIButton *buttonAction;
 @property (weak, nonatomic) IBOutlet UIButton *buttonLzl;
-@property (weak, nonatomic) IBOutlet AsyncImageView *icon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *icon;
 @property (weak, nonatomic) IBOutlet UIButton *buttonIcon;
 @property (weak, nonatomic) IBOutlet UIView *topView;
 @property (weak, nonatomic) IBOutlet UITableView *lzlTableView;
@@ -31,7 +31,7 @@
 
 @interface ContentLzlCell : UITableViewCell
 
-@property (weak, nonatomic) IBOutlet AsyncImageView *lzlIcon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *lzlIcon;
 @property (weak, nonatomic) IBOutlet UILabel *lzlAuthor;
 @property (weak, nonatomic) IBOutlet UILabel *lzlTime;
 @property (weak, nonatomic) IBOutlet UILabel *lzlText;

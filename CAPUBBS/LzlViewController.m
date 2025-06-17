@@ -192,15 +192,15 @@
             [hud showAndHideWithSuccessMessage:@"复制完成"];
         }]];
         [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-        lzlText = [data[indexPath.row] objectForKey:@"text"];
-        lzlAuthor = [data[indexPath.row] objectForKey:@"author"];
+        lzlText = data[indexPath.row][@"text"];
+        lzlAuthor = data[indexPath.row][@"author"];
         NSString *exp = @"[a-zA-z]+://[^\\s]*"; // 提取网址链接
         NSRange range = [lzlText rangeOfString:exp options:NSRegularExpressionSearch];
         if (range.location != NSNotFound) {
             lzlUrl = [lzlText substringWithRange:range];
-            [action addAction:[UIAlertAction actionWithTitle:@"打开连接" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [action addAction:[UIAlertAction actionWithTitle:@"打开链接" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                 NSDictionary *dict = [ActionPerformer getLink:lzlUrl];
-                if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
+                if (dict.count > 0 && [dict[@"tid"] length] > 0) {
                     ContentViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
                     dest.bid = dict[@"bid"];
                     dest.tid = dict[@"tid"];
@@ -233,7 +233,7 @@
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     // Return NO if you do not want the specified item to be editable.
     if (indexPath.section == 0) {
-        if ([ActionPerformer checkRight] > 1 || [[data[indexPath.row] objectForKey:@"author"] isEqualToString:UID]) {
+        if ([ActionPerformer checkRight] > 1 || [data[indexPath.row][@"author"] isEqualToString:UID]) {
             return YES;
         }
     }
@@ -260,7 +260,7 @@
                     [hud hideWithFailureMessage:@"删除失败"];
                     return;
                 }
-                if ([[result.firstObject objectForKey:@"code"] integerValue]==0) {
+                if ([result[0][@"code"] integerValue]==0) {
                     [hud hideWithSuccessMessage:@"删除成功"];
                     NSMutableArray *temp = [NSMutableArray arrayWithArray:data];
                     [temp removeObjectAtIndex:indexPath.row];
@@ -269,7 +269,7 @@
                     [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
                 } else {
                     [hud hideWithFailureMessage:@"删除失败"];
-                    [self showAlertWithTitle:@"删除失败" message:[result.firstObject objectForKey:@"msg"]];
+                    [self showAlertWithTitle:@"删除失败" message:result[0][@"msg"]];
                 }
             }];
         }];
@@ -302,14 +302,14 @@
             [hud hideWithFailureMessage:@"发布失败"];
             return;
         }
-            if ([[[result firstObject] objectForKey:@"code"] integerValue]==0) {
+            if ([result[0][@"code"] integerValue]==0) {
                 [hud hideWithSuccessMessage:@"发布成功"];
                 [SKStoreReviewController requestReview];
                 self.textPost.text = @"";
                 [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
             } else {
                 [hud hideWithFailureMessage:@"发布失败"];
-                [self showAlertWithTitle:@"发布失败" message:[[result firstObject] objectForKey:@"msg"]];
+                [self showAlertWithTitle:@"发布失败" message:result[0][@"msg"]];
             }
     }];
 }
@@ -352,7 +352,7 @@
         if (indexPath == nil) {
             return;
         }
-        lzlAuthor = [data[indexPath.row] objectForKey:@"author"];
+        lzlAuthor = data[indexPath.row][@"author"];
         [self directPost:nil];
     }
 }
@@ -367,7 +367,7 @@
     if ([segue.identifier isEqualToString:@"userInfo"]) {
         UserViewController *dest = [segue destinationViewController];
         UIButton *button = sender;
-        dest.ID = [data[button.tag] objectForKey:@"author"];
+        dest.ID = data[button.tag][@"author"];
         dest.navigationItem.leftBarButtonItems = nil;
         LzlCell *cell = (LzlCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForItem:button.tag inSection:0]];
         if (![cell.icon.image isEqual:PLACEHOLDER]) {

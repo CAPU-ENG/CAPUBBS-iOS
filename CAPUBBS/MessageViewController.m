@@ -100,7 +100,7 @@
             
             // NSLog(@"%@", result);
             data = result;
-            if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
+            if ([data[0][@"code"] isEqualToString:@"1"]) {
                 [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
             }
             [self setMessageNum];
@@ -193,19 +193,19 @@
 }
 
 - (void)setMessageNum {
-    if ([[data[0] objectForKey:@"sysmsg"] integerValue] > 0) {
-        [self.segmentType setTitle:[NSString stringWithFormat:@"系统消息(%@)", [data[0] objectForKey:@"sysmsg"]] forSegmentAtIndex:0];
+    if (data.count > 0 && [data[0][@"sysmsg"] integerValue] > 0) {
+        [self.segmentType setTitle:[NSString stringWithFormat:@"系统消息(%@)", data[0][@"sysmsg"]] forSegmentAtIndex:0];
     } else {
         [self.segmentType setTitle:@"系统消息" forSegmentAtIndex:0];
     }
-    if ([[data[0] objectForKey:@"prvmsg"] integerValue] > 0) {
-        [self.segmentType setTitle:[NSString stringWithFormat:@"私信消息(%@)", [data[0] objectForKey:@"prvmsg"]] forSegmentAtIndex:1];
+    if (data.count > 0 && [data[0][@"prvmsg"] integerValue] > 0) {
+        [self.segmentType setTitle:[NSString stringWithFormat:@"私信消息(%@)", data[0][@"prvmsg"]] forSegmentAtIndex:1];
     } else {
         [self.segmentType setTitle:@"私信消息" forSegmentAtIndex:1];
     }
-    if (![USERINFO isEqual:@""]) {
+    if (data.count > 0 && ![USERINFO isEqual:@""]) {
         NSMutableDictionary *dict = [USERINFO mutableCopy];
-        NSString *msgNum = [NSString stringWithFormat:@"%d", [[data[0] objectForKey:@"sysmsg"] intValue] + [[data[0] objectForKey:@"prvmsg"] intValue]];
+        NSString *msgNum = [NSString stringWithFormat:@"%d", [data[0][@"sysmsg"] intValue] + [data[0][@"prvmsg"] intValue]];
         [dict setObject:msgNum forKey:@"newmsg"];
         [GROUP_DEFAULTS setObject:dict forKey:@"userInfo"];
     }
@@ -282,7 +282,7 @@
     if (self.segmentType.selectedSegmentIndex == 0) {
         int textLenth = 0;
         NSString *titleText = dict[@"title"];
-        titleText = [ActionPerformer removeRe:titleText];
+        titleText = [ActionPerformer restoreTitle:titleText];
         NSString *type = dict[@"type"];
         if ([type isEqualToString:@"reply"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"回复了您的帖子：%@", titleText]];
@@ -352,10 +352,10 @@
             dest.ID = dict[@"username"];
             NSMutableArray *tempData = [data mutableCopy];
             if ([tempData[indexPath.row + 1][@"number"] intValue] > 0) {
-                NSString *primsg = tempData[0][@"prvmsg"];
+                NSString *prvmsg = tempData[0][@"prvmsg"];
                 NSString *number = tempData[indexPath.row + 1][@"number"];
-                primsg = [NSString stringWithFormat:@"%d", [primsg intValue] - [number intValue]];
-                [tempData[0] setObject:primsg forKey:@"prvmsg"];
+                prvmsg = [NSString stringWithFormat:@"%d", [prvmsg intValue] - [number intValue]];
+                [tempData[0] setObject:prvmsg forKey:@"prvmsg"];
                 [tempData[indexPath.row + 1] setObject:@"0" forKey:@"number"];
                 data = [NSArray arrayWithArray:tempData];
                 [self.tableView reloadData];

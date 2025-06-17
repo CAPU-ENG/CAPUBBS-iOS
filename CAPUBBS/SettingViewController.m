@@ -76,13 +76,13 @@
     dispatch_main_async_safe((^{
         if ([ActionPerformer checkLogin:NO] && ![USERINFO isEqual:@""]) {
             NSDictionary *info = USERINFO;
-            if ([[info objectForKey:@"sex"] isEqualToString:@"男"]) {
-                self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚹"];
-            } else if ([[info objectForKey:@"sex"] isEqualToString:@"女"]) {
-                self.textUid.text = [info[@"username"] stringByAppendingString:@" 🚺"];
+            if ([info[@"sex"] isEqualToString:@"男"]) {
+                self.textUid.text = [info[@"username"] stringByAppendingString:@" ♂"];
+            } else if ([info[@"sex"] isEqualToString:@"女"]) {
+                self.textUid.text = [info[@"username"] stringByAppendingString:@" ♀"];
             }
-            [self.iconUser setUrl:[info objectForKey:@"icon"]];
-            self.textUidInfo.text = [NSString stringWithFormat:@"星星：%@ 权限：%@", [info objectForKey:@"star"], [info objectForKey:@"rights"]];
+            [self.iconUser setUrl:info[@"icon"]];
+            self.textUidInfo.text = [NSString stringWithFormat:@"星星：%@ 权限：%@", info[@"star"], info[@"rights"]];
         }
     }));
 }
@@ -90,20 +90,20 @@
 - (void)cacheChanged:(NSNotification *)noti {
     dispatch_main_async_safe((^{
         if (noti == nil || [noti.name hasPrefix:@"imageGet"]) {
-            __block long long cacheSize = 0;
-            NSString *dir = NSTemporaryDirectory(); // tmp目录
-            cacheSize += [SettingViewController folderSizeAtPath:dir];
-            dir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]; // Caches目录
-            cacheSize += [SettingViewController folderSizeAtPath:dir];
-            self.appCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)cacheSize / (1024 * 1024)];
-            
-            self.iconCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)[SettingViewController folderSizeAtPath:CACHE_PATH] / (1024 * 1024)];
+            unsigned long long cacheSize = 0;
+            // tmp目录
+            cacheSize += [SettingViewController folderSizeAtPath:NSTemporaryDirectory()];
+            // Caches目录
+            cacheSize += [SettingViewController folderSizeAtPath:CACHE_DIRECTORY];
+            unsigned long long iconCacheSize = [SettingViewController folderSizeAtPath:IMAGE_CACHE_PATH];
+            self.appCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)(cacheSize - iconCacheSize) / (1024 * 1024)];
+            self.iconCacheSize.text = [NSString stringWithFormat:@"%.2fMB", (float)iconCacheSize / (1024 * 1024)];
         }
     }));
 }
 
 //单个文件的大小
-+ (long long) fileSizeAtPath:(NSString *)filePath {
++ (unsigned long long)fileSizeAtPath:(NSString *)filePath {
     if ([MANAGER fileExistsAtPath:filePath]) {
         return [[MANAGER attributesOfItemAtPath:filePath error:nil] fileSize];
     }
@@ -111,12 +111,12 @@
 }
 
 //遍历文件夹获得文件夹大小
-+ (long long) folderSizeAtPath:(NSString *)folderPath {
++ (unsigned long long)folderSizeAtPath:(NSString *)folderPath {
     if (![MANAGER fileExistsAtPath:folderPath]) {
         return 0;
     }
     NSArray *chileFiles = [MANAGER subpathsAtPath:folderPath];
-    long long folderSize = 0;
+    unsigned long long folderSize = 0;
     for (NSString *fileName in chileFiles) {
         NSString* fileAbsolutePath = [folderPath stringByAppendingPathComponent:fileName];
         folderSize += [self fileSizeAtPath:fileAbsolutePath];
@@ -128,31 +128,20 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 1) {
         if (indexPath.row == 0) {
-            [self showAlertWithTitle:@"确认清除软件缓存？" message:@"该操作着重清除网络缓存\n不会清除头像缓存\n部分系统关键缓存无法彻底清除" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
+            [self showAlertWithTitle:@"确认清除软件缓存？" message:@"这将着重清除网络缓存\n不会清除头像缓存\n少数系统关键缓存无法彻底清除" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
                 [hud showWithProgressMessage:@"清除中"];
                 // Don't delete cache / tmp folder directly, otherwise will throw many db error
                 // NSURLCache
                 [[NSURLCache sharedURLCache] removeAllCachedResponses];
                 // WKWebView (WebKit) cache
-                NSSet *types = [WKWebsiteDataStore allWebsiteDataTypes];
-                NSDate *since = [NSDate dateWithTimeIntervalSince1970:0];
-                NSArray<WKWebsiteDataStore *> *allDataSources = [CustomWebViewContainer getAllDataSources];
-                dispatch_group_t group = dispatch_group_create();
-                for (WKWebsiteDataStore *dataStore in allDataSources) {
-                    dispatch_group_enter(group);
-                    [dataStore removeDataOfTypes:types modifiedSince:since completionHandler:^{
-                        dispatch_group_leave(group);
-                    }];
-                }
-                // wait for all removal to complete
-                dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+                [CustomWebViewContainer clearAllDataStores:^{
                     [hud hideWithSuccessMessage:@"清除完成"];
                     [self cacheChanged:nil];
-                });
+                }];
             }];
         } else if (indexPath.row == 1) {
             [self showAlertWithTitle:@"确认清除头像缓存？" message:@"建议仅在头像出错时使用" confirmTitle:@"确认" confirmAction:^(UIAlertAction *action) {
-                [MANAGER removeItemAtPath:CACHE_PATH error:nil];
+                [MANAGER removeItemAtPath:IMAGE_CACHE_PATH error:nil];
                 [hud showAndHideWithSuccessMessage:@"清除完成"];
                 [self cacheChanged:nil];
             }];

@@ -93,8 +93,8 @@
         self.isEdit = NO;
         UIAlertController *action = [UIAlertController alertControllerWithTitle:@"请选择发帖的版块" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
         for (int i = 0; i < 9; i++) {
-            [action addAction:[UIAlertAction actionWithTitle:[ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:i]] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                self.bid = [NUMBERS objectAtIndex:i];
+            [action addAction:[UIAlertAction actionWithTitle:[ActionPerformer getBoardTitle:NUMBERS[i]] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                self.bid = NUMBERS[i];
                 self.title = [NSString stringWithFormat:@"%@ @ %@", self.title, [ActionPerformer getBoardTitle:self.bid]];
                 [self.textTitle becomeFirstResponder];
                 [self updateActivity];
@@ -109,7 +109,7 @@
     }
     
     if (self.showEditOthersAlert) {
-        [self showAlertWithTitle:@"提醒" message:@"您在编辑他人的帖子。如果成功发布，作者将被替换成您，签名档也将被替换。请确保您有权限操作！" cancelTitle:@"我知道了"];
+        [self showAlertWithTitle:@"您在编辑他人的帖子" message:@"如果成功发布，作者将被替换成您，签名档也将被替换。请确保您有权限操作！" cancelTitle:@"我知道了"];
         self.showEditOthersAlert = NO;
     }
     
@@ -216,7 +216,7 @@
 }
 
 - (void)insertContent:(NSNotification *)notification {
-    [self.textBody insertText:[notification.userInfo objectForKey:@"HTML"]];
+    [self.textBody insertText:notification.userInfo[@"HTML"]];
     [self.textBody becomeFirstResponder];
 }
 
@@ -266,7 +266,7 @@
             [hud hideWithFailureMessage:@"发表失败"];
             return;
         }
-        NSInteger back = [[[result firstObject] objectForKey:@"code"] integerValue];
+        NSInteger back = [result[0][@"code"] integerValue];
         if (back == 0) {
             [hud hideWithSuccessMessage:@"发表成功"];
             [SKStoreReviewController requestReview];
@@ -423,7 +423,7 @@
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     [picker dismissViewControllerAnimated:YES completion:nil];
-    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    UIImage *image = info[UIImagePickerControllerOriginalImage];
     [self.textTitle resignFirstResponder];
     [self.textBody resignFirstResponder];
     [self uploadOneImage:image withCallback:^(NSString *url) {
@@ -574,7 +574,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
                 [hud hideWithFailureMessage:@"上传失败"];
                 callback(nil);
             } else {
-                if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
+                if ([result[0][@"code"] isEqualToString:@"-1"]) {
                     [hud hideWithSuccessMessage:@"上传完成"];
                     callback([result firstObject][@"imgurl"]);
                 } else {

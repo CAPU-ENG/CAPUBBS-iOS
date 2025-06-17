@@ -45,7 +45,7 @@
         return;
     }
     if (!backgroundView) {
-        backgroundView = [[AsyncImageView alloc] init];
+        backgroundView = [[AnimatedImageView alloc] init];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
         self.tableView.backgroundView = backgroundView;
     }
@@ -67,8 +67,8 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
     if (self.data.count > 0) {
-        cell.textLabel.text = [ActionPerformer removeRe:[[self.data objectAtIndex:indexPath.row] objectForKey:@"title"]];
-        cell.detailTextLabel.text = [[self.data objectAtIndex:indexPath.row] objectForKey:@"time"];
+        cell.textLabel.text = [ActionPerformer restoreTitle:self.data[indexPath.row][@"title"]];
+        cell.detailTextLabel.text = self.data[indexPath.row][@"time"];
     } else {
         cell.textLabel.text = [@"暂无" stringByAppendingString:self.title];
         cell.detailTextLabel.text = @"";
@@ -97,7 +97,7 @@
     // Pass the selected object to the new view controller.
     if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        NSDictionary *dict = [self.data objectAtIndex:[self.tableView indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *dict = self.data[[self.tableView indexPathForCell:(UITableViewCell *)sender].row];
         dest.bid = dict[@"bid"];
         dest.tid = dict[@"tid"];
         dest.floor = dict[@"pid"];

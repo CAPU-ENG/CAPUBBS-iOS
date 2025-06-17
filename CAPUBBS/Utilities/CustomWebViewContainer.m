@@ -7,8 +7,11 @@
 //
 
 #import "CustomWebViewContainer.h"
-#import <CommonCrypto/CommonCrypto.h>
+//#import <CommonCrypto/CommonCrypto.h>
 #import "AppDelegate.h"
+
+// Just a random UUID
+#define UUID @"1ff24b67-2a92-41d9-9139-18be48987f3a"
 
 @interface WKWebView (Extension)
 
@@ -29,93 +32,120 @@
 
 @implementation CustomWebViewContainer
 
-static NSMutableDictionary *sharedTokenPools = nil;
+static NSMutableDictionary *sharedProcessPools = nil;
 static dispatch_once_t onceSharedProcessPool;
 static NSMutableDictionary *sharedDataSources = nil;
 static dispatch_once_t onceSharedDataSource;
 
-+ (NSUUID *)uuidFromString:(NSString *)str {
-    // Generate SHA256 hash
-    const char *cStr = [str UTF8String];
-    unsigned char result[CC_SHA256_DIGEST_LENGTH];
-    CC_SHA256(cStr, (CC_LONG)strlen(cStr), result);
+//+ (NSUUID *)uuidFromString:(NSString *)str {
+//    // Generate SHA256 hash
+//    const char *cStr = [str UTF8String];
+//    unsigned char result[CC_SHA256_DIGEST_LENGTH];
+//    CC_SHA256(cStr, (CC_LONG)strlen(cStr), result);
+//
+//    // Use first 16 bytes as UUID
+//    uuid_t uuidBytes;
+//    memcpy(uuidBytes, result, 16);
+//
+//    // Set variant and version bits to make a valid UUID (version 4)
+//    uuidBytes[6] = (uuidBytes[6] & 0x0F) | 0x40; // Version 4
+//    uuidBytes[8] = (uuidBytes[8] & 0x3F) | 0x80; // Variant 1
+//
+//    return [[NSUUID alloc] initWithUUIDBytes:uuidBytes];
+//}
 
-    // Use first 16 bytes as UUID
-    uuid_t uuidBytes;
-    memcpy(uuidBytes, result, 16);
-
-    // Set variant and version bits to make a valid UUID (version 4)
-    uuidBytes[6] = (uuidBytes[6] & 0x0F) | 0x40; // Version 4
-    uuidBytes[8] = (uuidBytes[8] & 0x3F) | 0x80; // Variant 1
-
-    return [[NSUUID alloc] initWithUUIDBytes:uuidBytes];
++ (void)clearAllDataStores:(void (^)(void))completionHandler {
+    dispatch_main_sync_safe(^{
+        NSMutableArray<WKWebsiteDataStore *> *dataStores = [NSMutableArray arrayWithObject:[WKWebsiteDataStore defaultDataStore]];
+        dispatch_group_t group = dispatch_group_create();
+        if (@available(iOS 17.0, *)) {
+            dispatch_group_enter(group);
+            [WKWebsiteDataStore fetchAllDataStoreIdentifiers:^(NSArray<NSUUID *> *uuids) {
+                for (NSUUID *uuid in uuids) {
+                    dispatch_group_enter(group);
+                    [WKWebsiteDataStore removeDataStoreForIdentifier:uuid completionHandler:^(NSError *error) {
+                        if (error) {
+                            NSLog(@"Error removing data store for UUID: %@. Error: %@", uuid, error);
+                        }
+                        dispatch_group_leave(group);
+                    }];
+                }
+                dispatch_group_leave(group);
+            }];
+        } else {
+            [dataStores addObject:[WKWebsiteDataStore nonPersistentDataStore]];
+        }
+        
+        NSSet *types = [WKWebsiteDataStore allWebsiteDataTypes];
+        NSDate *since = [NSDate dateWithTimeIntervalSince1970:0];
+        for (WKWebsiteDataStore *dataStore in dataStores) {
+            dispatch_group_enter(group);
+            [dataStore removeDataOfTypes:types modifiedSince:since completionHandler:^{
+                dispatch_group_leave(group);
+            }];
+        }
+        // wait for all removal to complete
+        dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+            if (completionHandler) {
+                completionHandler();
+            }
+        });
+    });
 }
 
-+ (WKProcessPool *)sharedProcessPoolForToken:(NSString *)token {
++ (WKProcessPool *)sharedProcessPoolWithToken:(BOOL)hasToken {
     dispatch_once(&onceSharedProcessPool, ^{
-        sharedTokenPools = [[NSMutableDictionary alloc] init];
+        sharedProcessPools = [[NSMutableDictionary alloc] init];
     });
-    @synchronized (sharedTokenPools) {
-        if (!token) {
-            token = @"";
+    @synchronized (sharedProcessPools) {
+        NSNumber *key = @(hasToken);
+        if (!sharedProcessPools[key]) {
+            sharedProcessPools[key] = [[WKProcessPool alloc] init];
         }
-        if (!sharedTokenPools[token]) {
-            sharedTokenPools[token] = [[WKProcessPool alloc] init];
-        }
-        return sharedTokenPools[token];
+        return sharedProcessPools[key];
     }
 }
 
-+ (WKWebsiteDataStore *)sharedDataSourceForToken:(NSString *)token {
++ (WKWebsiteDataStore *)sharedDataSourceWithToken:(BOOL)hasToken {
     dispatch_once(&onceSharedDataSource, ^{
         sharedDataSources = [[NSMutableDictionary alloc] init];
     });
     @synchronized (sharedDataSources) {
-        if (!token) {
-            token = @"";
-        }
-        if (!sharedDataSources[token]) {
-            if (token.length == 0) {
-                sharedDataSources[token] = [WKWebsiteDataStore defaultDataStore];
+        NSNumber *key = @(hasToken);
+        if (!sharedDataSources[key]) {
+            if (!hasToken) {
+                sharedDataSources[key] = [WKWebsiteDataStore defaultDataStore];
             } else {
                 if (@available(iOS 17.0, *)) {
-                    sharedDataSources[token] = [WKWebsiteDataStore dataStoreForIdentifier:[CustomWebViewContainer uuidFromString:token]];
+                    sharedDataSources[key] = [WKWebsiteDataStore dataStoreForIdentifier:[[NSUUID alloc] initWithUUIDString:UUID]];
                 } else {
-                    sharedDataSources[token] = [WKWebsiteDataStore nonPersistentDataStore];
-                }
-                NSURL *url = [NSURL URLWithString:CHEXIE];
-                if (!url || !url.host) {
-                    NSString *fixedString = [@"https://" stringByAppendingString:CHEXIE];
-                    url = [NSURL URLWithString:fixedString];
-                }
-                if (url && url.host) {
-                    NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:@{
-                        NSHTTPCookieDomain: url.host,
-                        NSHTTPCookiePath: @"/",
-                        NSHTTPCookieName: @"token",
-                        NSHTTPCookieValue: token
-                    }];
-                    WKWebsiteDataStore *dataStore = sharedDataSources[token];
-                    [dataStore.httpCookieStore setCookie:cookie completionHandler:nil];
+                    sharedDataSources[key] = [WKWebsiteDataStore nonPersistentDataStore];
                 }
             }
         }
-        return sharedDataSources[token];
+        return sharedDataSources[key];
     }
 }
 
-+ (NSArray<WKWebsiteDataStore *> *)getAllDataSources {
-    dispatch_once(&onceSharedDataSource, ^{
-        sharedDataSources = [[NSMutableDictionary alloc] init];
-    });
-    @synchronized (sharedDataSources) {
-        return sharedDataSources.allValues;
+- (void)initiateWebViewWithToken:(BOOL)hasToken {
+    WKProcessPool *processPool = [CustomWebViewContainer sharedProcessPoolWithToken:hasToken];
+    WKWebsiteDataStore *dataStore = [CustomWebViewContainer sharedDataSourceWithToken:hasToken];
+    if (hasToken) {
+        NSURL *url = [NSURL URLWithString:CHEXIE];
+        if (!url || !url.host) {
+            NSString *fixedString = [@"https://" stringByAppendingString:CHEXIE];
+            url = [NSURL URLWithString:fixedString];
+        }
+        if (url && url.host) {
+            NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:@{
+                NSHTTPCookieDomain: url.host,
+                NSHTTPCookiePath: @"/",
+                NSHTTPCookieName: @"token",
+                NSHTTPCookieValue: TOKEN
+            }];
+            [dataStore.httpCookieStore setCookie:cookie completionHandler:nil];
+        }
     }
-}
-
-- (void)initiateWebViewForToken:(NSString *)token {
-    WKProcessPool *processPool = [CustomWebViewContainer sharedProcessPoolForToken:token];
-    WKWebsiteDataStore *dataStore = [CustomWebViewContainer sharedDataSourceForToken:token];
     
     if (_webView) {
         WKWebViewConfiguration *config = _webView.configuration;

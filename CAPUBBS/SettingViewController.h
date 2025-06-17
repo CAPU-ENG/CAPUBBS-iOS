@@ -8,13 +8,13 @@
 
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface SettingViewController : CustomTableViewController {
     MBProgressHUD *hud;
 }
 
-@property (weak, nonatomic) IBOutlet AsyncImageView *iconUser;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *iconUser;
 @property (weak, nonatomic) IBOutlet UILabel *textUid;
 @property (weak, nonatomic) IBOutlet UILabel *textUidInfo;
 @property (weak, nonatomic) IBOutlet UITableViewCell *cellUser;
@@ -32,7 +32,6 @@
 @property (weak, nonatomic) IBOutlet UISegmentedControl *segmentDirection;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *segmentEditTool;
 
-+ (long long) fileSizeAtPath:(NSString *)filePath;
-+ (long long) folderSizeAtPath:(NSString *)folderPath;
++ (unsigned long long)folderSizeAtPath:(NSString *)folderPath;
 
 @end

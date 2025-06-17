@@ -47,7 +47,7 @@
         return;
     }
     if (!backgroundView) {
-        backgroundView = [[AsyncImageView alloc] init];
+        backgroundView = [[AnimatedImageView alloc] init];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
         [self.view addSubview:backgroundView];
         [self.view sendSubviewToBack:backgroundView];
@@ -177,10 +177,10 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSDictionary *dict = [searchResult objectAtIndex:indexPath.row];
+    NSDictionary *dict = searchResult[indexPath.row];
     SearchViewCell *cell = [self.tableview dequeueReusableCellWithIdentifier:@"resultlist"];
     NSString *titleText = dict[@"title"] ? dict[@"title"] : dict[@"text"];
-    titleText = [ActionPerformer removeRe:titleText];
+    titleText = [ActionPerformer restoreTitle:titleText];
     cell.titleText.text = titleText;
     cell.authorText.text = dict[@"author"];
     if ([self.bid isEqualToString:@"-1"] && !SIMPLE_VIEW) {
@@ -300,13 +300,14 @@
     // Pass the selected object to the new view controller.
     if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [segue destinationViewController];
-        NSDictionary *one = [searchResult objectAtIndex:[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *one = searchResult[[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
         dest.bid = one[@"bid"];
         dest.tid = one[@"tid"];
         if (one[@"floor"]) {
             dest.floor = one[@"floor"];
         }
-        dest.title = one[@"title"] ? one[@"title"] : one[@"text"];
+        NSString *titleText = one[@"title"] ? one[@"title"] : one[@"text"];
+        dest.title = [ActionPerformer restoreTitle:titleText];
         [self.navigationController setToolbarHidden:NO];
     }
 }

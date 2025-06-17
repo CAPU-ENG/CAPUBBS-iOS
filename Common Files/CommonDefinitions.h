@@ -39,6 +39,10 @@
 #define SUCCESSMARK [UIImage imageNamed:@"successmark"]
 #define FAILMARK [UIImage imageNamed:@"failmark"]
 #define QUESTIONMARK [UIImage imageNamed:@"questionmark"]
+#define PLACEHOLDER [UIImage imageNamed:@"placeholder"]
+#define CACHE_DIRECTORY [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0]
+#define IMAGE_CACHE_PATH [CACHE_DIRECTORY stringByAppendingString:@"/IconCache"]
+
 #define BUNDLE_IDENTIFIER [[NSBundle mainBundle] bundleIdentifier]
 #define APP_VERSION [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]
 #define APP_BUILD [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"]

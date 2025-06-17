@@ -8,13 +8,13 @@
 
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 #import "CustomWebViewContainer.h"
 
 @interface UserViewController : CustomTableViewController<WKNavigationDelegate> {
     ActionPerformer *performer;
     MBProgressHUD *hud;
-    AsyncImageView *backgroundView;
+    AnimatedImageView *backgroundView;
     int textSize;
     UIRefreshControl *control;
     NSMutableArray *recentPost;
@@ -52,7 +52,7 @@
 @property (weak, nonatomic) IBOutlet CustomWebViewContainer *sig1;
 @property (weak, nonatomic) IBOutlet CustomWebViewContainer *sig2;
 @property (weak, nonatomic) IBOutlet CustomWebViewContainer *sig3;
-@property (weak, nonatomic) IBOutlet AsyncImageView *icon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *icon;
 @property (weak, nonatomic) IBOutlet UILabel *labelReport;
 
 @end

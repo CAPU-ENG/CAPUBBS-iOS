@@ -13,9 +13,9 @@
 
 @property (nonatomic, strong) WKWebView *webView;
 
-+ (NSArray<WKWebsiteDataStore *> *)getAllDataSources;
++ (void)clearAllDataStores:(void (^)(void))completionHandler;
 
-// Token should be nil in most cases
-- (void)initiateWebViewForToken:(NSString *)token;
+// Token should be excluded in most cases
+- (void)initiateWebViewWithToken:(BOOL)hasToken;
 
 @end

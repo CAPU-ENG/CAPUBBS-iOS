@@ -1,5 +1,5 @@
 //
-//  AsyncImageView.h
+//  AnimatedImageView.h
 //  CAPUBBS
 //
 //  Created by 熊典 on 14-8-17.
@@ -11,9 +11,6 @@
 #import <SDWebImage/SDAnimatedImage.h>
 #import <SDWebImage/SDAnimatedImageView.h>
 
-#define PLACEHOLDER [UIImage imageNamed:@"placeholder"]
-#define CACHE_PATH [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingString:@"/IconCache"]
-
 typedef NS_ENUM(int, ImageFileType) {
     ImageFileTypeUnknown = 0,
     ImageFileTypeJPEG,
@@ -24,15 +21,15 @@ typedef NS_ENUM(int, ImageFileType) {
     ImageFileTypeWEBP  // iOS 14+
 };
 
-@interface AsyncImageView : SDAnimatedImageView
+@interface AnimatedImageView : SDAnimatedImageView
 
 - (void)setRounded:(BOOL)isRounded;
 - (void)setBlurredImage:(UIImage *)image animated:(BOOL)animated;
 - (void)setGif:(NSString *)imageName;
 - (void)setUrl:(NSString *)urlToSet;
-- (void)setUrl:(NSString *)urlToSet withPlaceholder:(BOOL)showPlaceholder;
 - (NSString *)getUrl;
 + (NSString *)transIconURL:(NSString *)iconUrl;
++ (BOOL)isAnimated:(NSData *)imageData;
 + (ImageFileType)fileType:(NSData *)imageData;
 + (NSString *)fileExtension:(ImageFileType)type;
 + (void)checkPath;

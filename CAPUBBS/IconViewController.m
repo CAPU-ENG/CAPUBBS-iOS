@@ -27,7 +27,7 @@
     
     largeCellSize = smallCellSize = 0;
     performer = [[ActionPerformer alloc] init];
-    previewImageView = [[AsyncImageView alloc] init];
+    previewImageView = [[AnimatedImageView alloc] init];
     [previewImageView setBackgroundColor:self.view.backgroundColor];
     [previewImageView setContentMode:UIViewContentModeScaleAspectFill];
     [previewImageView.layer setBorderColor:GREEN_LIGHT.CGColor];
@@ -43,7 +43,7 @@
     if (range.length > 0) {
         temp = [temp substringFromIndex:range.location + range.length];
         for (int i = 0; i < iconNames.count; i++) {
-            if ([[iconNames objectAtIndex:i] isEqualToString:temp]) {
+            if ([iconNames[i] isEqualToString:temp]) {
                 newIconNum = i;
                 break;
             }
@@ -121,7 +121,7 @@
         if (HAS_CUSTOM_ICON && indexPath.row == 0) {
             [cell.icon setUrl:self.userIcon];
         } else {
-            [cell.icon setUrl:[NSString stringWithFormat:@"/bbsimg/icons/%@", [iconNames objectAtIndex:(int)indexPath.row - HAS_CUSTOM_ICON]]];
+            [cell.icon setUrl:[NSString stringWithFormat:@"/bbsimg/icons/%@", iconNames[indexPath.row - HAS_CUSTOM_ICON]]];
         }
         [cell.imageCheck setHidden:(indexPath.row != newIconNum + HAS_CUSTOM_ICON)];
         [cell.icon.layer setBorderWidth:3 * (indexPath.row == newIconNum + HAS_CUSTOM_ICON)];
@@ -244,7 +244,7 @@
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
     [picker dismissViewControllerAnimated:YES completion:nil];
-    UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
+    UIImage *image = info[UIImagePickerControllerEditedImage];
     if (!image || image.size.width <= 0 || image.size.height <= 0) {
         [self showAlertWithTitle:@"警告" message:@"图片不合法，无法获取长度 / 宽度！"];
     } else if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
@@ -273,9 +273,9 @@
                 [hud hideWithFailureMessage:@"上传失败"];
                 return;
             }
-            if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
+            if ([result[0][@"code"] isEqualToString:@"-1"]) {
                 [hud hideWithSuccessMessage:@"上传成功"];
-                NSString *url = [[result firstObject] objectForKey:@"imgurl"];
+                NSString *url = result[0][@"imgurl"];
                 [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:@{ @"URL" : url }];
                 [self.navigationController popViewControllerAnimated:YES];
             } else {

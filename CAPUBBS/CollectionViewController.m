@@ -25,7 +25,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
     if (!SIMPLE_VIEW) {
-        AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
+        AnimatedImageView *backgroundView = [[AnimatedImageView alloc] init];
         [backgroundView setBlurredImage:[UIImage imageNamed:@"bcollection"] animated:NO];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
         self.tableView.backgroundView = backgroundView;
@@ -145,8 +145,8 @@
     // 默认按收藏日期排序
     if (sortType != SORT_BY_POST_DATE) {
         [data sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
-            NSString *val1 = [obj1 objectForKey:@"collectionTime"];
-            NSString *val2 = [obj2 objectForKey:@"collectionTime"];
+            NSString *val1 = obj1[@"collectionTime"];
+            NSString *val2 = obj2[@"collectionTime"];
             return [val2 compare:val1];
         }];
     }
@@ -157,21 +157,21 @@
     
     if (sortType == SORT_BY_POST_DATE) {
         [data sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
-            NSString *val1 = [obj1 objectForKey:@"time"];
-            NSString *val2 = [obj2 objectForKey:@"time"];
+            NSString *val1 = obj1[@"time"];
+            NSString *val2 = obj2[@"time"];
             return [val2 compare:val1];
         }];
     } else if (sortType == SORT_BY_BOARD_INDEX) {
         [data sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
-            NSString *val1 = [obj1 objectForKey:@"bid"];
-            NSString *val2 = [obj2 objectForKey:@"bid"];
+            NSString *val1 = obj1[@"bid"];
+            NSString *val2 = obj2[@"bid"];
             return [val1 compare:val2 options:NSNumericSearch];
         }];
         [self indexByKeyword:@"bid"];
     } else if (sortType == SORT_BY_AUTHOR) {
         [data sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
-            NSString *val1 = [obj1 objectForKey:@"author"];
-            NSString *val2 = [obj2 objectForKey:@"author"];
+            NSString *val1 = obj1[@"author"];
+            NSString *val2 = obj2[@"author"];
             return [val1 localizedCompare:val2]; // 考虑汉字
         }];
         [self indexByKeyword:@"author"];
@@ -261,7 +261,7 @@
 
 - (IBAction)shareSelection:(id)sender {
     NSArray<NSDictionary *> *selectedData = [self getSelectedData];
-    [[self getVcToShowAlert] showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"您将导出所选的%ld个收藏\n可以存为文件作为备份，或者使用AirDrop立即分享。\n使用客户端打开导出的文件可以导入收藏", selectedData.count] confirmTitle:@"导出" confirmAction:^(UIAlertAction *action) {
+    [[self getVcToShowAlert] showAlertWithTitle:@"提示" message:[NSString stringWithFormat:@"您将导出所选的%ld个收藏\n可以存为文件以备份，或使用AirDrop立即分享\n使用客户端打开导出的文件可以导入收藏", selectedData.count] confirmTitle:@"导出" confirmAction:^(UIAlertAction *action) {
         NSURL *fileUrl = [self exportCollectionsToFile:selectedData];
         if (!fileUrl) {
             [[self getVcToShowAlert] showAlertWithTitle:@"错误" message:@"创建导出文件失败"];
@@ -346,7 +346,7 @@
         return data.count;
     }
     if (sortType == SORT_BY_BOARD_INDEX || sortType == SORT_BY_AUTHOR) {
-        return [[sortData objectAtIndex:section] count];
+        return [sortData[section] count];
     }
     return 0;
 }
@@ -366,21 +366,21 @@
         return [NSString stringWithFormat:@"您一共有%d个收藏", (int)data.count];
     }
     if (sortType == SORT_BY_BOARD_INDEX) {
-        return [ActionPerformer getBoardTitle:[[[sortData objectAtIndex:section] firstObject] objectForKey:@"bid"]];
+        return [ActionPerformer getBoardTitle:sortData[section][0][@"bid"]];
     }
     if (sortType == SORT_BY_AUTHOR) {
-        return [[[sortData objectAtIndex:section] firstObject] objectForKey:@"author"] ?: @"未知";
+        return sortData[section][0][@"author"] ?: @"未知";
     }
     return nil;
 }
 
 - (NSDictionary *)getCollectionDataForIndexPath:(NSIndexPath *)indexPath {
     if (self.searchController.searchBar.text.length > 0) {
-        return [searchData objectAtIndex:indexPath.row];
+        return searchData[indexPath.row];
     } else if (sortType == SORT_BY_COLLECTION_DATE || sortType == SORT_BY_POST_DATE) {
         return data[indexPath.row];
     } else if (sortType == SORT_BY_BOARD_INDEX || sortType == SORT_BY_AUTHOR) {
-        return [[sortData objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+        return sortData[indexPath.section][indexPath.row];
     }
     NSLog(@"Could not get collection data for row:%ld in section: %ld. This should not happen!", indexPath.row, indexPath.section);
     return nil;
@@ -401,7 +401,6 @@
     cell.labelTitle.text = dict[@"title"];
     
     NSString *postTime = dict[@"time"];
-    NSString *author = dict[@"author"];
     if (sortType == SORT_BY_AUTHOR) {
         NSString *boardTitle = [ActionPerformer getBoardTitle:dict[@"bid"]];
         if (postTime.length > 0) {
@@ -409,7 +408,11 @@
         } else {
             cell.labelSubtitle.text = boardTitle;
         }
-    } else if ((sortType == SORT_BY_COLLECTION_DATE || sortType == SORT_BY_POST_DATE || sortType == SORT_BY_BOARD_INDEX) && author.length > 0) {
+    } else {
+        NSString *author = dict[@"author"];
+        if (author.length == 0) {
+            author = @"未知";
+        }
         if (sortType == SORT_BY_COLLECTION_DATE) {
             NSDate *collectionDate = [NSDate dateWithTimeIntervalSince1970:[dict[@"collectionTime"] intValue]];
             NSString *dateStr = [formatter stringFromDate:collectionDate];
@@ -421,8 +424,6 @@
                 cell.labelSubtitle.text = author;
             }
         }
-    } else {
-        cell.labelSubtitle.text = @"未知";
     }
     
     if ([dict[@"text"] length] == 0) {
@@ -435,8 +436,7 @@
     if (icon.length > 0) {
         [cell.icon setUrl:icon];
     } else {
-        UIImage *boardImage = [UIImage imageNamed:[NSString stringWithFormat:@"b%@", dict[@"bid"]]];
-        [cell.icon setImage:boardImage ?: PLACEHOLDER];
+        [cell.icon setImage:PLACEHOLDER];
     }
     
     return cell;
@@ -527,6 +527,7 @@
     }
     dispatch_main_async_safe(^{
         [self.tableView reloadData];
+        [self updateActionAvailability];
     });
 }
 
@@ -538,9 +539,14 @@
     searchBar.placeholder = @"搜索";
 }
 
-- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
+- (void)willPresentSearchController:(UISearchController *)searchController {
+    [self updateActionAvailability];
+}
+
+- (void)didDismissSearchController:(UISearchController *)searchController {
     lastSearch = nil;
     wasFirstResponder = NO;
+    [self updateActionAvailability];
 }
 
 #pragma mark - Navigation

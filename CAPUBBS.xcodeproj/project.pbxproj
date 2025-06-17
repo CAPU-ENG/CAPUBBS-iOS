@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0100A0D21C0C562C00A1282D /* AsyncImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0100A0D11C0C562C00A1282D /* AsyncImageView.m */; };
+		0100A0D21C0C562C00A1282D /* AnimatedImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0100A0D11C0C562C00A1282D /* AnimatedImageView.m */; };
 		011509C11BF21B080076D6F3 /* CollectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 011509C01BF21B080076D6F3 /* CollectionViewController.m */; };
 		0117FF772DF7ECE10005F5D2 /* injection.js in Resources */ = {isa = PBXBuildFile; fileRef = 0117FF762DF7ECD20005F5D2 /* injection.js */; };
 		0134178B1AB06CFF0086098F /* IDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0134178A1AB06CFF0086098F /* IDViewController.m */; };
@@ -271,8 +271,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0100A0D01C0C562C00A1282D /* AsyncImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncImageView.h; sourceTree = "<group>"; };
-		0100A0D11C0C562C00A1282D /* AsyncImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncImageView.m; sourceTree = "<group>"; };
+		0100A0D01C0C562C00A1282D /* AnimatedImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AnimatedImageView.h; sourceTree = "<group>"; };
+		0100A0D11C0C562C00A1282D /* AnimatedImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AnimatedImageView.m; sourceTree = "<group>"; };
 		011509BF1BF21B080076D6F3 /* CollectionViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CollectionViewController.h; sourceTree = "<group>"; };
 		011509C01BF21B080076D6F3 /* CollectionViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = CollectionViewController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		0117FF762DF7ECD20005F5D2 /* injection.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = injection.js; sourceTree = "<group>"; };
@@ -808,8 +808,8 @@
 				01F79C8D1D9CAEAC000594F1 /* CommonDefinitions.h */,
 				8BAC8EE318B100B100F68A62 /* ActionPerformer.h */,
 				8BAC8EE418B100B100F68A62 /* ActionPerformer.m */,
-				0100A0D01C0C562C00A1282D /* AsyncImageView.h */,
-				0100A0D11C0C562C00A1282D /* AsyncImageView.m */,
+				0100A0D01C0C562C00A1282D /* AnimatedImageView.h */,
+				0100A0D11C0C562C00A1282D /* AnimatedImageView.m */,
 				01E042BD2DE4B1B700590A6C /* ReachabilityManager.h */,
 				01E042BE2DE4B1C800590A6C /* ReachabilityManager.m */,
 				01E1B1591C28061500EC680D /* UIImageEffects.h */,
@@ -1300,7 +1300,7 @@
 				018DC2021BFF482600334BF1 /* IDCell.m in Sources */,
 				017785ED1AADDA870089361C /* FacesViewCell.m in Sources */,
 				01445B672DF5589B0000638F /* XMLDictionary.m in Sources */,
-				0100A0D21C0C562C00A1282D /* AsyncImageView.m in Sources */,
+				0100A0D21C0C562C00A1282D /* AnimatedImageView.m in Sources */,
 				01F38EBD1AE1537F007F25D0 /* ChatCell.m in Sources */,
 				8BAC8EEB18B10E6700F68A62 /* IndexViewController.m in Sources */,
 				01E1B15B1C28061500EC680D /* UIImageEffects.m in Sources */,
@@ -1490,7 +1490,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4013;
+				CURRENT_PROJECT_VERSION = 4020;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1519,7 +1519,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4013;
+				CURRENT_PROJECT_VERSION = 4020;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;

@@ -223,7 +223,7 @@
     }
 }
 
-+ (NSString *)removeRe:(NSString *)text {
++ (NSString *)restoreTitle:(NSString *)text {
     BOOL remove = YES;
     while (remove) {
         remove = NO;
@@ -236,6 +236,8 @@
             text = [text substringFromIndex:@" ".length];
         }
     }
+    text = [self simpleEscapeHTML:text processLtGt:YES];
+    text = [text stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
     return text;
 }
 
@@ -248,8 +250,8 @@
         return @"全部版面";
     }
     for (int i = 0; i < NUMBERS.count; i++) {
-        if ([bid isEqualToString:[NUMBERS objectAtIndex:i]]) {
-            return [titles objectAtIndex:i];
+        if ([bid isEqualToString:NUMBERS[i]]) {
+            return titles[i];
         }
     }
     return @"未知版面";
@@ -311,52 +313,52 @@
 
 + (NSDictionary *)getLink:(NSString *)path {
     NSString *bid = @"", *tid = @"", *p = @"", *floor = @"";
-    NSRegularExpression *regular = [NSRegularExpression regularExpressionWithPattern:@"((http://|https://)?/bbs|\\.\\.)(/content(/|/index.php)?\\?)(.+)" options:0 error:nil];
-    NSArray *matchs = [regular matchesInString:path options:0 range:NSMakeRange(0, path.length)];
-    if (matchs.count != 0) {
-        NSTextCheckingResult *result = matchs.firstObject;
-        NSString *getstr = [path substringWithRange:[result rangeAtIndex:5]];
-        bid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(bid=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        tid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(tid=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        if (bid.length > 0 && tid.length > 0) {
-            p = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(p=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-            floor = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(#)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
+    NSURLComponents *components = [NSURLComponents componentsWithString:path];
+    if (!components) {
+        return @{@"bid" : bid, @"tid" : tid, @"p" : p, @"floor" : floor};
+    }
+    
+    NSMutableDictionary<NSString *, NSString *> *params = [NSMutableDictionary dictionary];
+    for (NSURLQueryItem *item in components.queryItems) {
+        if (item.value) { // 只添加有值的参数
+            params[item.name] = item.value;
         }
     }
     
-    regular = [NSRegularExpression regularExpressionWithPattern:@"((http://|https://)?/cgi-bin/bbs.pl\\?)(.+)" options:0 error:nil];
-    matchs = [regular matchesInString:path options:0 range:NSMakeRange(0, path.length)];
-    if (matchs.count != 0) {
-        NSTextCheckingResult *result = matchs.firstObject;
-        NSString *getstr = [path substringWithRange:[result rangeAtIndex:3]];
-        bid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(b=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        tid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(see=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        NSString *oldbid = [getstr substringWithRange:[[[NSRegularExpression regularExpressionWithPattern:@"(id=)([^&#]+)" options:0 error:nil] matchesInString:getstr options:0 range:NSMakeRange(0, getstr.length)].firstObject rangeAtIndex:2]];
-        
-        NSDictionary *trans = @{@"act": @1, @"capu": @2, @"bike": @3, @"water": @4, @"acad": @5, @"asso": @6, @"skill": @7, @"race": @9, @"web": @28};
-        if (oldbid&&oldbid.length != 0) {
-            bid = [trans objectForKey:oldbid];
+    NSString *urlPath = components.path;
+    if ([urlPath containsString:@"/bbs/content"] || [urlPath containsString:@"/bbs/main"]) {
+        bid = params[@"bid"] ?: @"";
+        tid = params[@"tid"] ?: @"";
+        p = params[@"p"];
+        if (tid.length > 0) {
+            floor = components.fragment ?: @"";
         }
-        
+    } else if ([urlPath containsString:@"/cgi-bin/bbs.pl"]) {
+        bid = params[@"b"] ?: @"";
+        tid = params[@"see"] ?: @"";
+        NSString *oldbid = params[@"id"];
+        if (oldbid) {
+            // 这个转换表可以作为静态字典或属性，避免重复创建
+            NSDictionary *trans = @{@"act": @"1", @"capu": @"2", @"bike": @"3", @"water": @"4", @"acad": @"5", @"asso": @"6", @"skill": @"7", @"race": @"9", @"web": @"28"};
+            bid = trans[oldbid] ?: bid;
+        }
         if (tid.length > 0) {
             long count = 0; // 转换26进制tid
-            for (int i = 0; i < tid.length; i++) {
-                count += ([tid characterAtIndex:tid.length - 1 - i] - 'a') * pow(26, i);
+            NSString *lowerTid = [tid lowercaseString];
+            for (int i = 0; i < lowerTid.length; i++) {
+                int charValue = [lowerTid characterAtIndex:lowerTid.length - 1 - i] - 'a';
+                if (charValue >= 0 && charValue < 26) {
+                    count += charValue * pow(26, i);
+                }
             }
             count++;
             tid = [NSString stringWithFormat:@"%ld", count];
         }
     }
-    
     if (p.length == 0) {
         p = @"1";
     }
-    return @{
-        @"bid" : bid,
-        @"tid" : tid,
-        @"p" : p,
-        @"floor" : floor
-    };
+    return @{@"bid" : bid, @"tid" : tid, @"p" : p, @"floor" : floor};
 }
 
 + (NSString *)restoreFormat:(NSString *)text {
@@ -381,8 +383,8 @@
                         @"[i]$1[/i]"];
     NSRegularExpression *regExp;
     for (int i = 0; i < oriExp.count; i++) {
-        regExp = [NSRegularExpression regularExpressionWithPattern:[oriExp objectAtIndex:i] options:options error:nil];
-        text = [regExp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:[repExp objectAtIndex:i]];
+        regExp = [NSRegularExpression regularExpressionWithPattern:oriExp[i] options:options error:nil];
+        text = [regExp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:repExp[i]];
     }
     
     while (YES) {
@@ -427,7 +429,7 @@
     return text;
 }
 
-+ (NSString *)simpleEscapeHTML:(NSString *)text {
++ (NSString *)simpleEscapeHTML:(NSString *)text processLtGt:(BOOL)ltGt {
     if (!text || text.length == 0) {
         return text;
     }
@@ -452,16 +454,24 @@
         index++;
     }
     
-    NSString *expression = @"<br(.*?)>"; // 恢复换行
+    NSString *expression = @"<br[^>]*>"; // 恢复换行
     NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
     text = [regexp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:@"\n"];
     
-    NSArray *HTML = @[@"&nbsp;", @"&amp;", @"&apos;", @"&quot;", @"&ldquo;", @"&rdquo;", @"&#39;", @"&mdash;", @"&hellip;"]; // 常见的转义
-    NSArray *oriText = @[@" ", @"&", @"'", @"\"", @"“", @"”", @"'",  @"——", @"…"];
-    for (int i = 0; i < oriText.count; i++) {
-        text = [text stringByReplacingOccurrencesOfString:[HTML objectAtIndex:i] withString:[oriText objectAtIndex:i]];
+    NSDictionary *entityMap = @{
+        @"&nbsp;": @" ",   @"&amp;": @"&",    @"&apos;": @"'",
+        @"&quot;": @"\"",  @"&ldquo;": @"“",  @"&rdquo;": @"”",
+        @"&#39;": @"'",    @"&mdash;": @"——", @"&hellip;": @"…"
+    };
+    for (NSString *key in entityMap) {
+        text = [text stringByReplacingOccurrencesOfString:key withString:entityMap[key]];
     }
-    // NSLog(@"%@", text);
+    if (ltGt) {
+        NSDictionary *entityMap = @{@"&lt;": @"<", @"&gt;": @">"};
+        for (NSString *key in entityMap) {
+            text = [text stringByReplacingOccurrencesOfString:key withString:entityMap[key]];
+        }
+    }
     return text;
 }
 
@@ -524,8 +534,8 @@
                         @"<b>$2</b>",
                         @"<i>$2</i>"];
     for (int i = 0; i < oriExp.count; i++) {
-        NSRegularExpression *regExp = [NSRegularExpression regularExpressionWithPattern:[oriExp objectAtIndex:i] options:0 error:nil];
-        text = [regExp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:[newExp objectAtIndex:i]];
+        NSRegularExpression *regExp = [NSRegularExpression regularExpressionWithPattern:oriExp[i] options:0 error:nil];
+        text = [regExp stringByReplacingMatchesInString:text options:0 range:NSMakeRange(0, text.length) withTemplate:newExp[i]];
     }
     return text;
 }
@@ -534,7 +544,7 @@
     if (!text || text.length == 0) {
         return text;
     }
-    text = [self simpleEscapeHTML:text];
+    text = [self simpleEscapeHTML:text processLtGt:NO];
     
     NSRegularExpressionOptions options = NSRegularExpressionCaseInsensitive | NSRegularExpressionDotMatchesLineSeparators;
 
@@ -575,17 +585,18 @@
 }
 
 + (NSString *)md5:(NSString *)str { // 字符串MD5值算法
-    if (!str || str.length == 0) {
+    if (!str) {
         return @"";
     }
     const char* cStr=[str UTF8String];
+    CC_LONG dataLength = (CC_LONG)[str lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
     unsigned char digist[CC_MD5_DIGEST_LENGTH]; // CC_MD5_DIGEST_LENGTH = 16
-    CC_MD5(cStr, (unsigned int)strlen(cStr), digist);
-    NSMutableString* outPutStr = [NSMutableString stringWithCapacity:10];
-    for(int  i =0; i<CC_MD5_DIGEST_LENGTH;i++) {
+    CC_MD5(cStr, dataLength, digist);
+    NSMutableString* outPutStr = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
+    for(int  i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
         [outPutStr appendFormat:@"%02X", digist[i]];// 小写 x 表示输出的是小写 MD5 ，大写 X 表示输出的是大写 MD5
     }
-    return outPutStr;
+    return [outPutStr copy];
 }
 
 + (NSString *)getSigForData:(id)data {
@@ -612,66 +623,9 @@
         // Simulator
         @"x86_64": @"iOS Simulator",
         @"arm64": @"iOS Simulator",
-        
-        //        @"iPhone8,1": @"iPhone 6s",
-        //        @"iPhone8,2": @"iPhone 6s Plus",
-        //        @"iPhone7,1": @"iPhone 6 Plus",
-        //        @"iPhone7,2": @"iPhone 6",
-        //        @"iPhone6,1": @"iPhone 5s",
-        //        @"iPhone6,2": @"iPhone 5s",
-        //        @"iPhone5,3": @"iPhone 5c",
-        //        @"iPhone5,4": @"iPhone 5c",
-        //        @"iPhone5,1": @"iPhone 5",
-        //        @"iPhone5,2": @"iPhone 5",
-        //        @"iPhone4,1": @"iPhone 4s",
-        //        @"iPhone3,1": @"iPhone 4",
-        //        @"iPhone3,2": @"iPhone 4",
-        //        @"iPhone3,3": @"iPhone 4",
-        //        @"iPhone2,1": @"iPhone 3Gs",
-        //        @"iPhone1,2": @"iPhone 3G",
-        //        @"iPhone1,1": @"iPhone",
-        //
-        //        @"iPod6,1": @"iPod touch 6",
-        //        @"iPod5,1": @"iPod touch 5",
-        //        @"iPod4,1": @"iPod touch 4",
-        //        @"iPod3,1": @"iPod touch 3",
-        //        @"iPod2,1": @"iPod touch 2",
-        //        @"iPod1,1": @"iPod touch",
-        //
-        //        @"iPad6,8": @"iPad Pro",
-        //
-        //        @"iPad5,3": @"iPad Air 2",
-        //        @"iPad5,4": @"iPad Air 2",
-        //        @"iPad4,1": @"iPad Air",
-        //        @"iPad4,2": @"iPad Air",
-        //        @"iPad4,3": @"iPad Air",
-        //        @"iPad3,4": @"iPad 4",
-        //        @"iPad3,5": @"iPad 4",
-        //        @"iPad3,6": @"iPad 4",
-        //        @"iPad3,1": @"iPad 3",
-        //        @"iPad3,2": @"iPad 3",
-        //        @"iPad3,3": @"iPad 3",
-        //        @"iPad2,1": @"iPad 2",
-        //        @"iPad2,2": @"iPad 2",
-        //        @"iPad2,3": @"iPad 2",
-        //        @"iPad2,4": @"iPad 2",
-        //        @"iPad1,1": @"iPad 1",
-        //        @"iPad1,2": @"iPad 1",
-        //
-        //        @"iPad5,1": @"iPad mini 4",
-        //        @"iPad5,2": @"iPad mini 4",
-        //        @"iPad4,7": @"iPad mini 3",
-        //        @"iPad4,8": @"iPad mini 3",
-        //        @"iPad4,9": @"iPad mini 3",
-        //        @"iPad4,4": @"iPad mini 2",
-        //        @"iPad4,5": @"iPad mini 2",
-        //        @"iPad4,6": @"iPad mini 2",
-        //        @"iPad2,5": @"iPad mini",
-        //        @"iPad2,6": @"iPad mini",
-        //        @"iPad2,7": @"iPad mini",
     };
     
-    if ([dict[platform] length] > 0) {
+    if (dict[platform]) {
         platform = dict[platform];
     }
     

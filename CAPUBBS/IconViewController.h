@@ -15,7 +15,7 @@
     NSArray *iconNames;
     MBProgressHUD *hud;
     ActionPerformer *performer;
-    AsyncImageView *previewImageView;
+    AnimatedImageView *previewImageView;
     int newIconNum;
     int oldIconNum;
     int largeCellSize;

@@ -7,10 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface LzlCell : UITableViewCell
-@property (weak, nonatomic) IBOutlet AsyncImageView *icon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *icon;
 @property (weak, nonatomic) IBOutlet UIButton *buttonIcon;
 @property (weak, nonatomic) IBOutlet UIImageView *imageBottom;
 @property (weak, nonatomic) IBOutlet UILabel *textAuthor;

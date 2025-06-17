@@ -99,7 +99,7 @@
         return;
     }
     if (!backgroundView) {
-        backgroundView = [[AsyncImageView alloc] init];
+        backgroundView = [[AnimatedImageView alloc] init];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
         self.tableView.backgroundView = backgroundView;
     }
@@ -140,7 +140,7 @@
             return ;
         }
         
-        if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
+        if ([data[0][@"code"] isEqualToString:@"1"]) {
             [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
         }
         
@@ -179,8 +179,8 @@
             }
         } else {
             NSString *iconUrl = result[0][@"icon"];
-            [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AsyncImageView transIconURL:iconUrl]] object:nil];
-            AsyncImageView *icon = [[AsyncImageView alloc] init];
+            [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AnimatedImageView transIconURL:iconUrl]] object:nil];
+            AnimatedImageView *icon = [[AnimatedImageView alloc] init];
             [icon setUrl:iconUrl];
             if (hudVisible) {
                 [hud hideWithSuccessMessage:@"加载成功"];
@@ -282,12 +282,12 @@
             return;
         }
         // NSLog(@"%@", result);
-        if ([[result.firstObject objectForKey:@"code"] integerValue] == 0) {
+        if ([result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"发送成功"];
         } else {
             [hud hideWithFailureMessage:@"发送失败"];
         }
-        switch ([[result.firstObject objectForKey:@"code"] integerValue]) {
+        switch ([result[0][@"code"] integerValue]) {
             case 0: {
                 cell.textSend.text = @"";
                 [self loadChat];

@@ -16,7 +16,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self.webViewContainer initiateWebViewForToken:TOKEN];
+    [self.webViewContainer initiateWebViewWithToken:YES];
     [self.webViewContainer.webView setNavigationDelegate:self];
     [self.webViewContainer.webView.scrollView setDelegate:self];
     [self.webViewContainer.webView addObserver:self forKeyPath:@"estimatedProgress" options:NSKeyValueObservingOptionNew context:nil];

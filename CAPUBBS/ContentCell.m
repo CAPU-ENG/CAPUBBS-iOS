@@ -19,7 +19,7 @@
     [self.webViewContainer.layer setBorderWidth:1.0];
     [self.webViewContainer.layer setMasksToBounds:YES];
     [self.webViewContainer setBackgroundColor:[UIColor whiteColor]];
-    [self.webViewContainer initiateWebViewForToken:nil];
+    [self.webViewContainer initiateWebViewWithToken:NO];
     [self.webViewContainer.webView.scrollView setScrollEnabled:NO];
     [self.lzlTableView setBackgroundColor:[UIColor clearColor]];
 }

@@ -93,8 +93,8 @@
     IndexViewCell * cell;
     if (indexPath.row < NUMBERS.count) {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"indexcell" forIndexPath:indexPath];
-        cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:[NUMBERS objectAtIndex:indexPath.row]]];
-        cell.text.text = [ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:indexPath.row]];
+        cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:NUMBERS[indexPath.row]]];
+        cell.text.text = [ActionPerformer getBoardTitle:NUMBERS[indexPath.row]];
     } else {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"collectioncell" forIndexPath:indexPath];
     }
@@ -134,16 +134,18 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didHighlightItemAtIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
-    [cell setAlpha:0.5];
-    [cell setTransform:CGAffineTransformMakeScale(1.05, 1.05)];
+    [UIView animateWithDuration:0.1 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+        [cell setAlpha:0.75];
+        [cell setTransform:CGAffineTransformMakeScale(1.05, 1.05)];
+    } completion:nil];
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didUnhighlightItemAtIndexPath:(nonnull NSIndexPath *)indexPath {
     UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
-    [UIView animateWithDuration:0.5 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+    [UIView animateWithDuration:0.2 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
         [cell setAlpha:1.0];
         [cell setTransform:CGAffineTransformMakeScale(1, 1)];
-    }completion:nil];
+    } completion:nil];
 }
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
@@ -191,7 +193,7 @@
     }
     
     NSDictionary *dict = [ActionPerformer getLink:text];
-    if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
+    if (dict.count > 0 && [dict[@"tid"] length] > 0) {
         ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
         next.bid = dict[@"bid"];
         next.tid = dict[@"tid"];
@@ -251,7 +253,7 @@
     }
     if ([segue.identifier isEqualToString:@"postlist"]) {
         int number = (int)[self.collectionView indexPathForCell:(UICollectionViewCell *)sender].row;
-        dest.bid = [NUMBERS objectAtIndex:number];
+        dest.bid = NUMBERS[number];
     }
 }
 

@@ -95,7 +95,7 @@
                     tempInfo = [tempInfo substringWithRange:range];
                     tempInfo = [tempInfo substringWithRange:NSMakeRange(1, tempInfo.length - 2)];
                 }
-                [dict setObject:tempInfo forKey:[keys objectAtIndex:i]];
+                [dict setObject:tempInfo forKey:keys[i]];
             }
             [data addObject:dict];
         }

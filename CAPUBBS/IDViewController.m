@@ -7,7 +7,7 @@
 //
 
 #import "IDViewController.h"
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 #import "IDCell.h"
 
 @interface IDViewController ()

@@ -7,7 +7,7 @@
 //
 
 #import "AppDelegate.h"
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 #import "LoginViewController.h"
 #import "ContentViewController.h"
 #import "ListViewController.h"
@@ -15,6 +15,7 @@
 #import "MessageViewController.h"
 #import "ComposeViewController.h"
 #import <CoreSpotlight/CoreSpotlight.h>
+#import <MobileCoreServices/MobileCoreServices.h>
 
 @interface PreviewItemWithName : NSObject <QLPreviewItem>
 
@@ -122,7 +123,7 @@
     [NOTIFICATION addObserver:self selector:@selector(sendEmail:) name:@"sendEmail" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(previewFile:) name:@"previewFile" object:nil];
     if ([ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
-        [self loginAsync:YES];
+        [self login:nil];
     }
     return YES;
 }
@@ -147,7 +148,7 @@
     // 返回后自动登录
     // 条件为 已登录 或 不是第一次打开软件且开启了自动登录
     if (([ActionPerformer checkLogin:NO] || [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) && [[DEFAULTS objectForKey:@"wakeLogin"] boolValue] == YES) {
-        [self loginAsync:YES];
+        [self login:nil];
     }
     [DEFAULTS setObject:@(YES) forKey:@"wakeLogin"];
     [[ReachabilityManager sharedManager] startMonitoring];
@@ -187,7 +188,7 @@
     __block UIViewController *topVC;
     dispatch_main_sync_safe(^{
         topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-        while (topVC.presentedViewController && !topVC.presentedViewController.isBeingDismissed) {
+        while (topVC.presentedViewController && !topVC.presentedViewController.isBeingDismissed && ![topVC isKindOfClass:[UIAlertController class]]) {
             topVC = topVC.presentedViewController;
         }
     });
@@ -281,55 +282,77 @@
 }
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler {
-    NSArray *collectionParts = @[];
     if ([userActivity.activityType isEqualToString:CSSearchableItemActionType]) {
+        NSArray *collectionParts = @[];
         NSString *identifier = userActivity.userInfo[CSSearchableItemActivityIdentifier];
         if (identifier.length > 0) {
             collectionParts = [identifier componentsSeparatedByString:@"\n"];
         }
+        // Continue from collection search
+        if (collectionParts.count >= 4 && [collectionParts[0] isEqualToString:@"collection"]) {
+            NSDictionary *naviDict = @{
+                @"open": @"post",
+                @"bid": collectionParts[1],
+                @"tid": collectionParts[2],
+                @"naviTitle": collectionParts[3]
+            };
+            dispatch_global_default_async(^{
+                [self _handleUrlRequestWithDictionary:naviDict];
+            });
+            return YES;
+        }
     }
+    
     NSDictionary *linkInfo;
     if (userActivity.webpageURL && userActivity.webpageURL.absoluteString.length > 0) {
         linkInfo = [ActionPerformer getLink:userActivity.webpageURL.absoluteString];
     }
-    
-    BOOL continueFronCollectionSearch = (collectionParts.count > 0 && [collectionParts[0] isEqualToString:@"collection"]);
-    BOOL continueFromHandoffOrWebpage = (linkInfo.count > 0 && ![linkInfo[@"tid"] isEqualToString:@""]);
-    if (continueFronCollectionSearch || continueFromHandoffOrWebpage) {
+    // From universal link or handfoff
+    if (linkInfo.count > 0 && [linkInfo[@"bid"] length] > 0) {
+        NSDictionary *naviDict;
+        if ([linkInfo[@"tid"] length] > 0) {
+            naviDict = @{
+                @"open": @"post",
+                @"bid": linkInfo[@"bid"],
+                @"tid": linkInfo[@"tid"],
+                @"page": linkInfo[@"p"],
+                @"floor": linkInfo[@"floor"],
+                @"naviTitle": userActivity.title ?: @""
+            };
+        } else {
+            naviDict = @{
+                @"open": @"list",
+                @"bid": linkInfo[@"bid"],
+                @"page": linkInfo[@"p"],
+            };
+        }
         dispatch_global_default_async(^{
-            NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"post"}];
-            if (continueFronCollectionSearch) {
-                naviDict[@"bid"] = collectionParts[1];
-                naviDict[@"tid"] = collectionParts[2];
-                naviDict[@"naviTitle"] = collectionParts[3];
-            } else if (continueFromHandoffOrWebpage) {
-                naviDict[@"bid"] = linkInfo[@"bid"];
-                naviDict[@"tid"] = linkInfo[@"tid"];
-                naviDict[@"page"] = linkInfo[@"p"];
-                naviDict[@"floor"] = linkInfo[@"floor"];
-                naviDict[@"naviTitle"] = userActivity.title;
-            }
             [self _handleUrlRequestWithDictionary:naviDict];
         });
+        return YES;
     }
     
     NSDictionary *activityInfo = userActivity.userInfo;
-    if ([activityInfo[@"type"] isEqualToString:@"compose"]) {
+    if (activityInfo && [activityInfo[@"type"] isEqualToString:@"compose"]) {
         dispatch_global_default_async(^{
             if (userActivity.webpageURL.absoluteString.length == 0 && [activityInfo[@"bid"] length] > 0) {
-                NSMutableDictionary *listDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"list"}];
-                listDict[@"bid"] = activityInfo[@"bid"];
-                [self _handleUrlRequestWithDictionary:listDict];
+                [self _handleUrlRequestWithDictionary:@{
+                    @"open": @"list",
+                    @"bid": activityInfo[@"bid"],
+                }];
             }
             
             NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
             [naviDict addEntriesFromDictionary:activityInfo];
-            naviDict[@"naviTitle"] = userActivity.title;
+            if (userActivity.title) {
+                naviDict[@"naviTitle"] = userActivity.title;
+            }
             [self _handleUrlRequestWithDictionary:naviDict];
         });
+        return YES;
     }
     
-    return YES;
+    return NO;
 }
 
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL))completionHandler {
@@ -349,23 +372,21 @@
 
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
     if (url.isFileURL) {
-        BOOL secured = [url startAccessingSecurityScopedResource];
-        if (!secured) {
-            NSLog(@"Handle file error - unable to start access");
-            return NO;
-        }
+        BOOL needsStopAccessing = [url startAccessingSecurityScopedResource];
+
         NSError *error = nil;
         NSData *jsonData = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&error];
+        if (needsStopAccessing) {
+            [url stopAccessingSecurityScopedResource];
+        }
         if (error) {
             NSLog(@"Handle file error - %@", error);
-            [url stopAccessingSecurityScopedResource];
             return NO;
         }
         
         NSArray *importData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
         if (error) {
             NSLog(@"Handle file error - wrong json format");
-            [url stopAccessingSecurityScopedResource];
             return NO;
         }
         
@@ -415,7 +436,7 @@
 }
 
 - (void)_handleImportCollectionData:(NSArray *)data {
-    [[AppDelegate getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现%ld项收藏", data.count] message:@"是否导入？\n导入时会自动排除重复项。" confirmTitle:@"导入" confirmAction:^(UIAlertAction *action) {
+    [[AppDelegate getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现%ld项收藏", data.count] message:@"是否导入？\n导入时会自动排除重复项" confirmTitle:@"导入" confirmAction:^(UIAlertAction *action) {
         dispatch_global_default_async(^{
             int successCount = 0;
             int duplicateCount = 0;
@@ -466,19 +487,22 @@
     }
     UIViewController *view = [AppDelegate getTopViewController];
     if ([open isEqualToString:@"message"]) {
-        // 同步登陆
-        [self loginAsync:NO];
-        [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
-        
-        dispatch_main_sync_safe(^{
-            MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
+        [self login:^(BOOL success) {
+            if (!success) {
+                return;
+            }
+            [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
             
-            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-            navi.modalPresentationStyle = UIModalPresentationFullScreen;
-            navi.toolbarHidden = NO;
-            [view presentViewControllerSafe:navi];
-        });
+            dispatch_main_sync_safe(^{
+                MessageViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"message"];
+                
+                dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+                UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+                navi.modalPresentationStyle = UIModalPresentationFullScreen;
+                navi.toolbarHidden = NO;
+                [view presentViewControllerSafe:navi];
+            });
+        }];
     } else if ([open isEqualToString:@"hot"]) {
         dispatch_main_sync_safe(^{
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
@@ -520,6 +544,10 @@
         dispatch_main_sync_safe(^{
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
             dest.bid = dict[@"bid"];
+            NSInteger page = [dict[@"page"] integerValue];
+            if (page > 0) {
+                dest.page = page;
+            }
             
             dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
             UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
@@ -528,33 +556,36 @@
             [view presentViewControllerSafe:navi];
         });
     } else if ([open isEqualToString:@"post"]) {
-        // 同步登陆
-        [self loginAsync:NO];
-        [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
-        
-        dispatch_main_sync_safe(^{
-            ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
+        [self login:^(BOOL success) {
+            if (!success) {
+                return;
+            }
+            [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
             
-            dest.bid = dict[@"bid"];
-            dest.tid = dict[@"tid"];
-            if (dict[@"page"]) {
-                dest.floor = [NSString stringWithFormat:@"%d", [dict[@"page"] intValue] * 12];
-            }
-            if (dict[@"floor"]) {
-                dest.destinationFloor = dict[@"floor"];
-                // dest.openDestinationLzl = YES; // Do we need it? not tested yet
-            }
-            if (dict[@"naviTitle"]) {
-                dest.title = dict[@"naviTitle"];
-            } else {
-                dest.title = @"加载中";
-            }
-            
-            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-            navi.modalPresentationStyle = UIModalPresentationFullScreen;
-            [view presentViewControllerSafe:navi];
-        });
+            dispatch_main_sync_safe(^{
+                ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
+                
+                dest.bid = dict[@"bid"];
+                dest.tid = dict[@"tid"];
+                if (dict[@"page"]) {
+                    dest.floor = [NSString stringWithFormat:@"%d", [dict[@"page"] intValue] * 12];
+                }
+                if (dict[@"floor"]) {
+                    dest.destinationFloor = dict[@"floor"];
+                    // dest.openDestinationLzl = YES; // Do we need it? not tested yet
+                }
+                if (dict[@"naviTitle"]) {
+                    dest.title = dict[@"naviTitle"];
+                } else {
+                    dest.title = @"加载中";
+                }
+                
+                dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+                UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+                navi.modalPresentationStyle = UIModalPresentationFullScreen;
+                [view presentViewControllerSafe:navi];
+            });
+        }];
     }
     NSLog(@"Open with %@", open);
 }
@@ -571,24 +602,33 @@
 
 - (void)updateCollection {
     NSMutableArray *seachableItems = [[NSMutableArray alloc] init];
-    NSArray *array = [DEFAULTS objectForKey:@"collection"];
-    for (NSDictionary *dict in array) {
+    NSArray *collections = [DEFAULTS objectForKey:@"collection"];
+    if (!collections || collections.count == 0) {
+        [[CSSearchableIndex defaultSearchableIndex] deleteSearchableItemsWithDomainIdentifiers:@[BUNDLE_IDENTIFIER] completionHandler:nil];
+        return;
+    }
+    for (NSDictionary *dict in collections) {
         NSString *bid = dict[@"bid"];
         NSString *tid = dict[@"tid"];
         NSString *title = dict[@"title"];
-        NSString *author = dict[@"author"];
-        NSString *text = dict[@"text"];
-        CSSearchableItemAttributeSet *attr = [[CSSearchableItemAttributeSet alloc] initWithItemContentType:@"views"];
+        NSString *author = dict[@"author"] ?: @"";
+        NSString *text = dict[@"text"] ?: @"";
+        CSSearchableItemAttributeSet *attr = [[CSSearchableItemAttributeSet alloc] initWithItemContentType:(NSString *)kUTTypeText];
         attr.title = title;
-        // 切割text长度 防止太长导致内容丢失
-        if (text.length > 6000) {
-            text = [text substringToIndex:6000];
+        if (text.length > 0) {
+            if (author.length > 0) {
+                text = [NSString stringWithFormat:@"%@ - %@", author, text];
+            } else if (bid) {
+                text = [NSString stringWithFormat:@"%@ - %@", [ActionPerformer getBoardTitle:bid], text];
+            }
         }
-        if (author.length > 0 && text.length > 0) {
-            attr.contentDescription = [NSString stringWithFormat:@"%@ - %@", author, text];
-        }
-        attr.thumbnailData = UIImagePNGRepresentation([UIImage imageNamed:[NSString stringWithFormat:@"b%@", bid]]);
-        attr.keywords = @[@"CAPUBBS", @"收藏"];
+        attr.textContent = text;
+        NSString *textSummary = (text.length > 2000) ? [text substringToIndex:2000] : text;
+        attr.contentDescription = textSummary;
+        
+        UIImage *boardIcon = [UIImage imageNamed:[NSString stringWithFormat:@"b%@", bid]];
+        attr.thumbnailData = UIImagePNGRepresentation(boardIcon ?: PLACEHOLDER);
+        attr.keywords = @[@"CAPUBBS", @"收藏", @"CAPU", @"北大车协", @"车协", @"chexie"];
         CSSearchableItem *item = [[CSSearchableItem alloc] initWithUniqueIdentifier:[NSString stringWithFormat:@"collection\n%@\n%@\n%@", bid, tid, title] domainIdentifier:BUNDLE_IDENTIFIER attributeSet:attr];
         [seachableItems addObject:item];
     }
@@ -600,7 +640,7 @@
             if (error) {
                 NSLog(@"%@", error);
             } else {
-                NSLog(@"Collection Saved");
+                NSLog(@"Collection Saved To System");
             }
         }];
     }];
@@ -619,10 +659,10 @@
         }
         
         // 转移头像缓存
-        [AsyncImageView checkPath];
+        [AnimatedImageView checkPath];
         NSDictionary *cache = [DEFAULTS objectForKey:@"iconCache"];
         for (NSString *key in cache) {
-            [MANAGER createFileAtPath:[NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:key]] contents:[cache objectForKey:key] attributes:nil];
+            [MANAGER createFileAtPath:[NSString stringWithFormat:@"%@/%@", IMAGE_CACHE_PATH, [ActionPerformer md5:key]] contents:[cache objectForKey:key] attributes:nil];
         }
         
         // 清除旧缓存
@@ -649,7 +689,7 @@
     }
     
     if ([[DEFAULTS objectForKey:@"clearIconCache3.5"] boolValue] == NO) { // 3.5之后链接全更改为https 缓存失效
-        [MANAGER removeItemAtPath:CACHE_PATH error:nil];
+        [MANAGER removeItemAtPath:IMAGE_CACHE_PATH error:nil];
         [DEFAULTS setObject:@(YES) forKey:@"clearIconCache3.5"];
     }
 }
@@ -658,29 +698,34 @@
     [NOTIFICATION postNotificationName:@"globalTap" object:nil];
 }
 
-- (void)loginAsync:(BOOL)async {
+- (void)login:(void (^)(BOOL success))callback {
     NSString *uid = UID;
-    if (uid.length > 0) {
-        NSDictionary *dict = @{
-            @"username" : uid,
-            @"password" : [ActionPerformer md5:PASS],
-        };
-        dispatch_semaphore_t signal = dispatch_semaphore_create(0);
-        [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
-            if (err || result.count == 0 || ![[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+    if (uid.length == 0) {
+        if (callback) {
+            callback(NO);
+        }
+        return;
+    }
+    NSDictionary *dict = @{
+        @"username" : uid,
+        @"password" : [ActionPerformer md5:PASS],
+    };
+    [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
+        BOOL success = !err && result.count > 0 && [result[0][@"code"] isEqualToString:@"0"];
+        if (!success) {
+            if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
                 [GROUP_DEFAULTS removeObjectForKey:@"token"];
                 [[AppDelegate getTopViewController] showAlertWithTitle:@"警告" message:@"后台登录失败,您现在处于未登录状态，请检查原因！"];
-            } else {
-                [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
-                NSLog(@"Login Completed - %@ Async:%@", uid, async ? @"YES" : @"NO");
             }
-            dispatch_semaphore_signal(signal);
-            [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
-        }];
-        if (!async) {
-            dispatch_semaphore_wait(signal, DISPATCH_TIME_FOREVER);
+        } else {
+            [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
+            NSLog(@"Login Completed");
         }
-    }
+        [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
+        if (callback) {
+            callback(success);
+        }
+    }];
 }
 
 - (void)maybeCheckUpdate {
@@ -746,13 +791,13 @@
         }
         
         callback(YES);
-        NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
-        NSString *latestVersion = [releaseInfo objectForKey:@"version"];
+        NSDictionary *releaseInfo = infoArray[0];
+        NSString *latestVersion = releaseInfo[@"version"];
 //        latestVersion = @"3.9.6";
         NSLog(@"App Store latest version: %@", latestVersion);
         if ([currentVersion compare:latestVersion options:NSNumericSearch] == NSOrderedAscending) {
-            NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
-            [[AppDelegate getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", latestVersion] message:[releaseInfo objectForKey:@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
+            NSString *newVerURL = releaseInfo[@"trackViewUrl"];
+            [[AppDelegate getTopViewController] showAlertWithTitle:[NSString stringWithFormat:@"发现新版本%@", latestVersion] message:releaseInfo[@"releaseNotes"] confirmTitle:@"更新" confirmAction:^(UIAlertAction *action) {
                 [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
             } cancelTitle:@"暂不"];
         }

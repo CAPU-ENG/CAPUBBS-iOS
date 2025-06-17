@@ -93,7 +93,7 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSDictionary *dict = [news objectAtIndex:indexPath.row];
+    NSDictionary *dict = news[indexPath.row];
     NSString *bid = dict[@"bid"];
     NSString *tid = dict[@"tid"];
     NSString *url = dict[@"url"];
@@ -143,7 +143,7 @@
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         // Delete the row from the data source
-        NSDictionary *item = [news objectAtIndex:indexPath.row];
+        NSDictionary *item = news[indexPath.row];
         [self showAlertWithTitle:@"警告" message:[NSString stringWithFormat:@"确定要删除该公告吗？\n删除操作不可逆！\n\n标题：%@", item[@"text"]] confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
             [hud showWithProgressMessage:@"正在操作"];
             NSDictionary *dict = @{
@@ -154,7 +154,7 @@
                 if (err || result.count == 0) {
                     [hud hideWithFailureMessage:@"操作失败"];
                 } else {
-                    if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+                    if ([result[0][@"code"] integerValue] == 0) {
                         [hud hideWithSuccessMessage:@"操作成功"];
                         NSMutableArray *temp = [NSMutableArray arrayWithArray:news];
                         [temp removeObjectAtIndex:indexPath.row];
@@ -162,7 +162,7 @@
                         [self.tableview deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
                     } else {
                         [hud hideWithFailureMessage:@"操作失败"];
-                        [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
+                        [self showAlertWithTitle:@"操作失败" message:result[0][@"msg"]];
                     }
                 }
                 [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
@@ -205,11 +205,11 @@
             if (err || result.count == 0) {
                 [hud hideWithFailureMessage:@"操作失败"];
             } else {
-                if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+                if ([result[0][@"code"] integerValue] == 0) {
                     [hud hideWithSuccessMessage:@"操作成功"];
                 } else {
                     [hud hideWithFailureMessage:@"操作失败"];
-                    [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
+                    [self showAlertWithTitle:@"操作失败" message:result[0][@"msg"]];
                 }
             }
             [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
@@ -330,27 +330,27 @@
 //            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
-        if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        if ([result[0][@"code"] isEqualToString:@"0"]) {
             [hud hideWithSuccessMessage:@"登录成功"];
         } else {
             [hud hideWithFailureMessage:@"登录失败"];
         }
-        if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
+        if ([result[0][@"code"] isEqualToString:@"1"]) {
             [self showAlertWithTitle:@"登录失败" message:@"密码错误！" cancelAction:^(UIAlertAction *action) {
                 [self.textPass becomeFirstResponder];
             }];
             [self getNewsAndInfo];
             return ;
-        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
+        } else if ([result[0][@"code"] isEqualToString:@"2"]) {
             [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！" cancelAction:^(UIAlertAction *action) {
                 [self.textUid becomeFirstResponder];
             }];
             [self getNewsAndInfo];
             return ;
-        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        } else if ([result[0][@"code"] isEqualToString:@"0"]) {
             [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
             [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
-            [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+            [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
             [LoginViewController updateIDSaves];
             NSLog(@"Login - %@", uid);
             dispatch_main_async_safe(^{
@@ -428,7 +428,7 @@
     // Pass the selected object to the new view controller.
     if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        NSDictionary *dict = [news objectAtIndex:[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *dict = news[[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
         dest.bid = dict[@"bid"];
         dest.tid = dict[@"tid"];
         dest.title = dict[@"text"];
@@ -436,7 +436,7 @@
     }
     if ([segue.identifier isEqualToString:@"web"]) {
         WebViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        NSDictionary *dict = [news objectAtIndex:[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *dict = news[[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
         dest.URL = dict[@"url"];
     }
     if ([segue.identifier isEqualToString:@"account"]) {

@@ -7,10 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface MessageCell : UITableViewCell
-@property (weak, nonatomic) IBOutlet AsyncImageView *imageIcon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *imageIcon;
 @property (weak, nonatomic) IBOutlet UIButton *buttonIcon;
 @property (weak, nonatomic) IBOutlet UILabel *labelUser;
 @property (weak, nonatomic) IBOutlet UILabel *labelMsgNum;

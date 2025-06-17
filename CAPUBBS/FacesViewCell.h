@@ -7,10 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface FacesViewCell : UICollectionViewCell
 
-@property (weak, nonatomic) IBOutlet AsyncImageView *face;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *face;
 
 @end

@@ -182,7 +182,7 @@ static const CGFloat kWebViewMinHeight = 40;
         }
 
         NSString *titleText = data.firstObject[@"title"];
-        self.title = [ActionPerformer removeRe:titleText];
+        self.title = [ActionPerformer restoreTitle:titleText];
         isLast = [data[0][@"nextpage"] isEqualToString:@"false"];
         self.buttonForward.enabled = !isLast;
         self.buttonLatest.enabled = !isLast;
@@ -231,6 +231,9 @@ static const CGFloat kWebViewMinHeight = 40;
 }
 
 - (void)updateCollection {
+    if (data.count == 0) {
+        return;
+    }
     NSMutableArray *collections = [NSMutableArray arrayWithArray:[DEFAULTS objectForKey:@"collection"]];
     for (NSMutableDictionary *mdic in collections) {
         if ([self.bid isEqualToString:mdic[@"bid"]] && [self.tid isEqualToString:mdic[@"tid"]]) {
@@ -238,7 +241,7 @@ static const CGFloat kWebViewMinHeight = 40;
                 NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:mdic];
                 [tmp addEntriesFromDictionary:data[0]];
                 tmp[@"text"] = [self getCollectionText:tmp[@"text"]];
-                tmp[@"title"] = [ActionPerformer removeRe:tmp[@"title"]];
+                tmp[@"title"] = [ActionPerformer restoreTitle:tmp[@"title"]];
                 
                 BOOL hasChange = NO;
                 for (NSString *keyword in @[@"title", @"text", @"author", @"icon"]) {
@@ -277,7 +280,7 @@ static const CGFloat kWebViewMinHeight = 40;
                 [tempHeights addObject:@0];
             }
             [newTempHeights addObject:@(0)];
-            NSDictionary *dict = [data objectAtIndex:i];
+            NSDictionary *dict = data[i];
             NSString *text = [ActionPerformer transToHTML:dict[@"text"]];
             NSString *sig = [ActionPerformer transToHTML:dict[@"sig"]];
             NSString *html = [ActionPerformer htmlStringWithText:text sig:sig textSize:textSize];
@@ -580,7 +583,7 @@ static const CGFloat kWebViewMinHeight = 40;
     [cell.icon setUrl:dict[@"icon"]];
     
     [cell.webViewContainer.webView setNavigationDelegate:self];
-    [cell.webViewContainer.webView loadHTMLString:[HTMLStrings objectAtIndex:indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
+    [cell.webViewContainer.webView loadHTMLString:HTMLStrings[indexPath.row] baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
     
     
     if (heights.count > indexPath.row && [heights[indexPath.row] floatValue] > 0) {
@@ -687,10 +690,10 @@ static const CGFloat kWebViewMinHeight = 40;
         NSString *alt = payload[@"alt"];
         NSString *base64String = [base64Data substringFromIndex:range.location + 1];
         NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
-        ImageFileType type = [AsyncImageView fileType:imageData];
+        ImageFileType type = [AnimatedImageView fileType:imageData];
         if (type != ImageFileTypeUnknown) {
             [hud hideWithSuccessMessage:@"图片加载成功"];
-            NSString *fileName = [NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AsyncImageView fileExtension:type]];
+            NSString *fileName = [NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AnimatedImageView fileExtension:type]];
             [self presentImage:imageData fileName:fileName alt:alt];
             return;
         }
@@ -703,13 +706,13 @@ static const CGFloat kWebViewMinHeight = 40;
         [hud showWithProgressMessage:@"图片加载中"];
         NSURLRequest *request = [NSURLRequest requestWithURL:imageUrl cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
         NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            ImageFileType type = [AsyncImageView fileType:idata];
+            ImageFileType type = [AnimatedImageView fileType:idata];
             if (error || type == ImageFileTypeUnknown) {
                 [hud hideWithFailureMessage:!error ? errorMessage : @"未知图片格式"];
                 return;
             }
             [hud hideWithSuccessMessage:@"图片加载成功"];
-            NSString *fileName = [NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AsyncImageView fileExtension:type]];
+            NSString *fileName = [NSString stringWithFormat:@"%@.%@", [ActionPerformer md5:imgSrc], [AnimatedImageView fileExtension:type]];
             [self presentImage:idata fileName:fileName alt:alt];
         }];
         [task resume];
@@ -770,7 +773,7 @@ static const CGFloat kWebViewMinHeight = 40;
     }
     
     NSDictionary *dict = [ActionPerformer getLink:path];
-    if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
+    if (dict.count > 0 && [dict[@"tid"] length] > 0) {
         int p = [dict[@"p"] intValue];
         int floor = [dict[@"floor"] intValue];
         if ([dict[@"bid"] isEqualToString:self.bid] && [dict[@"tid"] isEqualToString:self.tid] && p > 0) {
@@ -913,7 +916,7 @@ static const CGFloat kWebViewMinHeight = 40;
             @"collectionTime" : [NSString stringWithFormat:@"%ld", (long)[[NSDate date] timeIntervalSince1970]],
             @"bid" : self.bid,
             @"tid" : self.tid,
-            @"title" : [ActionPerformer removeRe:self.title]
+            @"title" : [ActionPerformer restoreTitle:self.title]
         }];
         [array addObject:mdic];
         self.isCollection = YES;
@@ -1070,7 +1073,7 @@ static const CGFloat kWebViewMinHeight = 40;
             defaultTitle = [item[@"floor"] isEqualToString:@"1"]?self.title:[NSString stringWithFormat:@"Re: %@",self.title];
             isEdit = YES;
             NSString *content = text;
-            content = [ActionPerformer simpleEscapeHTML:content];
+            content = [ActionPerformer simpleEscapeHTML:content processLtGt:NO];
             defaultContent = content;
             [self performSegueWithIdentifier:@"compose" sender:nil];
         }]];
@@ -1112,7 +1115,7 @@ static const CGFloat kWebViewMinHeight = 40;
     if (!text || text.length == 0) {
         return @"";
     }
-    text = [ActionPerformer simpleEscapeHTML:text];
+    text = [ActionPerformer simpleEscapeHTML:text processLtGt:NO];
     
     NSString *expression = @"<quote>((.|[\r\n])*?)</quote>"; // 去除帖子中的引用
     NSRegularExpression *regexp = [NSRegularExpression regularExpressionWithPattern:expression options:0 error:nil];
@@ -1159,7 +1162,7 @@ static const CGFloat kWebViewMinHeight = 40;
                     if (!isBlank) {
                         if (isRemove) {
                             for (int i = (int)htmlLabel.count - 1; i >= 0; i--) {
-                                if ([[htmlLabel objectAtIndex:i] isEqualToString:label]) {
+                                if ([htmlLabel[i] isEqualToString:label]) {
                                     [htmlLabel removeObjectAtIndex:i];
                                     break;
                                 }
@@ -1187,7 +1190,7 @@ static const CGFloat kWebViewMinHeight = 40;
     }
     if (htmlLabel.count != 0) {
         for (int i = (int)htmlLabel.count - 1; i >= 0; i--) {
-            text = [text stringByAppendingString:[NSString stringWithFormat:@"</%@>", [htmlLabel objectAtIndex:i]]];
+            text = [text stringByAppendingString:[NSString stringWithFormat:@"</%@>", htmlLabel[i]]];
         }
     }
     //NSLog(@"%@", text);

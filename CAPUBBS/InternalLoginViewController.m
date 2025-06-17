@@ -81,29 +81,29 @@
 //            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
-        if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        if ([result[0][@"code"] isEqualToString:@"0"]) {
             [hud hideWithSuccessMessage:@"登录成功"];
         } else {
             [hud hideWithFailureMessage:@"登录失败"];
         }
-        if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
+        if ([result[0][@"code"] isEqualToString:@"1"]) {
             [self showAlertWithTitle:@"登录失败" message:@"密码错误！" cancelAction:^(UIAlertAction *action) {
                 [self.textPass becomeFirstResponder];
             }];
             return ;
-        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
+        } else if ([result[0][@"code"] isEqualToString:@"2"]) {
             [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！" cancelAction:^(UIAlertAction *action) {
                 [self.textUid becomeFirstResponder];
             }];
             return ;
-        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        } else if ([result[0][@"code"] isEqualToString:@"0"]) {
             if ([UID length] > 0 && ![uid isEqualToString:UID]) { // 注销之前的账号
                 [performerLogout performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
                 NSLog(@"Logout - %@", UID);
             }
             [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
             [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
-            [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+            [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
             [LoginViewController updateIDSaves];
             NSLog(@"Login - %@", uid);
             dispatch_main_async_safe(^{

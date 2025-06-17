@@ -52,7 +52,7 @@
     heights = [[NSMutableArray alloc] initWithArray:@[@0, @0, @0, @0]];
     for (int i = 0; i < webViewContainers.count; i++) {
         CustomWebViewContainer *webViewContainer = webViewContainers[i];
-        [webViewContainer initiateWebViewForToken:nil];
+        [webViewContainer initiateWebViewWithToken:NO];
         [webViewContainer setBackgroundColor:[UIColor clearColor]];
         [webViewContainer setOpaque:NO];
         [webViewContainer.webView setTag:i];
@@ -101,7 +101,7 @@
         return;
     }
     if (!backgroundView) {
-        backgroundView = [[AsyncImageView alloc] init];
+        backgroundView = [[AnimatedImageView alloc] init];
         [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
         self.tableView.backgroundView = backgroundView;
     }
@@ -119,14 +119,14 @@
     iconURL = @"";
     for (int i = 0; i < labels.count; i++) {
         if (i != 4) {
-            UILabel *label = [labels objectAtIndex:i];
+            UILabel *label = labels[i];
             if (i >= 1 && i <= 5) {
                 label.text = @"不告诉你";
             } else {
                 label.text = @"未知";
             }
         } else {
-            UIButton *button = [labels objectAtIndex:i];
+            UIButton *button = labels[i];
             [button setTitle:@"不告诉你" forState:UIControlStateNormal];
             [button setEnabled:NO];
         }
@@ -185,13 +185,13 @@
                 self.star.text = [self.star.text stringByAppendingString:@"⭐️"];
             }
             for (int i = 0; i < labels.count; i++) {
-                if (!([dict[[property objectAtIndex:i]] length] == 0 || [dict[[property objectAtIndex:i]] isEqualToString:@"Array"])) {
+                if (!([dict[property[i]] length] == 0 || [dict[property[i]] isEqualToString:@"Array"])) {
                     if (i != 4) {
-                        UILabel *label = [labels objectAtIndex:i];
-                        label.text = [dict[[property objectAtIndex:i]] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
+                        UILabel *label = labels[i];
+                        label.text = [dict[property[i]] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
                     } else {
-                        UIButton *button = [labels objectAtIndex:i];
-                        NSString *email = dict[[property objectAtIndex:i]];
+                        UIButton *button = labels[i];
+                        NSString *email = dict[property[i]];
                         NSString *validEmail = [self extractValidEmail:email];
                         if (validEmail) {
                             [button setTitle:validEmail forState:UIControlStateNormal];
@@ -205,7 +205,7 @@
             }
             iconURL = dict[@"icon"];
             if (self.iconData.length == 0) {
-                [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AsyncImageView transIconURL:iconURL]] object:nil];
+                [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AnimatedImageView transIconURL:iconURL]] object:nil];
             }
             [self.icon setUrl:iconURL];
             
@@ -261,7 +261,7 @@
     if (indexPath.row == 0) {
         return UITableViewAutomaticDimension;
     } else if (indexPath.row <= 4) {
-        return MIN(MAX([[heights objectAtIndex:indexPath.row - 1] floatValue], 14) + 35, WEB_VIEW_MAX_HEIGHT);
+        return MIN(MAX([heights[indexPath.row - 1] floatValue], 14) + 35, WEB_VIEW_MAX_HEIGHT);
     } else {
         return 55;
     }
@@ -343,7 +343,7 @@
             if (result && [result isKindOfClass:[NSNumber class]]) {
                 height = [result floatValue] * (textSize / 100.0);
             }
-            if (height > 0 && height - [[heights objectAtIndex:i] floatValue] >= 1) {
+            if (height > 0 && height - [heights[i] floatValue] >= 1) {
                 heights[i] = @(height);
                 [self.tableView beginUpdates];
                 [self.tableView endUpdates];
@@ -360,29 +360,31 @@
 
 - (IBAction)tapPic:(UIButton *)sender {
     if (iconURL.length > 0) {
-        [self showPic:[AsyncImageView transIconURL:iconURL]];
+        [self showPic:[AnimatedImageView transIconURL:iconURL]];
     }
 }
 - (void)showPic:(NSString *)url {
     NSString *md5Url = [ActionPerformer md5:url];
-    NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, md5Url];
-    if ([MANAGER fileExistsAtPath:cachePath]) { // GIF是未压缩的格式 可直接调取
+    NSString *cachePath = [NSString stringWithFormat:@"%@/%@", IMAGE_CACHE_PATH, md5Url];
+    if ([MANAGER fileExistsAtPath:cachePath]) {
         NSData *imageData = [MANAGER contentsAtPath:cachePath];
-        if ([AsyncImageView fileType:imageData] == ImageFileTypeGIF) {
-            [self presentImage:imageData fileName:[NSString stringWithFormat:@"%@.gif", md5Url]];
+        // 动图是未压缩的格式 可直接调取
+        if ([AnimatedImageView isAnimated:imageData]) {
+            ImageFileType type = [AnimatedImageView fileType:imageData];
+            [self presentImage:imageData fileName:[NSString stringWithFormat:@"%@.%@", md5Url, [AnimatedImageView fileExtension:type]]];
             return;
         }
     }
     [hud showWithProgressMessage:@"正在载入"];
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        ImageFileType type = [AsyncImageView fileType:idata];
+        ImageFileType type = [AnimatedImageView fileType:idata];
         if (error || type == ImageFileTypeUnknown) {
             [hud hideWithFailureMessage:@"载入失败"];
             return;
         }
         [hud hideWithSuccessMessage:@"载入成功"];
-        [self presentImage:idata fileName:[NSString stringWithFormat:@"%@.%@", md5Url, [AsyncImageView fileExtension:type]]];
+        [self presentImage:idata fileName:[NSString stringWithFormat:@"%@.%@", md5Url, [AnimatedImageView fileExtension:type]]];
     }];
     [task resume];
 }

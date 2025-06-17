@@ -40,7 +40,7 @@
         [self.imageUidAvailable setImage:SUCCESSMARK];
         [self setDefaultValue];
     } else {
-        iconURL = [NSString stringWithFormat:@"%@/bbsimg/icons/%@", CHEXIE, [ICON_NAMES objectAtIndex:arc4random() % [ICON_NAMES count]]];
+        iconURL = [NSString stringWithFormat:@"%@/bbsimg/icons/%@", CHEXIE, ICON_NAMES[arc4random() % [ICON_NAMES count]]];
         [self.icon setUrl:iconURL];
         [self editingDidEnd:self.textUid];
     }
@@ -236,16 +236,16 @@
                 [hud hideWithFailureMessage:@"注册失败"];
                 return;
             }
-            if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+            if ([result[0][@"code"] integerValue] == 0) {
                 [hud hideWithSuccessMessage:@"注册成功"];
             } else {
                 [hud hideWithFailureMessage:@"注册失败"];
             }
-            switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+            switch ([result[0][@"code"] integerValue]) {
                 case 0: {
                     [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
                     [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
-                    [GROUP_DEFAULTS setObject:[result.firstObject objectForKey:@"token"] forKey:@"token"];
+                    [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
                     [self performSelector:@selector(dismiss) withObject:nil afterDelay:0.5];
                     break;
                 }
@@ -280,13 +280,13 @@
                 [hud hideWithFailureMessage:@"修改失败"];
                 return;
             }
-            if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+            if ([result[0][@"code"] integerValue] == 0) {
                 [hud hideWithSuccessMessage:@"修改成功"];
             } else {
                 [hud hideWithFailureMessage:@"修改失败"];
             }
             
-            switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+            switch ([result[0][@"code"] integerValue]) {
                 case 0: {
                     if (self.textPsd.text.length > 0) {
                         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"验证密码" message:@"您选择了修改密码\n请输入原密码以验证身份" preferredStyle:UIAlertControllerStyleAlert];
@@ -308,7 +308,7 @@
                     break;
                 }
                 case 1:{
-                    [self showAlertWithTitle:@"修改个人信息失败" message:[[result firstObject] objectForKey:@"msg"]];
+                    [self showAlertWithTitle:@"修改个人信息失败" message:result[0][@"msg"]];
                     break;
                 }
                 default:
@@ -345,16 +345,16 @@
             [hud hideWithFailureMessage:@"修改失败"];
             return;
         }
-        if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+        if ([result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"修改成功"];
         } else {
             [hud hideWithFailureMessage:@"修改失败"];
         }
         
-        switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+        switch ([result[0][@"code"] integerValue]) {
             case 0: {
                 [GROUP_DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
-                [GROUP_DEFAULTS setObject:[[result firstObject] objectForKey:@"msg"] forKey:@"token"];
+                [GROUP_DEFAULTS setObject:result[0][@"msg"] forKey:@"token"];
                 [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
                 break;
             }
@@ -395,7 +395,7 @@
     }
     [performer performActionWithDictionary:@{@"uid":sender.text} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
         // NSLog(@"%@", result);
-        if (err || result.count == 0 || [[[result objectAtIndex:0] objectForKey:@"username"] length] == 0) {
+        if (err || result.count == 0 || [result[0][@"username"] length] == 0) {
             [self.imageUidAvailable setImage:SUCCESSMARK];
             self.navigationItem.rightBarButtonItem.enabled = YES;
         } else {

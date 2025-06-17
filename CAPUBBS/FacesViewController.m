@@ -18,7 +18,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     
-    previewImageView = [[AsyncImageView alloc] init];
+    previewImageView = [[AnimatedImageView alloc] init];
     self.numberOfFaces = 0;
     // Uncomment the following line to preserve selection between presentations
     // self.clearsSelectionOnViewWillAppear = NO;

@@ -1,17 +1,17 @@
 //
-//  AsyncImageView.m
+//  AnimatedImageView.m
 //  CAPUBBS
 //
 //  Created by 熊典 on 14-8-17.
 //  Copyright (c) 2014年 熊典. All rights reserved.
 //
 
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "UIImageEffects.h"
 
-@implementation AsyncImageView {
-    NSString * url;
+@implementation AnimatedImageView {
+    NSString * latestUrl;
     BOOL rounded;
 }
 
@@ -31,6 +31,7 @@
 }
 
 - (void)setBlurredImage:(UIImage *)image animated:(BOOL)animated {
+    latestUrl = nil;
     float animationTime = 0.5;
     image = [UIImageEffects imageByApplyingExtraLightEffectToImage:image];
     if (animated) {
@@ -56,12 +57,13 @@
 }
 
 - (void)setGif:(NSString *)imageName {
+    latestUrl = nil;
     NSString *filePath = [[NSBundle mainBundle] pathForResource:imageName ofType:nil];
     NSData *fileData = [NSData dataWithContentsOfFile:filePath];
-    [self setGifWithData:fileData];
+    [self _setGifWithData:fileData];
 }
 
-- (void)setGifWithData:(NSData *)data {
+- (void)_setGifWithData:(NSData *)data {
     dispatch_main_async_safe(^{
         SDAnimatedImage *image = [[SDAnimatedImage alloc] initWithData:data];
         [self setImage:image];
@@ -69,26 +71,26 @@
 }
 
 - (void)setUrl:(NSString *)urlToSet {
-    [self setUrl:urlToSet withPlaceholder:YES];
-}
-
-- (void)setUrl:(NSString *)urlToSet withPlaceholder:(BOOL)showPlaceholder {
-    url = [AsyncImageView transIconURL:urlToSet];
-    if (url.length == 0) {
-        NSLog(@"Fail to translate icon URL - %@", urlToSet);
+    NSString *newUrl = [AnimatedImageView transIconURL:urlToSet];
+    if ([newUrl isEqualToString:latestUrl]) {
         return;
     }
-    
-    [self loadImageWithPlaceholder:showPlaceholder];
+    if (newUrl.length == 0) {
+        NSLog(@"Failed to translate icon URL - %@", urlToSet);
+        return;
+    }
+    latestUrl = newUrl;
+    [self loadImageWithPlaceholder:YES];
 }
 
 - (NSString *)getUrl {
-    return url;
+    return latestUrl;
 }
 
 - (void)loadImageWithPlaceholder:(BOOL)showPlaceholder {
     [NOTIFICATION removeObserver:self];
-    NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
+    NSString *imageUrl = latestUrl;
+    NSString *filePath = [NSString stringWithFormat:@"%@/%@", IMAGE_CACHE_PATH, [ActionPerformer md5:imageUrl]];
     NSData *data = [MANAGER contentsAtPath:filePath];
     NSString *oldInfo = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     
@@ -98,15 +100,17 @@
             if (SIMPLE_VIEW == YES) {
                 [self setImage:[UIImage imageWithData:data]];
             } else {
-                [self setGifWithData:data];
+                [self _setGifWithData:data];
             }
-            [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:url] object:nil userInfo:@{@"data": data}];
+            if (imageUrl.length > 0) {
+                [NOTIFICATION postNotificationName:[@"imageSet" stringByAppendingString:imageUrl] object:nil userInfo:@{@"data": data}];
+            }
         });
-    } else if (url.length > 0) {
+    } else if (imageUrl.length > 0) {
         if (showPlaceholder) {
             [self setImage:PLACEHOLDER];
         }
-        [NOTIFICATION addObserver:self selector:@selector(loadImageWithPlaceholder:) name:[@"imageGet" stringByAppendingString:url] object:nil];
+        [NOTIFICATION addObserver:self selector:@selector(loadImageWithPlaceholder:) name:[@"imageGet" stringByAppendingString:imageUrl] object:nil];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
@@ -119,30 +123,30 @@
             }
         }
         NSString *newInfo = [@"loading" stringByAppendingString:[formatter stringFromDate:[NSDate date]]];
-        [AsyncImageView checkPath];
+        [AnimatedImageView checkPath];
         [MANAGER createFileAtPath:filePath contents:[newInfo dataUsingEncoding:NSUTF8StringEncoding] attributes:nil];
         dispatch_global_default_async(^{
-            [self startLoadingImage:showPlaceholder];
+            [self startLoadingUrl:imageUrl withPlaceholder:showPlaceholder];
         });
     }
 }
 
-- (void)startLoadingImage:(BOOL)hasPlaceholder {
-    NSString *imageTag = url;
-    NSString *filePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url]];
-    if (!([[GROUP_DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue] && IS_CELLULAR)) {
-        // NSLog(@"Load Img - %@", imageTag);
-        NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:url]];
+- (void)startLoadingUrl:(NSString *)imageUrl withPlaceholder:(BOOL)hasPlaceholder {
+    NSString *filePath = [NSString stringWithFormat:@"%@/%@", IMAGE_CACHE_PATH, [ActionPerformer md5:imageUrl]];
+    BOOL shouldSkipLoading = [[GROUP_DEFAULTS objectForKey:@"iconOnlyInWifi"] boolValue] && IS_CELLULAR;
+    if (!shouldSkipLoading) {
+        // NSLog(@"Load Img - %@", imageUrl);
+        NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageUrl]];
         UIImage *image = [UIImage imageWithData:imageData];
-        ImageFileType imageType = [AsyncImageView fileType:imageData];
+        ImageFileType imageType = [AnimatedImageView fileType:imageData];
         if (imageType != ImageFileTypeUnknown) {
-            if (imageType != ImageFileTypeGIF) {
-                imageData = [self resizeImage:image imageType:imageType];
+            if (![AnimatedImageView isAnimated:imageData]) {
+                imageData = [self resizeImage:image];
             }
             // NSLog(@"Icon Type:%@, Size:%dkb", imageType, (int)(imageData.length/1024));
-            [AsyncImageView checkPath];
+            [AnimatedImageView checkPath];
             [MANAGER createFileAtPath:filePath contents:imageData attributes:nil];
-            [NOTIFICATION postNotificationName:[@"imageGet" stringByAppendingString:imageTag] object:nil];
+            [NOTIFICATION postNotificationName:[@"imageGet" stringByAppendingString:imageUrl] object:nil];
             return;
         }
     }
@@ -152,10 +156,12 @@
             [self setImage:PLACEHOLDER];
         });
     }
-    NSLog(@"Icon Load Failed - %@", imageTag);
+    if (!shouldSkipLoading) {
+        NSLog(@"Image Load Failed - %@", imageUrl);
+    }
 }
 
-- (NSData *)resizeImage:(UIImage *)oriImage imageType:(ImageFileType)type {
+- (NSData *)resizeImage:(UIImage *)oriImage {
     UIImage *resizeImage = oriImage;
     int maxWidth = 450; // 详细信息界面图片大小150 * 150 @3x模式下450 * 450可保证清晰
     if (oriImage.size.width > maxWidth) {
@@ -164,7 +170,13 @@
         resizeImage = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
     }
-    if (type == ImageFileTypePNG) { // 带透明信息的png不可转换成jpeg否则丢失透明性
+    
+    CGImageAlphaInfo alphaInfo = CGImageGetAlphaInfo(oriImage.CGImage);
+    BOOL hasAlpha = (alphaInfo == kCGImageAlphaFirst ||
+                     alphaInfo == kCGImageAlphaLast ||
+                     alphaInfo == kCGImageAlphaPremultipliedFirst ||
+                     alphaInfo == kCGImageAlphaPremultipliedLast);
+    if (hasAlpha) { // 带透明信息的png不可转换成jpeg否则丢失透明性
         return UIImagePNGRepresentation(resizeImage);
     } else {
         if (resizeImage.size.width >= maxWidth) {
@@ -173,6 +185,14 @@
             return UIImageJPEGRepresentation(resizeImage, 1);
         }
     }
+}
+
++ (BOOL)isAnimated:(NSData *)imageData {
+    if (!imageData) {
+        return NO;
+    }
+    SDAnimatedImage *animatedImage = [[SDAnimatedImage alloc] initWithData:imageData];
+    return animatedImage && animatedImage.sd_imageFrameCount > 1;
 }
 
 + (ImageFileType)fileType:(NSData *)imageData {
@@ -239,8 +259,8 @@
 }
 
 + (void)checkPath {
-    if (![MANAGER fileExistsAtPath:CACHE_PATH]) { // 如果没有CACHE_PATH目录则创建目录
-        [MANAGER createDirectoryAtPath:CACHE_PATH withIntermediateDirectories:NO attributes:nil error:nil];
+    if (![MANAGER fileExistsAtPath:IMAGE_CACHE_PATH]) { // 如果没有IMAGE_CACHE_PATH目录则创建目录
+        [MANAGER createDirectoryAtPath:IMAGE_CACHE_PATH withIntermediateDirectories:NO attributes:nil error:nil];
     }
 }
 
