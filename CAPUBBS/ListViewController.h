@@ -7,17 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MessageUI/MessageUI.h>
 
 @interface ListViewController : CustomTableViewController {
-    ActionPerformer *performer;
-    ActionPerformer *performerReply;
     NSMutableArray *data;
     NSInteger globalTopCount;
-    NSArray *numberEmoji;
     MBProgressHUD *hud;
     MBProgressHUD *hudSofa;
-    NSInteger page;
+    NSUserActivity *activity;
     int failCount;
     BOOL isFirstTime;
     BOOL isLast;
@@ -29,6 +25,7 @@
 }
 
 @property NSString *bid;
+@property NSInteger page;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonViewOnline;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonSearch;
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonBack;

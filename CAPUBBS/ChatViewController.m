@@ -23,7 +23,7 @@
     [targetView addSubview:hud];
     
     if (self.iconData.length > 0) {
-        [self refreshBackgroundView:YES];
+        [self refreshBackgroundViewAnimated:NO];
     }
     
     if (self.shouldHideInfo == YES) {
@@ -31,9 +31,6 @@
     } else if (self.directTalk == YES) {
         self.navigationItem.rightBarButtonItems = @[self.buttonInfo];
     }
-    performer = [[ActionPerformer alloc] init];
-    performerUser = [[ActionPerformer alloc] init];
-    performerSend = [[ActionPerformer alloc] init];
     shouldShowHud = YES;
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
@@ -47,9 +44,6 @@
         [self loadChat];
     }
     
-    // Auto height
-    self.tableView.estimatedRowHeight = 100;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     
@@ -92,20 +86,21 @@
     dispatch_main_async_safe(^{
         if (self.iconData.length == 0) {
             self.iconData = noti.userInfo[@"data"];
-            [self refreshBackgroundView:NO];
+            [self refreshBackgroundViewAnimated:YES];
         }
     });
 }
 
-- (void)refreshBackgroundView:(BOOL)noAnimation {
-    if (SIMPLE_VIEW == NO) {
-        if (!backgroundView) {
-            backgroundView = [[AsyncImageView alloc] init];
-            [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
-            self.tableView.backgroundView = backgroundView;
-        }
-        [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:!noAnimation];
+- (void)refreshBackgroundViewAnimated:(BOOL)animated {
+    if (SIMPLE_VIEW) {
+        return;
     }
+    if (!backgroundView) {
+        backgroundView = [[AnimatedImageView alloc] init];
+        [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
+        self.tableView.backgroundView = backgroundView;
+    }
+    [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:animated];
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -131,7 +126,7 @@
         @"type" : @"chat",
         @"chatter" : self.ID
     };
-    [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"msg" callback: ^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
@@ -142,7 +137,7 @@
             return ;
         }
         
-        if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
+        if ([data[0][@"code"] isEqualToString:@"1"]) {
             [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
         }
         
@@ -158,13 +153,15 @@
             [self checkID:NO];
         }
         [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-        [self performSelector:@selector(scrollTableView) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self scrollTableView];
+        });
         shouldShowHud = NO;
     }];
 }
 
 - (void)checkID:(BOOL)hudVisible {
-    [performerUser performActionWithDictionary:@{@"uid":self.ID, @"recent":@"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"uid":self.ID, @"recent":@"YES"} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             return;
         }
@@ -181,8 +178,8 @@
             }
         } else {
             NSString *iconUrl = result[0][@"icon"];
-            [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AsyncImageView transIconURL:iconUrl]] object:nil];
-            AsyncImageView *icon = [[AsyncImageView alloc] init];
+            [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AnimatedImageView transIconURL:iconUrl]] object:nil];
+            AnimatedImageView *icon = [[AnimatedImageView alloc] init];
             [icon setUrl:iconUrl];
             if (hudVisible) {
                 [hud hideWithSuccessMessage:@"加载成功"];
@@ -194,7 +191,9 @@
 - (void)scrollTableView {
     [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1] atScrollPosition:UITableViewScrollPositionBottom animated:YES];
     if (self.directTalk == YES) {
-        [self.textSend performSelector:@selector(becomeFirstResponder) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self.textSend becomeFirstResponder];
+        });
     }
     self.directTalk = NO;
 }
@@ -259,11 +258,13 @@
 
 - (IBAction)startCompose:(id)sender {
     [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1] atScrollPosition:UITableViewScrollPositionBottom animated:YES];
-    [self.textSend performSelector:@selector(becomeFirstResponder) withObject:nil afterDelay:0.5];
+    dispatch_main_after(0.5, ^{
+        [self.textSend becomeFirstResponder];
+    });
 }
 
 - (IBAction)buttonSend:(id)sender {
-    ChatCell *cell = (ChatCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
+    ChatCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1]];
     NSString *text = cell.textSend.text;
     if (text.length == 0) {
         [self showAlertWithTitle:@"错误" message:@"您未填写私信内容！" cancelAction:^(UIAlertAction *action) {
@@ -277,19 +278,19 @@
         @"to" : self.ID,
         @"text" : text
     };
-    [performerSend performActionWithDictionary:dict toURL:@"sendmsg" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"sendmsg" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@",err);
             [hud hideWithFailureMessage:@"发送失败"];
             return;
         }
         // NSLog(@"%@", result);
-        if ([[result.firstObject objectForKey:@"code"] integerValue] == 0) {
+        if ([result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"发送成功"];
         } else {
             [hud hideWithFailureMessage:@"发送失败"];
         }
-        switch ([[result.firstObject objectForKey:@"code"] integerValue]) {
+        switch ([result[0][@"code"] integerValue]) {
             case 0: {
                 cell.textSend.text = @"";
                 [self loadChat];

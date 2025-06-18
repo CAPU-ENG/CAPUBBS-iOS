@@ -7,10 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface RecentViewController : CustomTableViewController {
-    AsyncImageView *backgroundView;
+    AnimatedImageView *backgroundView;
 }
 
 @property NSArray *data;

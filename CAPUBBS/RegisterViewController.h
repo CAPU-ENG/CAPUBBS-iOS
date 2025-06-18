@@ -7,11 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface RegisterViewController : CustomTableViewController {
-    ActionPerformer *performer;
-    ActionPerformer *performerPsd;
     MBProgressHUD *hud;
     NSString *iconURL;
 }
@@ -25,7 +23,7 @@
 @property (weak, nonatomic) IBOutlet UITextField *textPsd;
 @property (weak, nonatomic) IBOutlet UITextField *textPsdSure;
 // @property (weak, nonatomic) IBOutlet UITextField *textCode;
-@property (weak, nonatomic) IBOutlet AsyncImageView *icon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *icon;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *segmentSex;
 @property (weak, nonatomic) IBOutlet UITextField *textQQ;
 @property (weak, nonatomic) IBOutlet UITextField *textEmail;
@@ -35,6 +33,5 @@
 @property (weak, nonatomic) IBOutlet UITextView *textSig;
 @property (weak, nonatomic) IBOutlet UITextView *textSig2;
 @property (weak, nonatomic) IBOutlet UITextView *textSig3;
-+ (BOOL)isValidateEmail:(NSString *)email;
 
 @end

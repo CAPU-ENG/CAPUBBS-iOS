@@ -10,10 +10,6 @@
 #import "ContentViewController.h"
 #import "IconViewController.h"
 
-#define UID_GUIDE @"如何才能取一个好的ID？"
-#define UID_WARNING @"该ID已经存在！"
-#define UID_CHANGE_HINT @"用户名一经注册无法更改"
-
 @interface RegisterViewController ()
 
 @end
@@ -27,8 +23,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
-    performerPsd = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(setUserIcon:) name:@"selectIcon" object:nil];
     [self.labelUidGuide setTextColor:BLUE];
     
@@ -44,7 +38,7 @@
         [self.imageUidAvailable setImage:SUCCESSMARK];
         [self setDefaultValue];
     } else {
-        iconURL = [NSString stringWithFormat:@"%@/bbsimg/icons/%@", CHEXIE, [ICON_NAMES objectAtIndex:arc4random() % [ICON_NAMES count]]];
+        iconURL = [NSString stringWithFormat:@"%@/bbsimg/icons/%@", CHEXIE, ICON_NAMES[arc4random() % [ICON_NAMES count]]];
         [self.icon setUrl:iconURL];
         [self editingDidEnd:self.textUid];
     }
@@ -71,7 +65,7 @@
     [uid addAttribute:NSForegroundColorAttributeName value:[UIColor darkGrayColor] range:NSMakeRange(0, uid.length)];
     self.textUid.attributedText = uid;
     self.textUid.userInteractionEnabled = NO;
-    [self.labelUidGuide setText:UID_CHANGE_HINT];
+    [self.labelUidGuide setText:@"用户名一经注册无法更改"];
     [self.labelUidGuide setTextColor:[UIColor darkGrayColor]];
     self.cellUidGuide.userInteractionEnabled = NO;
     self.cellUidGuide.accessoryType = UITableViewCellAccessoryNone;
@@ -101,9 +95,15 @@
     if (![dict[@"intro"] isEqualToString:@"Array"]) {
         self.textIntro.text = dict[@"intro"];
     }
-    self.textSig.text = [ContentViewController transFromHTML:[ContentViewController restoreFormat:dict[@"sig1"]]];
-    self.textSig2.text = [ContentViewController transFromHTML:[ContentViewController restoreFormat:dict[@"sig2"]]];
-    self.textSig3.text = [ContentViewController transFromHTML:[ContentViewController restoreFormat:dict[@"sig3"]]];
+    if (![dict[@"sig1"] isEqualToString:@"Array"]) {
+        self.textSig.text = dict[@"sig1"];
+    }
+    if (![dict[@"sig2"] isEqualToString:@"Array"]) {
+        self.textSig2.text = dict[@"sig2"];
+    }
+    if (![dict[@"sig3"] isEqualToString:@"Array"]) {
+        self.textSig3.text = dict[@"sig3"];
+    }
 }
 
 - (IBAction)cancel:(id)sender {
@@ -164,7 +164,7 @@
 //        }];
 //        return;
 //    }
-    if (email.length > 0 && [RegisterViewController isValidateEmail:email] == NO) {
+    if (email.length > 0 && [self isValidateEmail:email] == NO) {
         [self showAlertWithTitle:@"错误" message:@"邮箱格式错误！" cancelAction:^(UIAlertAction *action) {
             [self.textEmail becomeFirstResponder];
         }];
@@ -225,29 +225,28 @@
         @"sig" : sig,
         @"sig2" : sig2,
         @"sig3" : sig3,
-        @"os" : @"ios",
-        @"device" : [ActionPerformer doDevicePlatform],
-        @"version" : [[UIDevice currentDevice] systemVersion]
     };
     if (self.isEdit == NO) {
         [hud showWithProgressMessage:@"注册中"];
-        [performer performActionWithDictionary:dict toURL:@"register" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"register" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [self showAlertWithTitle:@"注册失败" message:[err localizedDescription]];
                 [hud hideWithFailureMessage:@"注册失败"];
                 return;
             }
-            if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+            if ([result[0][@"code"] integerValue] == 0) {
                 [hud hideWithSuccessMessage:@"注册成功"];
             } else {
                 [hud hideWithFailureMessage:@"注册失败"];
             }
-            switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+            switch ([result[0][@"code"] integerValue]) {
                 case 0: {
                     [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
                     [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
-                    [GROUP_DEFAULTS setObject:[result.firstObject objectForKey:@"token"] forKey:@"token"];
-                    [self performSelector:@selector(dismiss) withObject:nil afterDelay:0.5];
+                    [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
+                    dispatch_main_after(0.5, ^{
+                        [self dismissViewControllerAnimated:YES completion:nil];
+                    });
                     break;
                 }
                 case 6:{
@@ -275,19 +274,19 @@
         }];
     } else {
         [hud showWithProgressMessage:@"修改中"];
-        [performer performActionWithDictionary:dict toURL:@"edituser" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"edituser" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
                 [hud hideWithFailureMessage:@"修改失败"];
                 return;
             }
-            if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+            if ([result[0][@"code"] integerValue] == 0) {
                 [hud hideWithSuccessMessage:@"修改成功"];
             } else {
                 [hud hideWithFailureMessage:@"修改失败"];
             }
             
-            switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+            switch ([result[0][@"code"] integerValue]) {
                 case 0: {
                     if (self.textPsd.text.length > 0) {
                         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"验证密码" message:@"您选择了修改密码\n请输入原密码以验证身份" preferredStyle:UIAlertControllerStyleAlert];
@@ -296,7 +295,9 @@
                             textField.secureTextEntry = YES;
                         }];
                         [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                            [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                            dispatch_main_after(0.5, ^{
+                                [self back];
+                            });
                         }]];
                         [alert addAction:[UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                             NSString *oldPassword = alert.textFields.firstObject.text;
@@ -304,12 +305,14 @@
                         }]];
                         [self presentViewControllerSafe:alert];
                     } else {
-                        [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                        dispatch_main_after(0.5, ^{
+                            [self back];
+                        });
                     }
                     break;
                 }
                 case 1:{
-                    [self showAlertWithTitle:@"修改个人信息失败" message:[[result firstObject] objectForKey:@"msg"]];
+                    [self showAlertWithTitle:@"修改个人信息失败" message:result[0][@"msg"]];
                     break;
                 }
                 default:
@@ -320,13 +323,6 @@
             }
         }];
     }
-}
-
-- (void)dismiss {
-    dispatch_main_async_safe(^{
-        [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
-    });
-    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)back {
@@ -340,23 +336,25 @@
         @"old" : [ActionPerformer md5:oldPassword],
         @"new" : [ActionPerformer md5:self.textPsd.text]
     };
-    [performerPsd performActionWithDictionary:dict toURL:@"changepsd" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"changepsd" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
             [hud hideWithFailureMessage:@"修改失败"];
             return;
         }
-        if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+        if ([result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"修改成功"];
         } else {
             [hud hideWithFailureMessage:@"修改失败"];
         }
         
-        switch ([[[result firstObject] objectForKey:@"code"] integerValue]) {
+        switch ([result[0][@"code"] integerValue]) {
             case 0: {
                 [GROUP_DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
-                [GROUP_DEFAULTS setObject:[[result firstObject] objectForKey:@"msg"] forKey:@"token"];
-                [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                [GROUP_DEFAULTS setObject:result[0][@"msg"] forKey:@"token"];
+                dispatch_main_after(0.5, ^{
+                    [self back];
+                });
                 break;
             }
             case 1:{
@@ -394,17 +392,19 @@
         [self.imageUidAvailable setImage:QUESTIONMARK];
         return;
     }
-    [performer performActionWithDictionary:@{@"uid":sender.text} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"uid":sender.text} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
         // NSLog(@"%@", result);
-        if (err || result.count == 0 || [[[result objectAtIndex:0] objectForKey:@"username"] length] == 0) {
+        if (err || result.count == 0 || [result[0][@"username"] length] == 0) {
             [self.imageUidAvailable setImage:SUCCESSMARK];
             self.navigationItem.rightBarButtonItem.enabled = YES;
         } else {
             [self.imageUidAvailable setImage:FAILMARK];
-            [self.labelUidGuide setText:UID_WARNING];
+            [self.labelUidGuide setText:@"该ID已经存在！"];
             [self.labelUidGuide setTextColor:[UIColor redColor]];
-            [self.labelUidGuide performSelector:@selector(setText:) withObject:UID_GUIDE afterDelay:1.0];
-            [self.labelUidGuide performSelector:@selector(setTextColor:) withObject:BLUE afterDelay:1.0];
+            dispatch_main_after(1.0, ^{
+                [self.labelUidGuide setText:@"如何才能取一个好的ID？"];
+                [self.labelUidGuide setTextColor:BLUE];
+            });
         }
     }];
 }
@@ -417,24 +417,16 @@
     [sender resignFirstResponder];
 }
 
-+ (BOOL)isValidateEmail:(NSString *)email {
-    NSString *emailRegex = @"[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}";
-    NSRange range = [email rangeOfString:emailRegex options:NSRegularExpressionSearch];
-    return (range.location != NSNotFound);
+- (BOOL)string:(NSString *)string passRegex:(NSString *)regex {
+    return [[NSPredicate predicateWithFormat:@"SELF MATCHES %@", regex] evaluateWithObject:string];
 }
 
-- (BOOL)isValidQQ:(NSString *)QQ {
-    const char *cvalue = [QQ UTF8String];
-    int len = (int)strlen(cvalue);
-    if (len < 5 || len > 11) {
-        return NO;
-    }
-    for (int i = 0; i < len; i++) {
-        if (isnumber(cvalue[i]) == NO) {
-            return NO;
-        }
-    }
-    return YES;
+- (BOOL)isValidateEmail:(NSString *)email {
+    return [self string:email passRegex:@"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"];
+}
+
+- (BOOL)isValidQQ:(NSString *)qq {
+    return [self string:qq passRegex:@"^[1-9][0-9]{4,10}$"];
 }
 
 - (int)getByte:(NSString*)text {

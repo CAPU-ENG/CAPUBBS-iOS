@@ -7,11 +7,17 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <MessageUI/MessageUI.h>
+#import <QuickLook/QuickLook.h>
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate> {
-    ActionPerformer *performer;
+@interface AppDelegate : UIResponder <UIApplicationDelegate, MFMailComposeViewControllerDelegate, QLPreviewControllerDelegate, QLPreviewControllerDataSource> {
+    NSString *previewFilePath;
+    NSString *previewFileTitle;
+    UIView *previewFrame;
 }
 
 @property (strong, nonatomic) UIWindow *window;
+
++ (UIViewController *)getTopViewController;
 
 @end

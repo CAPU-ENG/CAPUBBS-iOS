@@ -303,3 +303,37 @@ void cleanupBuffer(void *userData, void *buf_data)
 
 @end
 
+@implementation UIImage (Extension)
+
+- (UIImage *)imageByApplyingCornerRadius:(CGFloat)cornerRadius {
+    // 1. 开启图形上下文
+    UIGraphicsBeginImageContextWithOptions(self.size, NO, 0.0);
+
+    // 2. 创建圆角矩形路径
+    UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, self.size.width, self.size.height)
+                                                    cornerRadius:cornerRadius];
+
+    // 3. 将路径设置为裁剪区域
+    [path addClip];
+
+    // 4. 绘制原始图片。因为已经设置了裁剪区域，所以只会绘制出在区域内的部分。
+    [self drawAtPoint:CGPointZero];
+
+    // 5. 从上下文中获取裁剪后的新图片
+    UIImage *roundedImage = UIGraphicsGetImageFromCurrentImageContext();
+
+    // 6. 关闭上下文
+    UIGraphicsEndImageContext();
+
+    return roundedImage;
+}
+
++ (UIImage *)imageWithColor:(UIColor *)color size:(CGSize)size {
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:size];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+        [color setFill];
+        [context fillRect:CGRectMake(0, 0, size.width, size.height)];
+    }];
+}
+
+@end

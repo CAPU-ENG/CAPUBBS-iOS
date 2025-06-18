@@ -10,7 +10,7 @@
 #import "FacesViewCell.h"
 
 @interface FacesViewController : CustomCollectionViewController {
-    AsyncImageView *previewImageView;
+    AnimatedImageView *previewImageView;
 }
 
 @property int numberOfFaces;

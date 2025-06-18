@@ -12,7 +12,9 @@
 #import "ComposeViewController.h"
 #import "SearchViewController.h"
 #import "WebViewController.h"
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
+
+#define NUMBER_EMOJI @[@"1⃣️", @"2⃣️", @"3⃣️", @"4⃣️", @"5⃣️", @"6⃣️", @"7⃣️", @"8⃣️", @"9⃣️", @"🔟"]
 
 @interface ListViewController ()
 
@@ -23,9 +25,6 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GREEN_BACK;
-    // Auto height
-    self.tableView.estimatedRowHeight = 50;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
     hud = [[MBProgressHUD alloc] initWithView:targetView];
@@ -38,37 +37,41 @@
     } else {
         self.navigationItem.rightBarButtonItems = @[self.buttonSearch];
         
-        if (SIMPLE_VIEW == NO) {
-            AsyncImageView *backgroundView = [[AsyncImageView alloc] init];
+        if (!SIMPLE_VIEW) {
+            AnimatedImageView *backgroundView = [[AnimatedImageView alloc] init];
             [backgroundView setBlurredImage:[UIImage imageNamed:[@"b" stringByAppendingString:self.bid]] animated:NO];
             [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
             self.tableView.backgroundView = backgroundView;
         }
     }
-//    numberEmoji = @[@"1⃣️", @"2⃣️", @"3⃣️", @"4⃣️", @"5⃣️", @"6⃣️", @"7⃣️", @"8⃣️", @"9⃣️", @"🔟"];
     isFirstTime = YES;
-    page = 1;
-    performer = [[ActionPerformer alloc] init];
-    performerReply = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(shouldRefresh) name:@"refreshList" object:nil];
+    [NOTIFICATION addObserver:self.tableView selector:@selector(reloadData) name:@"collectionChanged" object:nil];
     self.title = ([self.bid isEqualToString:@"hot"] ? @"🔥论坛热点🔥" : [ActionPerformer getBoardTitle:self.bid]);
     oriTitle = self.title;
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
-    [self jumpTo:page];
+    if (self.page <= 0) {
+        self.page = 1;
+    }
+    [self jumpTo:self.page];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self.navigationController setToolbarHidden:NO];
+    activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".list"]];
+    activity.webpageURL = [self getCurrentUrl];
+    [activity becomeCurrent];
+    
     if (![self.bid isEqualToString:@"hot"]) {
 //        if (![[DEFAULTS objectForKey:@"FeatureSwipe2.0"] boolValue]) {
 //            [self showAlertWithTitle:@"新功能！" message:@"帖子和列表界面可以左右滑动翻页" cancelTitle:@"我知道了"];
-//            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureSwipe2.0"];
+//            [DEFAULTS setObject:@(YES) forKey:@"FeatureSwipe2.0"];
 //        }
     } else {
         if (![[DEFAULTS objectForKey:@"FeatureViewOnline3.0"] boolValue]) {
-            [self showAlertWithTitle:@"新功能！" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" cancelTitle:@"我知道了"];
-            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureViewOnline3.0"];
+            [self showAlertWithTitle:@"Tips" message:@"可以查看在线用户和签到统计\n点击右上方墨镜前往" cancelTitle:@"我知道了"];
+            [DEFAULTS setObject:@(YES) forKey:@"FeatureViewOnline3.0"];
         }
     }
 }
@@ -79,41 +82,57 @@
     [hudSofa hideWithFailureMessage:@"页面退出"];
 }
 
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    [activity invalidate];
+}
+
+- (NSURL *)getCurrentUrl {
+    NSString *url;
+    if ([self.bid isEqualToString:@"hot"]) {
+        url = [NSString stringWithFormat:@"%@/bbs/index", CHEXIE];
+    } else {
+        url = [NSString stringWithFormat:@"%@/bbs/main/?bid=%@&p=%ld", CHEXIE, self.bid, self.page];
+    }
+    return [NSURL URLWithString:url];
+}
+
 - (void)shouldRefresh{
-    [self jumpTo:page];
+    [self jumpTo:self.page];
 }
 
 - (void)refreshControlValueChanged:(UIRefreshControl*)sender{
     self.refreshControl.attributedTitle=[[NSAttributedString alloc] initWithString:@"刷新"];
-    [self jumpTo:page];
+    [self jumpTo:self.page];
 }
 
 - (void)jumpTo:(NSInteger)pageNum {
     [hud showWithProgressMessage:@"读取中"];
-    NSInteger oldPage = page;
-    page = pageNum;
+    NSInteger oldPage = self.page;
+    self.page = pageNum;
     self.buttonCompose.enabled = [ActionPerformer checkLogin:NO];
     self.buttonSearch.enabled = (![self.bid isEqualToString:@"1" ] || [ActionPerformer checkLogin:NO]);
     if (![self.bid isEqualToString: @"hot"]) {
-        self.buttonBack.enabled = (page != 1);
+        self.buttonBack.enabled = (self.page != 1);
         NSDictionary *dict = @{
             @"bid" : self.bid,
-            @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum]
+            @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum],
+            @"raw": @"YES"
         };
-        [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"show" callback:^(NSArray *result, NSError *err) {
             if (self.refreshControl.isRefreshing) {
                 [self.refreshControl endRefreshing];
             }
 
             if (err || result.count == 0) {
                 failCount++;
-                page = oldPage;
-                self.buttonBack.enabled = page != 1;
+                self.page = oldPage;
+                self.buttonBack.enabled = self.page != 1;
                 [hud hideWithFailureMessage:@"读取失败"];
                 NSLog(@"%@",err);
             } else {
-                data = [NSMutableArray arrayWithArray:result];
-                if ([[[data lastObject] objectForKey:@"pages"] length]==0) {
+                NSString *pages = [result lastObject][@"pages"];
+                if (pages.length == 0) {
                     failCount++;
                     isLast = YES;
                     self.title = [NSString stringWithFormat:@"%@(未登录)", oriTitle];
@@ -121,20 +140,24 @@
                     [self showAlertWithTitle:@"警告" message:@"您未登录，不能查看本版！\n请登录或者前往其它版面"];
                     [hud hideWithFailureMessage:@"读取失败"];
                 } else {
-                    isLast = [[data[0] objectForKey:@"nextpage"] isEqualToString:@"false"];
-                    self.title = [NSString stringWithFormat:@"%@(%ld/%@)", oriTitle,(long)page, [[data lastObject] objectForKey:@"pages"]];
+                    data = [NSMutableArray arrayWithArray:result];
+                    isLast = [data[0][@"nextpage"] isEqualToString:@"false"];
+                    self.title = [NSString stringWithFormat:@"%@(%ld/%@)", oriTitle, self.page, [data lastObject][@"pages"]];
                     [hud hideWithSuccessMessage:@"读取成功"];
                 }
                 
+                activity.webpageURL = [self getCurrentUrl];
                 self.buttonForward.enabled = !isLast;
-                self.buttonJump.enabled = ([[[data lastObject] objectForKey:@"pages"] integerValue] > 1);
+                self.buttonJump.enabled = ([pages integerValue] > 1);
                 if (isFirstTime) {
                     [self.tableView reloadData];
                 } else {
                     [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
                 }
                 isFirstTime = NO;
-                [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+                if (data.count > 0) {
+                    [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+                }
             }
             [self checkRobSofa];
         }];
@@ -142,16 +165,16 @@
         self.buttonBack.enabled = NO;
         self.buttonForward.enabled = NO;
         self.buttonJump.enabled = NO;
-        [performer performActionWithDictionary:nil toURL:@"globaltop" withBlock:^(NSArray *topResult, NSError *topErr) {
-            [performer performActionWithDictionary:@{@"hotnum":[NSString stringWithFormat:@"%d", HOT_NUM]} toURL:@"hot" withBlock:^(NSArray *hotResult, NSError *hotErr) {
+        [ActionPerformer callApiWithParams:nil toURL:@"globaltop" callback:^(NSArray *topResult, NSError *topErr) {
+            [ActionPerformer callApiWithParams:@{@"hotnum":[NSString stringWithFormat:@"%d", HOT_NUM]} toURL:@"hot" callback:^(NSArray *hotResult, NSError *hotErr) {
                 if (self.refreshControl.isRefreshing) {
-                    page = 1;
+                    self.page = 1;
                     [self.refreshControl endRefreshing];
                 }
                 if (topErr || hotErr || hotResult.count == 0) {
                     failCount++;
-                    page = oldPage;
-                    self.buttonBack.enabled = page != 1;
+                    self.page = oldPage;
+                    self.buttonBack.enabled = self.page != 1;
                     [hud hideWithFailureMessage:@"读取失败"];
                     if (topErr) {
                         NSLog(@"globaltop error: %@",topErr);
@@ -168,7 +191,7 @@
                     data = [NSMutableArray arrayWithArray:topResult];
                     globalTopCount = data.count;
                     [data addObjectsFromArray:hotResult];
-                    [GROUP_DEFAULTS setObject:[NSNumber numberWithLong:globalTopCount] forKey:@"globalTopCount"];
+                    [GROUP_DEFAULTS setObject:@(globalTopCount) forKey:@"globalTopCount"];
                     [GROUP_DEFAULTS setObject:data forKey:@"hotPosts"];
                     if (isFirstTime) {
                         [self.tableView reloadData];
@@ -217,13 +240,17 @@
                     // NSLog(@"%d", (int)time);
                     if ((int)time <= 60) { // 一分钟之内的帖子(允许服务器时间误差)
                         NSLog(@"New Post Found");
-                        [self performSelector:@selector(robSofa:) withObject:dict afterDelay:0];
+                        dispatch_global_default_async(^{
+                            [self robSofa:dict];
+                        });
                         return;
                     }
                 }
             }
             float delay = 1 + (float)(arc4random() % 200) / 100; // 随机在1~3秒后刷新
-            [self performSelector:@selector(refresh) withObject:nil afterDelay:isFastRobSofa ? delay * 0.1 : delay];
+            dispatch_main_after(isFastRobSofa ? delay * 0.1 : delay, ^{
+                [self refresh];
+            });
         }
         [UIApplication sharedApplication].idleTimerDisabled = YES; // 关闭自动锁屏
     } else {
@@ -239,12 +266,12 @@
         @"text" : sofaContent,
         @"sig" : @"0"
     };
-    [performerReply performActionWithDictionary:dict toURL:@"post" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"post" callback:^(NSArray *result, NSError *err) {
         BOOL fail = NO;
         if (err || result.count == 0) {
             fail = YES;
         }
-        if (fail == NO && ![[[result firstObject] objectForKey:@"code"] isEqualToString:@"0"]) {
+        if (fail == NO && ![result[0][@"code"] isEqualToString:@"0"]) {
             fail = YES;
         }
         if (fail == NO) {
@@ -254,8 +281,19 @@
         } else {
             failCount++;
         }
-        [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self refresh];
+        });
     }];
+}
+
+- (BOOL)isCollection:(NSString *)bid tid:(NSString *)tid {
+    for (NSDictionary *dic in [DEFAULTS objectForKey:@"collection"]) {
+        if ([dic[@"bid"] isEqualToString:bid] && [dic[@"tid"] isEqualToString:tid]) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
 #pragma mark - Table view data source
@@ -274,48 +312,79 @@
     ListCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"list"];
     
     NSDictionary *dict = data[indexPath.row];
-    NSString *titleText = dict[@"text"];
-    titleText = [ActionPerformer removeRe:titleText];
-    if ([dict[@"top"] integerValue] == 1 || [dict[@"extr"] integerValue] == 1 || [dict[@"lock"] integerValue] == 1) {
-        titleText = [@" " stringByAppendingString:titleText];
-        if ([dict[@"top"] integerValue] == 1) {
-            titleText = [@"⬆️" stringByAppendingString:titleText];
-        }
-        if ([dict[@"extr"] integerValue] == 1) {
-            titleText = [@"⭐️" stringByAppendingString:titleText];
-        }
-        if ([dict[@"lock"] integerValue] == 1) {
-            titleText = [@"🔒" stringByAppendingString:titleText];
-        }
-    }
-    if (!titleText) {
-        titleText = @"";
+    NSString *titleText = [ActionPerformer restoreTitle:dict[@"text"]] ?: @"";
+    BOOL isTop = NO;
+    BOOL isCollection = [self isCollection:dict[@"bid"] tid:dict[@"tid"]];
+    NSMutableArray *titlePrefixes = [NSMutableArray array];
+    if (isCollection) {
+        [titlePrefixes addObject:@"💙"];
     }
     if ([self.bid isEqualToString:@"hot"]) {
         if (indexPath.row < globalTopCount) {
-            titleText = [@"⬆️ " stringByAppendingString:titleText];
+            isTop = YES;
+            [titlePrefixes addObject:@"⬆️"];
+        }
+//        else if (indexPath.row < globalTopCount + 10) {
+//            [titlePrefixes addObject:NUMBER_EMOJI[indexPath.row - globalTopCount]];
+//        }
+        
+        NSString *author = dict[@"author"];
+        NSString *replyer = dict[@"replyer"];
+        // pid is reply num
+        if ([dict[@"pid"] integerValue] == 0 || [replyer isEqualToString:@"Array"]) {
+            cell.authorText.text = author;
+        } else {
+            cell.authorText.text = [NSString stringWithFormat:@"%@ / %@", author, replyer];
+        }
+        NSString *time = [dict[@"time"] substringFromIndex:5];
+        if (SIMPLE_VIEW) {
+            cell.timeText.text = time;
+        } else {
+            cell.timeText.text = [NSString stringWithFormat:@"%@ • %@", [ActionPerformer getBoardTitle:dict[@"bid"]], time];
+        }
+    } else {
+        if ([dict[@"top"] integerValue] == 1 || [dict[@"extr"] integerValue] == 1 || [dict[@"lock"] integerValue] == 1 || isCollection) {
+            if ([dict[@"top"] integerValue] == 1) {
+                isTop = YES;
+                [titlePrefixes addObject:@"⬆️"];
+            }
+            if ([dict[@"lock"] integerValue] == 1) {
+                [titlePrefixes addObject:@"🔒"];
+            }
+            if ([dict[@"extr"] integerValue] == 1) {
+                [titlePrefixes addObject:@"⭐️"];
+            }
         }
         
         NSString *author = dict[@"author"];
         NSString *replyer = dict[@"replyer"];
-        if ([dict[@"pid"] integerValue] == 0 || [replyer isEqualToString:@"Array"]) {
-            cell.authorText.text = author;
+        if (SIMPLE_VIEW) {
+            if (replyer.length > 0) {
+                cell.authorText.text = [NSString stringWithFormat:@"%@ / %@", author, replyer];
+            } else {
+                cell.authorText.text = author;
+            }
+            cell.timeText.text = dict[@"time"];
         } else {
-            cell.authorText.text = [NSString stringWithFormat:@"%@/%@", author, replyer];
-        }
-//        else if (indexPath.row < globalTopCount + 10) {
-//            titleText = [numberEmoji[indexPath.row - globalTopCount] stringByAppendingString:[@" " stringByAppendingString:titleText]];
-//        }
-    } else {
-        NSString *author = [dict[@"author"] stringByReplacingOccurrencesOfString:@" " withString:@""];
-        if ([author hasSuffix:@"/"]) {
-            cell.authorText.text = [author substringToIndex:author.length - 1];
-        } else {
-            cell.authorText.text = author;
+            cell.authorText.numberOfLines = 2;
+            cell.timeText.numberOfLines = 2;
+            cell.timeText.text = [NSString stringWithFormat:@"%@ • %@\n查看：%@ 回复：%@", author, dict[@"postdate"], dict[@"click"], dict[@"reply"]];
+            if (replyer) {
+                cell.authorText.text = [NSString stringWithFormat:@"%@\n%@", replyer, dict[@"time"]];
+            } else {
+                cell.authorText.text = @"";
+            }
         }
     }
-    cell.titleText.text = titleText;
-    cell.timeText.text = dict[@"time"];
+    if (titlePrefixes.count > 0) {
+        cell.titleText.text = [NSString stringWithFormat:@"%@ %@", [titlePrefixes componentsJoinedByString:@""], titleText];
+    } else {
+        cell.titleText.text = titleText;
+    }
+    if (!SIMPLE_VIEW) {
+        cell.backgroundColor = isTop ? [UIColor colorWithWhite:1.0 alpha:0.5] : [UIColor clearColor];
+        cell.titleText.font = isTop ? [UIFont systemFontOfSize:cell.titleText.font.pointSize weight:UIFontWeightMedium] : [UIFont systemFontOfSize:cell.titleText.font.pointSize weight:UIFontWeightRegular];
+    }
     
     if (cell.gestureRecognizers.count == 0) {
         [cell addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPress:)]];
@@ -329,15 +398,15 @@
 }
 
 - (IBAction)back:(id)sender {
-    [self jumpTo:page-1];
+    [self jumpTo:self.page - 1];
 }
 
 - (IBAction)forward:(id)sender {
-    [self jumpTo:page+1];
+    [self jumpTo:self.page + 1];
 }
 
 - (IBAction)action:(id)sender {
-    NSString *URL = [NSString stringWithFormat:@"%@/bbs/main/?p=%d&bid=%@", CHEXIE, (int)page, self.bid];
+    NSString *URL = [NSString stringWithFormat:@"%@/bbs/main/?p=%ld&bid=%@", CHEXIE, self.page, self.bid];
     if ([self.bid isEqualToString:@"hot"]) {
         URL = [NSString stringWithFormat:@"%@/bbs/index", CHEXIE];
     }
@@ -395,7 +464,7 @@
 }
 
 - (IBAction)jump:(id)sender {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"跳转页面" message:[NSString stringWithFormat:@"请输入页码(1-%@)",[[data lastObject] objectForKey:@"pages"]] preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"跳转页面" message:[NSString stringWithFormat:@"请输入页码(1-%@)",[data lastObject][@"pages"]] preferredStyle:UIAlertControllerStyleAlert];
     [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
         textField.placeholder = @"页码";
         textField.keyboardType = UIKeyboardTypeNumberPad;
@@ -408,7 +477,7 @@
                                             handler:^(UIAlertAction * _Nonnull action) {
         NSString *pageip = alert.textFields.firstObject.text;
         NSInteger pagen = [pageip integerValue];
-        if (pagen <= 0 || pagen > [[[data lastObject] objectForKey:@"pages"] integerValue]) {
+        if (pagen <= 0 || pagen > [[data lastObject][@"pages"] integerValue]) {
             [self showAlertWithTitle:@"错误" message:@"输入不合法"];
             return;
         }
@@ -419,19 +488,27 @@
 
 - (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.buttonForward.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
-            [self jumpTo:page + 1];
-        if (self.buttonBack.enabled == YES && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
-            [self jumpTo:page - 1];
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.buttonForward.enabled == YES && swipeDirection == 0)
+            [self jumpTo:self.page + 1];
+        if (self.buttonBack.enabled == YES && swipeDirection == 1)
+            [self jumpTo:self.page - 1];
     }
 }
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.buttonForward.enabled == YES && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
-            [self jumpTo:page + 1];
-        if (self.buttonBack.enabled == YES && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue])
-            [self jumpTo:page - 1];
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.buttonForward.enabled == YES && swipeDirection == 1)
+            [self jumpTo:self.page + 1];
+        if (self.buttonBack.enabled == YES && swipeDirection == 0)
+            [self jumpTo:self.page - 1];
     }
 }
 
@@ -449,16 +526,16 @@
         
         UIAlertController *action = [UIAlertController alertControllerWithTitle:@"选择操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
         if (![self.bid isEqualToString:@"hot"]) {
-            [action addAction:[UIAlertAction actionWithTitle:([[info objectForKey:@"extr"] integerValue] == 1) ? @"取消加精" : @"加精" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [action addAction:[UIAlertAction actionWithTitle:([info[@"extr"] integerValue] == 1) ? @"取消加精" : @"加精" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                 [self operate:@"extr"];
             }]];
-            [action addAction:[UIAlertAction actionWithTitle:([[info objectForKey:@"top"] integerValue] == 1) ? @"取消置顶" : @"置顶" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [action addAction:[UIAlertAction actionWithTitle:([info[@"top"] integerValue] == 1) ? @"取消置顶" : @"置顶" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                 [self operate:@"top"];
             }]];
             [action addAction:[UIAlertAction actionWithTitle:@"首页置顶" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                 [self operate:@"global_top_action"];
             }]];
-            [action addAction:[UIAlertAction actionWithTitle:([[info objectForKey:@"lock"] integerValue] == 1) ? @"取消锁定" : @"锁定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [action addAction:[UIAlertAction actionWithTitle:([info[@"lock"] integerValue] == 1) ? @"取消锁定" : @"锁定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                 [self operate:@"lock"];
             }]];
         } else {
@@ -493,13 +570,15 @@
         @"method" : method
     };
     [hud showWithProgressMessage:@"正在操作"];
-    [performer performActionWithDictionary:dict toURL:@"action" withBlock:^(NSArray *result, NSError *err) {
-        if ([[result.firstObject objectForKey:@"code"]integerValue]==0) {
+    [ActionPerformer callApiWithParams:dict toURL:@"action" callback:^(NSArray *result, NSError *err) {
+        if (result.count > 0 && [result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"操作成功"];
-            [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+            dispatch_main_after(0.5, ^{
+                [self refresh];
+            });
         } else {
             [hud hideWithFailureMessage:@"操作失败"];
-            [self showAlertWithTitle:@"错误" message:[result.firstObject objectForKey:@"msg"]];
+            [self showAlertWithTitle:@"错误" message:result.count > 0 ? result[0][@"msg"] : @"未知错误"];
         }
     }];
 }
@@ -510,21 +589,23 @@
         @"tid" : data[selectedRow][@"tid"]
     };
     [hud showWithProgressMessage:@"正在操作"];
-    [performer performActionWithDictionary:dict toURL:@"delete" withBlock:^(NSArray *result, NSError *err) {
-        if ([[result.firstObject objectForKey:@"code"]integerValue] == 0) {
+    [ActionPerformer callApiWithParams:dict toURL:@"delete" callback:^(NSArray *result, NSError *err) {
+        if (result.count > 0 && [result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"操作成功"];
             [data removeObjectAtIndex:selectedRow];
             [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:selectedRow inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
-            [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+            dispatch_main_after(0.5, ^{
+                [self refresh];
+            });
         } else {
             [hud hideWithFailureMessage:@"操作失败"];
-            [self showAlertWithTitle:@"错误" message:[result.firstObject objectForKey:@"msg"]];
+            [self showAlertWithTitle:@"错误" message:result.count > 0 ? result[0][@"msg"] : @"未知错误"];
         }
     }];
 }
 
 - (void)refresh {
-    [self jumpTo:page];
+    [self jumpTo:self.page];
 }
 
 - (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event
@@ -550,14 +631,14 @@
     } else if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [segue destinationViewController];
         NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)sender];
-        NSDictionary *one = [data objectAtIndex:indexPath.row];
-        dest.tid = [one objectForKey:@"tid"];
-        dest.bid = [one objectForKey:@"bid"];
-        if ([self.bid isEqualToString: @"hot"] && indexPath.row > globalTopCount) {
-            dest.floor = [one objectForKey:@"pid"];
-            dest.willScroll = YES;
+        NSDictionary *one = data[indexPath.row];
+        dest.tid = one[@"tid"];
+        dest.bid = one[@"bid"];
+        if ([self.bid isEqualToString: @"hot"] && indexPath.row >= globalTopCount) {
+            // pid is reply num, floor # is reply num + 1
+            dest.destinationFloor = [NSString stringWithFormat:@"%ld", [one[@"pid"] integerValue] + 1];
         }
-        dest.title = [one objectForKey:@"text"];
+        dest.title = [ActionPerformer restoreTitle:one[@"text"]];
     }
 
     // Get the new view controller using [segue destinationViewController].

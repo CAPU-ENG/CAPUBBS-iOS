@@ -10,7 +10,6 @@
 #import "LzlCell.h"
 
 @interface LzlViewController : CustomTableViewController<UITextViewDelegate> {
-    ActionPerformer *performer;
     UIImageView *backgroundView;
     NSUserActivity *activity;
     NSArray *data;
@@ -23,6 +22,7 @@
 
 @property NSString *fid;
 @property NSURL *URL;
+@property NSArray *defaultData;
 @property UITextView *textPost;
 @property UILabel *labelByte;
 

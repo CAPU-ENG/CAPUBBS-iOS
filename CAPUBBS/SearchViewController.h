@@ -8,12 +8,11 @@
 
 #import <UIKit/UIKit.h>
 #import "SearchViewCell.h"
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface SearchViewController : CustomViewController<UITableViewDelegate> {
-    ActionPerformer *performer;
     MBProgressHUD *hud;
-    AsyncImageView *backgroundView;
+    AnimatedImageView *backgroundView;
     NSString *text;
     NSString *type;
     NSString *author;

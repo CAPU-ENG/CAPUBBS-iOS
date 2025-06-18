@@ -26,8 +26,7 @@
     [targetView addSubview:hud];
     
     largeCellSize = smallCellSize = 0;
-    performer = [[ActionPerformer alloc] init];
-    previewImageView = [[AsyncImageView alloc] init];
+    previewImageView = [[AnimatedImageView alloc] init];
     [previewImageView setBackgroundColor:self.view.backgroundColor];
     [previewImageView setContentMode:UIViewContentModeScaleAspectFill];
     [previewImageView.layer setBorderColor:GREEN_LIGHT.CGColor];
@@ -43,7 +42,7 @@
     if (range.length > 0) {
         temp = [temp substringFromIndex:range.location + range.length];
         for (int i = 0; i < iconNames.count; i++) {
-            if ([[iconNames objectAtIndex:i] isEqualToString:temp]) {
+            if ([iconNames[i] isEqualToString:temp]) {
                 newIconNum = i;
                 break;
             }
@@ -121,7 +120,7 @@
         if (HAS_CUSTOM_ICON && indexPath.row == 0) {
             [cell.icon setUrl:self.userIcon];
         } else {
-            [cell.icon setUrl:[NSString stringWithFormat:@"/bbsimg/icons/%@", [iconNames objectAtIndex:(int)indexPath.row - HAS_CUSTOM_ICON]]];
+            [cell.icon setUrl:[NSString stringWithFormat:@"/bbsimg/icons/%@", iconNames[indexPath.row - HAS_CUSTOM_ICON]]];
         }
         [cell.imageCheck setHidden:(indexPath.row != newIconNum + HAS_CUSTOM_ICON)];
         [cell.icon.layer setBorderWidth:3 * (indexPath.row == newIconNum + HAS_CUSTOM_ICON)];
@@ -224,7 +223,7 @@
         imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
         imagePicker.allowsEditing = YES;
         imagePicker.delegate = self;
-        [self performSelector:@selector(presentImagePicker:) withObject:imagePicker afterDelay:0.5];
+        [self presentViewControllerSafe:imagePicker];
     }]];
     if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
         [action addAction:[UIAlertAction actionWithTitle:@"拍照" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -234,7 +233,7 @@
             imagePicker.mediaTypes = @[(NSString *)kUTTypeImage];
             imagePicker.allowsEditing = YES;
             imagePicker.delegate = self;
-            [self performSelector:@selector(presentImagePicker:) withObject:imagePicker afterDelay:0.5];
+            [self presentViewControllerSafe:imagePicker];
         }]];
     }
     [action addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
@@ -242,51 +241,47 @@
     [self presentViewControllerSafe:action];
 }
 
-- (void)presentImagePicker:(UIImagePickerController*)imagePicker {
-    [self presentViewControllerSafe:imagePicker];
-}
-
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-    image = [info objectForKey:UIImagePickerControllerEditedImage];
-    if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    UIImage *image = info[UIImagePickerControllerEditedImage];
+    if (!image || image.size.width <= 0 || image.size.height <= 0) {
+        [self showAlertWithTitle:@"警告" message:@"图片不合法，无法获取长度 / 宽度！"];
+    } else if (image.size.width / image.size.height > 4.0 / 3.0 || image.size.width / image.size.height < 3.0 / 4.0) {
         [self showAlertWithTitle:@"警告" message:@"所选图片偏离正方形\n建议裁剪处理后使用" confirmTitle:@"继续上传" confirmAction:^(UIAlertAction *action) {
-            [self prepareUpload];
+            [self compressAndUploadImage:image];
         } cancelTitle:@"取消上传"];
     } else {
-        [self prepareUpload];
+        [self compressAndUploadImage:image];
     }
-    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (void)prepareUpload {
+- (void)compressAndUploadImage:(UIImage *)image {
     [hud showWithProgressMessage:@"正在压缩"];
-    [self performSelectorInBackground:@selector(upload) withObject:nil];
-}
-
-- (void)upload {
-    NSData * imageData = UIImageJPEGRepresentation(image, 1);
-    float maxLength = 200; // 压缩超过200K的图片
-    float ratio = 1.0;
-    while (imageData.length / 1024 >= maxLength && ratio >= 0.05) {
-        ratio *= 0.75;
-        imageData = UIImageJPEGRepresentation(image, ratio);
-    }
-    NSLog(@"Icon Size:%dkB", (int)imageData.length / 1024);
-    [hud showWithProgressMessage:@"正在上传"];
-    [performer performActionWithDictionary:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
-        if (err || result.count == 0) {
-            [hud hideWithFailureMessage:@"上传失败"];
-            return;
+    dispatch_global_default_async(^{
+        NSData * imageData = UIImageJPEGRepresentation(image, 1);
+        float maxLength = 200; // 压缩超过200K的图片
+        float ratio = 1.0;
+        while (imageData.length / 1024 >= maxLength && ratio >= 0.05) {
+            ratio *= 0.75;
+            imageData = UIImageJPEGRepresentation(image, ratio);
         }
-        if ([[[result firstObject] objectForKey:@"code"] isEqualToString:@"-1"]) {
-            [hud hideWithSuccessMessage:@"上传成功"];
-            NSString *url = [[result firstObject] objectForKey:@"imgurl"];
-            [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:@{ @"URL" : url }];
-            [self.navigationController popViewControllerAnimated:YES];
-        } else {
-            [hud hideWithFailureMessage:@"上传失败"];
-        }
-    }];
+        NSLog(@"Icon Size:%dkB", (int)imageData.length / 1024);
+        [hud showWithProgressMessage:@"正在上传"];
+        [ActionPerformer callApiWithParams:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" callback:^(NSArray *result, NSError *err) {
+            if (err || result.count == 0) {
+                [hud hideWithFailureMessage:@"上传失败"];
+                return;
+            }
+            if ([result[0][@"code"] isEqualToString:@"-1"]) {
+                [hud hideWithSuccessMessage:@"上传成功"];
+                NSString *url = result[0][@"imgurl"];
+                [NOTIFICATION postNotificationName:@"selectIcon" object:nil userInfo:@{ @"URL" : url }];
+                [self.navigationController popViewControllerAnimated:YES];
+            } else {
+                [hud hideWithFailureMessage:@"上传失败"];
+            }
+        }];
+    });
 }
 
 - (UIImage *)reSizeImage:(UIImage *)oriImage toSize:(CGSize)reSize{

@@ -25,7 +25,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
     messageRefreshing = NO;
     isFirstTime = YES;
     [NOTIFICATION addObserver:self selector:@selector(backgroundRefresh) name:@"userChanged" object:nil];
@@ -47,7 +46,6 @@
     } else {
         self.segmentType.tintColor = GREEN_DARK;
     }
-//    [self.segmentType setTintColor:GREEN_DARK];
     [self typeChanged:self.segmentType];
     // Do any additional setup after loading the view.
 }
@@ -86,7 +84,7 @@
             @"type" : type,
             @"page" : [NSString stringWithFormat:@"%ld", (long)page]
         };
-        [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"msg" callback: ^(NSArray *result, NSError *err) {
             if (control.isRefreshing) {
                 [control endRefreshing];
             }
@@ -100,7 +98,7 @@
             
             // NSLog(@"%@", result);
             data = result;
-            if ([[data[0] objectForKey:@"code"] isEqualToString:@"1"]) {
+            if ([data[0][@"code"] isEqualToString:@"1"]) {
                 [self showAlertWithTitle:@"错误" message:@"尚未登录或登录超时"];
             }
             [self setMessageNum];
@@ -160,11 +158,15 @@
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.segmentType.selectedSegmentIndex == 0 && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.segmentType.selectedSegmentIndex == 0 && swipeDirection == 1) {
             [self.segmentType setSelectedSegmentIndex:1];
             [self typeChanged:self.segmentType];
         }
-        if (self.segmentType.selectedSegmentIndex == 1 && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        if (self.segmentType.selectedSegmentIndex == 1 && swipeDirection == 0) {
             [self.segmentType setSelectedSegmentIndex:0];
             [self typeChanged:self.segmentType];
         }
@@ -173,11 +175,15 @@
 
 - (IBAction)swipeRight:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if (self.segmentType.selectedSegmentIndex == 0 && ![[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        int swipeDirection = [[DEFAULTS objectForKey:@"oppositeSwipe"] intValue];
+        if (swipeDirection == 2) { // Disable swipe
+            return;
+        }
+        if (self.segmentType.selectedSegmentIndex == 0 && swipeDirection == 0) {
             [self.segmentType setSelectedSegmentIndex:1];
             [self typeChanged:self.segmentType];
         }
-        if (self.segmentType.selectedSegmentIndex == 1 && [[DEFAULTS objectForKey:@"oppositeSwipe"] boolValue]) {
+        if (self.segmentType.selectedSegmentIndex == 1 && swipeDirection == 1) {
             [self.segmentType setSelectedSegmentIndex:0];
             [self typeChanged:self.segmentType];
         }
@@ -185,19 +191,19 @@
 }
 
 - (void)setMessageNum {
-    if ([[data[0] objectForKey:@"sysmsg"] integerValue] > 0) {
-        [self.segmentType setTitle:[NSString stringWithFormat:@"系统消息(%@)", [data[0] objectForKey:@"sysmsg"]] forSegmentAtIndex:0];
+    if (data.count > 0 && [data[0][@"sysmsg"] integerValue] > 0) {
+        [self.segmentType setTitle:[NSString stringWithFormat:@"系统消息(%@)", data[0][@"sysmsg"]] forSegmentAtIndex:0];
     } else {
         [self.segmentType setTitle:@"系统消息" forSegmentAtIndex:0];
     }
-    if ([[data[0] objectForKey:@"prvmsg"] integerValue] > 0) {
-        [self.segmentType setTitle:[NSString stringWithFormat:@"私信消息(%@)", [data[0] objectForKey:@"prvmsg"]] forSegmentAtIndex:1];
+    if (data.count > 0 && [data[0][@"prvmsg"] integerValue] > 0) {
+        [self.segmentType setTitle:[NSString stringWithFormat:@"私信消息(%@)", data[0][@"prvmsg"]] forSegmentAtIndex:1];
     } else {
         [self.segmentType setTitle:@"私信消息" forSegmentAtIndex:1];
     }
-    if (![USERINFO isEqual:@""]) {
+    if (data.count > 0 && ![USERINFO isEqual:@""]) {
         NSMutableDictionary *dict = [USERINFO mutableCopy];
-        NSString *msgNum = [NSString stringWithFormat:@"%d", [[data[0] objectForKey:@"sysmsg"] intValue] + [[data[0] objectForKey:@"prvmsg"] intValue]];
+        NSString *msgNum = [NSString stringWithFormat:@"%d", [data[0][@"sysmsg"] intValue] + [data[0][@"prvmsg"] intValue]];
         [dict setObject:msgNum forKey:@"newmsg"];
         [GROUP_DEFAULTS setObject:dict forKey:@"userInfo"];
     }
@@ -249,6 +255,8 @@
     }
 }
 
+#pragma mark - Table view data source
+
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     // Return the number of sections.
     return 1;
@@ -257,6 +265,10 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     // Return the number of rows in the section.
     return data.count - 1;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return data && data.count <= 1 ? @"您还没有消息" : nil;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -268,7 +280,7 @@
     if (self.segmentType.selectedSegmentIndex == 0) {
         int textLenth = 0;
         NSString *titleText = dict[@"title"];
-        titleText = [ActionPerformer removeRe:titleText];
+        titleText = [ActionPerformer restoreTitle:titleText];
         NSString *type = dict[@"type"];
         if ([type isEqualToString:@"reply"]) {
             text = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"回复了您的帖子：%@", titleText]];
@@ -290,8 +302,8 @@
             textLenth = 0;
         }
         for (NSDictionary *mdic in [DEFAULTS objectForKey:@"collection"]) {
-            if ([dict[@"bid"] isEqualToString:[mdic objectForKey:@"bid"]] && [dict[@"tid"] isEqualToString:[mdic objectForKey:@"tid"]]) {
-                [text addAttribute:NSFontAttributeName value:[UIFont boldSystemFontOfSize:14.0] range:NSMakeRange(textLenth, titleText.length)];
+            if ([dict[@"bid"] isEqualToString:mdic[@"bid"]] && [dict[@"tid"] isEqualToString:mdic[@"tid"]]) {
+                [text addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:cell.labelText.font.pointSize weight:UIFontWeightBold] range:NSMakeRange(textLenth, titleText.length)];
                 break;
             }
         }
@@ -338,10 +350,10 @@
             dest.ID = dict[@"username"];
             NSMutableArray *tempData = [data mutableCopy];
             if ([tempData[indexPath.row + 1][@"number"] intValue] > 0) {
-                NSString *primsg = tempData[0][@"prvmsg"];
+                NSString *prvmsg = tempData[0][@"prvmsg"];
                 NSString *number = tempData[indexPath.row + 1][@"number"];
-                primsg = [NSString stringWithFormat:@"%d", [primsg intValue] - [number intValue]];
-                [tempData[0] setObject:primsg forKey:@"prvmsg"];
+                prvmsg = [NSString stringWithFormat:@"%d", [prvmsg intValue] - [number intValue]];
+                [tempData[0] setObject:prvmsg forKey:@"prvmsg"];
                 [tempData[indexPath.row + 1] setObject:@"0" forKey:@"number"];
                 data = [NSArray arrayWithArray:tempData];
                 [self.tableView reloadData];
@@ -354,14 +366,17 @@
         }
     } else if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [segue destinationViewController];
-        if ([dict[@"type"] hasPrefix:@"replylzl"]) {
-            dict = [ContentViewController getLink:dict[@"url"]];
-        }
         dest.tid = dict[@"tid"];
         dest.bid = dict[@"bid"];
-        dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+        dest.destinationPage = dict[@"p"];
         // NSLog(@"%@", dict[@"url"]);
-        dest.exactFloor = dict[@"floor"];
+        NSString *floor = [ActionPerformer getLink:dict[@"url"]][@"floor"];
+        if ([floor intValue] > 0) {
+            dest.destinationFloor = floor;
+            if ([dict[@"type"] hasPrefix:@"replylzl"]) {
+                dest.openDestinationLzl = YES;
+            }
+        }
         dest.title = @"帖子跳转中";
         NSMutableArray *tempData = [data mutableCopy];
         if ([tempData[indexPath.row + 1][@"hasread"] isEqualToString:@"0"]) {
@@ -381,8 +396,8 @@
         dest.navigationController.popoverPresentationController.sourceView = button;
         dest.navigationController.popoverPresentationController.sourceRect = button.bounds;
         dest.ID = data[button.tag + 1][@"username"];
-        MessageCell *cell = (MessageCell *)[self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForItem:button.tag inSection:0]];
-        if (![cell.imageIcon.image isEqual:PLACEHOLDER]) {
+        MessageCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForItem:button.tag inSection:0]];
+        if (cell && ![cell.imageIcon.image isEqual:PLACEHOLDER]) {
             dest.iconData = UIImagePNGRepresentation(cell.imageIcon.image);
         }
     }

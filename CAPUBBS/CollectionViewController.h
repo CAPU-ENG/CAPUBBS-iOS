@@ -9,16 +9,22 @@
 #import <UIKit/UIKit.h>
 
 @interface CollectionViewController : CustomTableViewController<UISearchControllerDelegate, UISearchResultsUpdating, UISearchBarDelegate> {
+    MBProgressHUD *hud;
     NSMutableArray *data;
     NSMutableArray *searchData;
     NSMutableArray *sortData;
+    NSDateFormatter *formatter;
     NSString *lastSearch;
     BOOL wasFirstResponder;
     int sortType;
 }
 
-@property (strong, nonatomic) UISearchController *searchController;
-@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonOrganize;
-@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonDeleteAll;
+@property (strong, nonatomic) CustomSearchController *searchController;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonSelectAll;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonSelectReverse;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonShare;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *buttonTrash;
+@property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonOrganize;
+@property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCancelOrganize;
 
 @end

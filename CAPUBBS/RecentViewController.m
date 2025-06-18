@@ -19,7 +19,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
     if (self.iconData.length > 0) {
-        [self refreshBackgroundView:YES];
+        [self refreshBackgroundViewAnimated:NO];
     } else {
         [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:self.iconUrl] object:nil];
     }
@@ -35,20 +35,21 @@
     dispatch_main_async_safe(^{
         if (self.iconData.length == 0) {
             self.iconData = noti.userInfo[@"data"];
-            [self refreshBackgroundView:NO];
+            [self refreshBackgroundViewAnimated:YES];
         }
     });
 }
 
-- (void)refreshBackgroundView:(BOOL)noAnimation {
-    if (SIMPLE_VIEW == NO) {
-        if (!backgroundView) {
-            backgroundView = [[AsyncImageView alloc] init];
-            [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
-            self.tableView.backgroundView = backgroundView;
-        }
-        [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:!noAnimation];
+- (void)refreshBackgroundViewAnimated:(BOOL)animated {
+    if (SIMPLE_VIEW) {
+        return;
     }
+    if (!backgroundView) {
+        backgroundView = [[AnimatedImageView alloc] init];
+        [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
+        self.tableView.backgroundView = backgroundView;
+    }
+    [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:animated];
 }
 
 #pragma mark - Table view data source
@@ -66,8 +67,8 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
     if (self.data.count > 0) {
-        cell.textLabel.text = [ActionPerformer removeRe:[[self.data objectAtIndex:indexPath.row] objectForKey:@"title"]];
-        cell.detailTextLabel.text = [[self.data objectAtIndex:indexPath.row] objectForKey:@"time"];
+        cell.textLabel.text = [ActionPerformer restoreTitle:self.data[indexPath.row][@"title"]];
+        cell.detailTextLabel.text = self.data[indexPath.row][@"time"];
     } else {
         cell.textLabel.text = [@"暂无" stringByAppendingString:self.title];
         cell.detailTextLabel.text = @"";
@@ -96,10 +97,10 @@
     // Pass the selected object to the new view controller.
     if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        NSDictionary *dict = [self.data objectAtIndex:[self.tableView indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *dict = self.data[[self.tableView indexPathForCell:(UITableViewCell *)sender].row];
         dest.bid = dict[@"bid"];
         dest.tid = dict[@"tid"];
-        dest.floor = dict[@"pid"];
+        dest.destinationFloor = dict[@"pid"];
         dest.title = dict[@"title"];
         dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done)];
     }

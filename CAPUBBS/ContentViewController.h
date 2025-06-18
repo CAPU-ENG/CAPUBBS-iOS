@@ -7,15 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MessageUI/MessageUI.h>
+#import <WebKit/WebKit.h>
 
-@interface ContentViewController : CustomTableViewController<UIAlertViewDelegate, MFMailComposeViewControllerDelegate, UIWebViewDelegate, UIDocumentInteractionControllerDelegate> {
+@interface ContentViewController : CustomTableViewController<WKNavigationDelegate, WKScriptMessageHandler> {
     MBProgressHUD *hud;
-    ActionPerformer *performer;
     NSUserActivity *activity;
     NSString *URL;
     NSMutableArray *data;
-    CustomMailComposeViewController *mail;
     UIDocumentInteractionController *dic;
     int page;
     int textSize;
@@ -25,18 +23,23 @@
     NSString *defaultContent;
     NSInteger selectedIndex;
     NSMutableArray *heights;
+    NSMutableArray *tempHeights; // 储存之前计算的高度结果，防止reload时高度突变
     NSMutableArray *HTMLStrings;
     NSString *tempPath;
-    NSString *imgPath;
     CGFloat contentOffsetY;
     BOOL isAtEnd;
+    NSInteger scrollTargetRow;
 }
 
 @property NSString *bid;
 @property NSString *tid;
-@property NSString *floor;
-@property NSString *exactFloor;
-@property BOOL willScroll;
+@property NSString *destinationPage;
+/// If set, will try to scroll to the desired flor
+@property NSString *destinationFloor;
+/// If set, will popup lzl for the desired floor
+@property BOOL openDestinationLzl;
+/// If set, will try to scroll to the last flor
+@property BOOL willScrollToBottom;
 @property BOOL isCollection;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *barFreeSpace;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCollection;
@@ -46,9 +49,5 @@
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonJump;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonAction;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *buttonCompose;
-+ (NSString *)htmlStringWithText:(NSString *)text sig:(NSString *)sig textSize:(int)textSize;
-+ (NSString *)restoreFormat:(NSString *)text;
-+ (NSString *)transFromHTML:(NSString *)text;
-+ (NSString *)removeHTML:(NSString *)text;
-+ (NSDictionary *)getLink:(NSString *)path;
+
 @end

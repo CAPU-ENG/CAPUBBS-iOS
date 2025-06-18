@@ -25,6 +25,9 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
+    if ([self.collectionView.collectionViewLayout isKindOfClass:[UICollectionViewFlowLayout class]]) {
+        ((UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout).sectionInsetReference = UICollectionViewFlowLayoutSectionInsetFromSafeArea;
+    }
     cellWidth = cellHeight = 0;
     [NOTIFICATION addObserver:self selector:@selector(setVibrate) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(changeNoti) name:@"infoRefreshed" object:nil];
@@ -42,11 +45,11 @@
     [super viewDidAppear:animated];
 //    if (![[DEFAULTS objectForKey:@"FeatureHot2.0"] boolValue]) {
 //        [self showAlertWithTitle:@"新功能！" message:@"增加了大家期待的论坛热点\n点击按钮或向左滑动前往" cancelTitle:@"我知道了"];
-//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureHot2.0"];
+//        [DEFAULTS setObject:@(YES) forKey:@"FeatureHot2.0"];
 //    }
 //    if (![[DEFAULTS objectForKey:@"FeaturePersonalCenter3.0"] boolValue]) {
 //        [self showAlertWithTitle:@"新功能！" message:@"消息中心上线\n可以查看系统消息和私信消息\n点击右上方小人前往" cancelTitle:@"我知道了"];
-//        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeaturePersonalCenter3.0"];
+//        [DEFAULTS setObject:@(YES) forKey:@"FeaturePersonalCenter3.0"];
 //    }
 }
 
@@ -90,8 +93,8 @@
     IndexViewCell * cell;
     if (indexPath.row < NUMBERS.count) {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"indexcell" forIndexPath:indexPath];
-        cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:[NUMBERS objectAtIndex:indexPath.row]]];
-        cell.text.text = [ActionPerformer getBoardTitle:[NUMBERS objectAtIndex:indexPath.row]];
+        cell.image.image = [UIImage imageNamed:[@"b" stringByAppendingString:NUMBERS[indexPath.row]]];
+        cell.text.text = [ActionPerformer getBoardTitle:NUMBERS[indexPath.row]];
     } else {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"collectioncell" forIndexPath:indexPath];
     }
@@ -103,22 +106,25 @@
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     if (cellWidth == 0 || cellHeight == 0) {
         // iPhone 5s及之前:320 iPhone 6:375 iPhone 6 Plus:414 iPad:768 iPad Pro:1024
-        float width = collectionView.frame.size.width;
+        UIEdgeInsets safeArea = collectionView.safeAreaInsets;
+        CGFloat safeAreaWidth = (safeArea.left + safeArea.right) / 2;
+        CGFloat width = collectionView.bounds.size.width;
         int num = width / 450 + 2;
         fontSize = 15 + num;
         cellSpace = (0.1 + 0.025 * num) * (width / num);
-        cellWidth = (width - cellSpace * (num + 1)) / num;
+        cellMargin = MAX(0, cellSpace - safeAreaWidth);
+        cellWidth = (width - cellSpace * (num - 1) - (cellMargin + safeAreaWidth) * 2) / num;
         cellHeight = cellWidth * (11.0 / 15.0) + 2 * fontSize;
     }
     return CGSizeMake(cellWidth, cellHeight);
 }
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
-    return UIEdgeInsetsMake(20, cellSpace, 20, cellSpace); // top, left, bottom, right
+    return UIEdgeInsetsMake(20, cellMargin, 20, cellMargin); // top, left, bottom, right
 }
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
-    return cellSpace;
+    return cellSpace - 0.1;
 }
 
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
@@ -128,16 +134,18 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didHighlightItemAtIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
-    [cell setAlpha:0.5];
-    [cell setTransform:CGAffineTransformMakeScale(1.05, 1.05)];
+    [UIView animateWithDuration:0.1 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+        [cell setAlpha:0.75];
+        [cell setTransform:CGAffineTransformMakeScale(1.05, 1.05)];
+    } completion:nil];
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didUnhighlightItemAtIndexPath:(nonnull NSIndexPath *)indexPath {
     UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
-    [UIView animateWithDuration:0.5 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+    [UIView animateWithDuration:0.2 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
         [cell setAlpha:1.0];
         [cell setTransform:CGAffineTransformMakeScale(1, 1)];
-    }completion:nil];
+    } completion:nil];
 }
 
 - (IBAction)swipeLeft:(UISwipeGestureRecognizer *)sender {
@@ -184,12 +192,12 @@
         return;
     }
     
-    NSDictionary *dict = [ContentViewController getLink:text];
-    if (dict.count > 0 && ![dict[@"tid"] isEqualToString:@""]) {
+    NSDictionary *dict = [ActionPerformer getLink:text];
+    if (dict.count > 0 && [dict[@"tid"] length] > 0) {
         ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
         next.bid = dict[@"bid"];
         next.tid = dict[@"tid"];
-        next.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+        next.destinationPage = dict[@"p"];
         next.title=@"帖子跳转中";
         [self.navigationController pushViewController:next animated:YES];
         return;
@@ -201,8 +209,8 @@
         && ![text containsString:@"不"]
         ) {
             [hud showAndHideWithSuccessMessage:@"~\(≧▽≦)/~" delay:1]; // (>^ω^<)
-            [DEFAULTS setObject:[NSNumber numberWithInt:MAX_ID_NUM] forKey:@"IDNum"];
-            [DEFAULTS setObject:[NSNumber numberWithInt:MAX_HOT_NUM] forKey:@"hotNum"];
+            [DEFAULTS setObject:@(MAX_ID_NUM) forKey:@"IDNum"];
+            [DEFAULTS setObject:@(MAX_HOT_NUM) forKey:@"hotNum"];
         } else {
             if (!([text containsString:@"chexie"] || [text containsString:@"capu"] || [text containsString:@"local"] || [text containsString:@"test"] || [text containsString:@"/"] || [text rangeOfString:@"[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" options:NSRegularExpressionSearch].location != NSNotFound)) {
                 [DEFAULTS removeObjectForKey:@"IDNum"];
@@ -245,7 +253,7 @@
     }
     if ([segue.identifier isEqualToString:@"postlist"]) {
         int number = (int)[self.collectionView indexPathForCell:(UICollectionViewCell *)sender].row;
-        dest.bid = [NUMBERS objectAtIndex:number];
+        dest.bid = NUMBERS[number];
     }
 }
 

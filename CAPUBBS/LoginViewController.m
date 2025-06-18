@@ -28,9 +28,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
-    performerInfo = [[ActionPerformer alloc] init];
-    performerUser = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(userChanged) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(refreshIcon) name:@"infoRefreshed" object:nil];
     userInfoRefreshing = NO;
@@ -39,9 +36,6 @@
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableview addSubview:control];
-    // Auto height
-    self.tableview.estimatedRowHeight = 40;
-    self.tableview.rowHeight = UITableViewAutomaticDimension;
     
     [self userChanged];
     // Uncomment the following line to preserve selection between presentations.
@@ -96,7 +90,7 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSDictionary *dict = [news objectAtIndex:indexPath.row];
+    NSDictionary *dict = news[indexPath.row];
     NSString *bid = dict[@"bid"];
     NSString *tid = dict[@"tid"];
     NSString *url = dict[@"url"];
@@ -146,18 +140,18 @@
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         // Delete the row from the data source
-        NSDictionary *item = [news objectAtIndex:indexPath.row];
+        NSDictionary *item = news[indexPath.row];
         [self showAlertWithTitle:@"警告" message:[NSString stringWithFormat:@"确定要删除该公告吗？\n删除操作不可逆！\n\n标题：%@", item[@"text"]] confirmTitle:@"删除" confirmAction:^(UIAlertAction *action) {
             [hud showWithProgressMessage:@"正在操作"];
             NSDictionary *dict = @{
                 @"method" : @"delete",
                 @"time" : item[@"time"]
             };
-            [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
+            [ActionPerformer callApiWithParams:dict toURL:@"news" callback:^(NSArray *result, NSError *err) {
                 if (err || result.count == 0) {
                     [hud hideWithFailureMessage:@"操作失败"];
                 } else {
-                    if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+                    if ([result[0][@"code"] integerValue] == 0) {
                         [hud hideWithSuccessMessage:@"操作成功"];
                         NSMutableArray *temp = [NSMutableArray arrayWithArray:news];
                         [temp removeObjectAtIndex:indexPath.row];
@@ -165,14 +159,14 @@
                         [self.tableview deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
                     } else {
                         [hud hideWithFailureMessage:@"操作失败"];
-                        [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
+                        [self showAlertWithTitle:@"操作失败" message:result[0][@"msg"]];
                     }
                 }
-                [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
+                dispatch_global_after(0.5, ^{
+                    [self getNewsAndInfo];
+                });
             }];
         }];
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
     }
 }
 
@@ -206,18 +200,20 @@
             @"text" : text,
             @"url" : url
         };
-        [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"news" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [hud hideWithFailureMessage:@"操作失败"];
             } else {
-                if ([[[result firstObject] objectForKey:@"code"] integerValue] == 0) {
+                if ([result[0][@"code"] integerValue] == 0) {
                     [hud hideWithSuccessMessage:@"操作成功"];
                 } else {
                     [hud hideWithFailureMessage:@"操作失败"];
-                    [self showAlertWithTitle:@"操作失败" message:[[result firstObject] objectForKey:@"msg"]];
+                    [self showAlertWithTitle:@"操作失败" message:result[0][@"msg"]];
                 }
             }
-            [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
+            dispatch_global_after(0.5, ^{
+                [self getNewsAndInfo];
+            });
         }];
     }]];
     [self presentViewControllerSafe:alert];
@@ -234,7 +230,7 @@
             [self refreshIcon];
             if (userInfoRefreshing == NO) {
                 userInfoRefreshing = YES;
-                [performerUser performActionWithDictionary:@{@"uid": UID} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+                [ActionPerformer callApiWithParams:@{@"uid": UID} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
                     userInfoRefreshing = NO;
                     if (!err && result.count > 0) {
                         [GROUP_DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:result[0]] forKey:@"userInfo"];
@@ -242,8 +238,8 @@
                         for (int i = 0; i < data.count; i++) {
                             NSMutableDictionary *dict = [data[i] mutableCopy];
                             if ([dict[@"id"] isEqualToString:result[0][@"username"]]) {
-                                [dict setObject:result[0][@"icon"] forKey:@"icon"];
-                                [data replaceObjectAtIndex:i withObject:dict];
+                                dict[@"icon"] = result[0][@"icon"];
+                                data[i] = dict;
                                 [DEFAULTS setObject:data forKey:@"ID"];
                                 break;
                             }
@@ -283,7 +279,7 @@
         if (![ActionPerformer checkLogin:NO] && [[DEFAULTS objectForKey:@"enterLogin"] boolValue] == YES && [[DEFAULTS objectForKey:@"autoLogin"] boolValue] == YES) {
             NSLog(@"Autolog in Login Page");
             [self login:nil];
-            [DEFAULTS setObject:[NSNumber numberWithBool:NO] forKey:@"enterLogin"];
+            [DEFAULTS setObject:@(NO) forKey:@"enterLogin"];
         } else {
             [self getNewsAndInfo];
             if ([ActionPerformer checkLogin:NO]) {
@@ -327,7 +323,7 @@
         @"device" : [ActionPerformer doDevicePlatform],
         @"version" : [[UIDevice currentDevice] systemVersion]
     };
-    [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"login" callback:^(NSArray *result, NSError *err) {
         //NSLog(@"%@",result);
         if (err || result.count == 0) {
             [hud hideWithFailureMessage:@"登录失败"];
@@ -335,27 +331,27 @@
 //            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
             return ;
         }
-        if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        if ([result[0][@"code"] isEqualToString:@"0"]) {
             [hud hideWithSuccessMessage:@"登录成功"];
         } else {
             [hud hideWithFailureMessage:@"登录失败"];
         }
-        if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"1"]) {
+        if ([result[0][@"code"] isEqualToString:@"1"]) {
             [self showAlertWithTitle:@"登录失败" message:@"密码错误！" cancelAction:^(UIAlertAction *action) {
                 [self.textPass becomeFirstResponder];
             }];
             [self getNewsAndInfo];
             return ;
-        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"2"]) {
+        } else if ([result[0][@"code"] isEqualToString:@"2"]) {
             [self showAlertWithTitle:@"登录失败" message:@"用户名不存在！" cancelAction:^(UIAlertAction *action) {
                 [self.textUid becomeFirstResponder];
             }];
             [self getNewsAndInfo];
             return ;
-        } else if ([[[result objectAtIndex:0] objectForKey:@"code"] isEqualToString:@"0"]) {
+        } else if ([result[0][@"code"] isEqualToString:@"0"]) {
             [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
             [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
-            [GROUP_DEFAULTS setObject:[[result objectAtIndex:0] objectForKey:@"token"] forKey:@"token"];
+            [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
             [LoginViewController updateIDSaves];
             NSLog(@"Login - %@", uid);
             dispatch_main_async_safe(^{
@@ -382,7 +378,7 @@
         if ([dict[@"id"] isEqualToString:UID]) {
             findID = YES;
             if (![dict[@"pass"] isEqualToString:PASS]) {
-                [data replaceObjectAtIndex:i withObject:nowDict];
+                data[i] = nowDict;
             }
         }
     }
@@ -397,7 +393,7 @@
         return;
     }
     newsRefreshing = YES;
-    [performerInfo performActionWithDictionary:@{@"more":@"YES"} toURL:@"main" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"more":@"YES"} toURL:@"main" callback:^(NSArray *result, NSError *err) {
         newsRefreshing = NO;
         if (control.isRefreshing) {
             [control endRefreshing];
@@ -412,68 +408,7 @@
         // NSLog(@"%@", news);
         [DEFAULTS setObject:news forKey:@"newsCache"];
         [self.tableview reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:@"yyyy-MM-dd"];
-        NSTimeZone *beijingTimeZone = [NSTimeZone timeZoneWithName:@"Asia/Shanghai"];
-        [formatter setTimeZone:beijingTimeZone];
-        NSDate *currentDate = [NSDate date];
-        NSDate *lastDate =[formatter dateFromString:[DEFAULTS objectForKey:@"checkUpdate"]];
-        NSTimeInterval time = [currentDate timeIntervalSinceDate:lastDate];
-        if ((int)time > 3600 * 24) { // 每隔1天检测一次更新
-            NSLog(@"Check For Update");
-            [self performSelectorInBackground:@selector(checkUpdate) withObject:nil];
-            [DEFAULTS setObject:[formatter stringFromDate:currentDate] forKey:@"checkUpdate"];
-        } else {
-            NSLog(@"Needn't Check Update");
-        }
     }];
-}
-
-- (void)checkUpdate {
-    NSDictionary *infoDic = [[NSBundle mainBundle] infoDictionary];
-    //CFShow((__bridge CFTypeRef)(infoDic));
-    NSString *currentVersion = [infoDic objectForKey:@"CFBundleVersion"];
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
-    //CAPUBBS iTunes Link = https://itunes.apple.com/sg/app/capubbs/id826386033?l=zh&mt=8
-    [request setURL:[NSURL URLWithString:@"https://itunes.apple.com/lookup?id=826386033"]];
-    [request setHTTPMethod:@"POST"];
-    
-    NSURLSessionDataTask *task = [[NSURLSession sharedSession]
-                                  dataTaskWithRequest:request
-                                  completionHandler:^(NSData * _Nullable data,
-                                                      NSURLResponse * _Nullable response,
-                                                      NSError * _Nullable error) {
-        
-        if (error || !data) {
-            NSLog(@"Check Update Failed: %@", error.localizedDescription);
-            [self showAlertWithTitle:@"警告" message:@"向App Store检查更新失败，请检查您的网络连接！"];
-            return;
-        }
-        
-        NSError *jsonError = nil;
-        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-        if (!json || jsonError) {
-            NSLog(@"JSON Parse Error: %@", jsonError.localizedDescription);
-            return;
-        }
-        
-        NSArray *infoArray = json[@"results"];
-        if (infoArray.count == 0) {
-            NSLog(@"No app info returned from App Store.");
-            return;
-        }
-        
-        NSDictionary *releaseInfo = [infoArray objectAtIndex:0];
-        NSString *lastVersion = [releaseInfo objectForKey:@"version"];
-        NSLog(@"App Store latest version: %@",lastVersion);
-        if ([currentVersion compare:lastVersion options:NSNumericSearch] == NSOrderedAscending) {
-            NSString *newVerURL = [releaseInfo objectForKey:@"trackViewUrl"];
-            [self showAlertWithTitle:@"发现新版本%@" message:[NSString stringWithFormat:@"更新内容：\n%@", [releaseInfo objectForKey:@"releaseNotes"]] confirmTitle:@"升级" confirmAction:^(UIAlertAction *action) {
-                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:newVerURL] options:@{} completionHandler:nil];
-            } cancelTitle:@"暂不"];
-        }
-    }];
-    [task resume];
 }
 
 - (IBAction)didEndOnExit:(UITextField*)sender {
@@ -494,7 +429,7 @@
     // Pass the selected object to the new view controller.
     if ([segue.identifier isEqualToString:@"post"]) {
         ContentViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        NSDictionary *dict = [news objectAtIndex:[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *dict = news[[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
         dest.bid = dict[@"bid"];
         dest.tid = dict[@"tid"];
         dest.title = dict[@"text"];
@@ -502,7 +437,7 @@
     }
     if ([segue.identifier isEqualToString:@"web"]) {
         WebViewController *dest = [[[segue destinationViewController] viewControllers] firstObject];
-        NSDictionary *dict = [news objectAtIndex:[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
+        NSDictionary *dict = news[[self.tableview indexPathForCell:(UITableViewCell *)sender].row];
         dest.URL = dict[@"url"];
     }
     if ([segue.identifier isEqualToString:@"account"]) {
@@ -540,7 +475,7 @@
     [alert addAction:[UIAlertAction actionWithTitle:@"我同意以上协议"
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction * _Nonnull action) {
-        [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"hasShownEULA"];
+        [DEFAULTS setObject:@(YES) forKey:@"hasShownEULA"];
     }]];
     
     [alert addAction:[UIAlertAction actionWithTitle:@"我拒绝以上协议"

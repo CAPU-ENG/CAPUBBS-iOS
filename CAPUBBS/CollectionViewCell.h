@@ -7,13 +7,12 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface CollectionViewCell : UITableViewCell {
 }
 
-@property NSDictionary *infoDict;
-@property (weak, nonatomic) IBOutlet AsyncImageView *icon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *icon;
 @property (weak, nonatomic) IBOutlet UILabel *labelTitle;
 @property (weak, nonatomic) IBOutlet UILabel *labelSubtitle;
 @property (weak, nonatomic) IBOutlet UILabel *labelInfo;

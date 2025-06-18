@@ -22,14 +22,15 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = GRAY_PATTERN;
-    self.preferredContentSize = CGSizeMake(360, 0);
+    self.preferredContentSize = CGSizeMake(400, 0);
     UIView *targetView = self.navigationController ? self.navigationController.view : self.view;
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
+    textSize = [[DEFAULTS objectForKey:@"textSize"] intValue];
     if (self.iconData.length > 0) {
         [self.icon setImage:[UIImage imageWithData:self.iconData]];
-        [self refreshBackgroundView:YES];
+        [self refreshBackgroundViewAnimated:NO];
     }
     
     [self.icon setRounded:YES];
@@ -47,27 +48,24 @@
         self.title = @"个人信息";
     }
     labels = @[self.rights, self.sign, self.hobby, self.qq, self.mailBtn, self.from, self.regDate, self.lastDate, self.post, self.reply, self.water, self.extr];
-    webViews = @[self.intro, self.sig1, self.sig2, self.sig3];
+    webViewContainers = @[self.intro, self.sig1, self.sig2, self.sig3];
     heights = [[NSMutableArray alloc] initWithArray:@[@0, @0, @0, @0]];
-    for (int i = 0; i < webViews.count; i++) {
-        UIWebView *webView = [webViews objectAtIndex:i];
-        [webView setTag:i];
-        [webView setDelegate:self];
-        [webView.scrollView setScrollEnabled:NO];
+    for (int i = 0; i < webViewContainers.count; i++) {
+        CustomWebViewContainer *webViewContainer = webViewContainers[i];
+        [webViewContainer initiateWebViewWithToken:NO];
+        [webViewContainer setBackgroundColor:[UIColor clearColor]];
+        [webViewContainer setOpaque:NO];
+        [webViewContainer.webView setTag:i];
+        [webViewContainer.webView setNavigationDelegate:self];
+        [webViewContainer.webView.scrollView setScrollEnabled:NO];
     }
     
-    recentPost = [[NSMutableArray alloc] init];
-    recentReply = [[NSMutableArray alloc] init];
+    recentPost = [NSMutableArray array];
+    recentReply = [NSMutableArray array];
     property = @[@"rights", @"sign", @"hobby", @"qq", @"mail", @"place", @"regdate", @"lastdate", @"post", @"reply", @"water", @"extr"];
-    performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(getInformation) name:@"userUpdated" object:nil];
-    for (UIWebView *webView in webViews) {
-        [webView setAllowsLinkPreview:YES];
-    }
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
-    [self.tableView addSubview:control];
-    self.tableView.estimatedRowHeight = 100;
 //    self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     [self getInformation];
@@ -83,7 +81,7 @@
     if ([self.ID isEqualToString:UID]) {
 //        if (![[DEFAULTS objectForKey:@"FeatureEditUser3.0"] boolValue]) {
 //            [self showAlertWithTitle:@"新功能！" message:@"可以编辑个人信息\n点击右上方铅笔前往" cancelTitle:@"我知道了"];
-//            [DEFAULTS setObject:[NSNumber numberWithBool:YES] forKey:@"FeatureEditUser3.0"];
+//            [DEFAULTS setObject:@(YES) forKey:@"FeatureEditUser3.0"];
 //        }
     }
 }
@@ -92,20 +90,21 @@
     if (self.iconData.length == 0) {
         self.iconData = noti.userInfo[@"data"];
         dispatch_main_async_safe(^{
-            [self refreshBackgroundView:NO];
+            [self refreshBackgroundViewAnimated:YES];
         });
     }
 }
 
-- (void)refreshBackgroundView:(BOOL)noAnimation {
-    if (SIMPLE_VIEW == NO) {
-        if (!backgroundView) {
-            backgroundView = [[AsyncImageView alloc] init];
-            [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
-            self.tableView.backgroundView = backgroundView;
-        }
-        [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:!noAnimation];
+- (void)refreshBackgroundViewAnimated:(BOOL)animated {
+    if (SIMPLE_VIEW) {
+        return;
     }
+    if (!backgroundView) {
+        backgroundView = [[AnimatedImageView alloc] init];
+        [backgroundView setContentMode:UIViewContentModeScaleAspectFill];
+        self.tableView.backgroundView = backgroundView;
+    }
+    [backgroundView setBlurredImage:[UIImage imageWithData:self.iconData] animated:animated];
 }
 
 - (void)refreshControlValueChanged:(UIRefreshControl *)refreshControl {
@@ -119,24 +118,37 @@
     iconURL = @"";
     for (int i = 0; i < labels.count; i++) {
         if (i != 4) {
-            UILabel *label = [labels objectAtIndex:i];
+            UILabel *label = labels[i];
             if (i >= 1 && i <= 5) {
                 label.text = @"不告诉你";
             } else {
                 label.text = @"未知";
             }
         } else {
-            UIButton *button = [labels objectAtIndex:i];
+            UIButton *button = labels[i];
             [button setTitle:@"不告诉你" forState:UIControlStateNormal];
             [button setEnabled:NO];
         }
     }
 }
 
+- (NSString *)extractValidEmail:(NSString *)rawEmailString {
+    if (!rawEmailString || rawEmailString.length == 0) {
+        return @"";
+    }
+    
+    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}" options:0 error:nil];
+    NSTextCheckingResult *match = [regex firstMatchInString:rawEmailString options:0 range:NSMakeRange(0, rawEmailString.length)];
+    if (match) {
+        return [rawEmailString substringWithRange:match.range];
+    }
+    return @"";
+}
+
 - (void)getInformation {
     [self setDefault];
     [hud showWithProgressMessage:@"查询中"];
-    [performer performActionWithDictionary:@{@"uid": self.ID, @"recent": @"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"uid": self.ID, @"recent": @"YES", @"raw": @"YES"} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
@@ -163,62 +175,83 @@
                 });
             }
             if ([dict[@"sex"] isEqualToString:@"男"]) {
-                self.username.text = [dict[@"username"] stringByAppendingString:@" 🚹"];
-            } else if ([[[result objectAtIndex:0] objectForKey:@"sex"] isEqualToString:@"女"]) {
-                self.username.text = [dict[@"username"] stringByAppendingString:@" 🚺"];
+                self.username.text = [dict[@"username"] stringByAppendingString:@" ♂"];
+            } else if ([dict[@"sex"] isEqualToString:@"女"]) {
+                self.username.text = [dict[@"username"] stringByAppendingString:@" ♀"];
             }
             self.star.text = @"";
             for (int i = 1; i<= [dict[@"star"] intValue]; i++) {
                 self.star.text = [self.star.text stringByAppendingString:@"⭐️"];
             }
             for (int i = 0; i < labels.count; i++) {
-                if (!([dict[[property objectAtIndex:i]] length] == 0 || [dict[[property objectAtIndex:i]] isEqualToString:@"Array"])) {
+                if (!([dict[property[i]] length] == 0 || [dict[property[i]] isEqualToString:@"Array"])) {
                     if (i != 4) {
-                        UILabel *label = [labels objectAtIndex:i];
-                        label.text = [dict[[property objectAtIndex:i]] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
+                        UILabel *label = labels[i];
+                        label.text = [dict[property[i]] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
                     } else {
-                        UIButton *button = [labels objectAtIndex:i];
-                        NSString *email = dict[[property objectAtIndex:i]];
-                        [button setTitle:email forState:UIControlStateNormal];
-                        [button setEnabled:[RegisterViewController isValidateEmail:email]];
+                        UIButton *button = labels[i];
+                        NSString *email = dict[property[i]];
+                        NSString *validEmail = [self extractValidEmail:email];
+                        if (validEmail) {
+                            [button setTitle:validEmail forState:UIControlStateNormal];
+                            [button setEnabled:YES];
+                        } else {
+                            [button setTitle:email forState:UIControlStateNormal];
+                            [button setEnabled:NO];
+                        }
                     }
                 }
             }
             iconURL = dict[@"icon"];
             if (self.iconData.length == 0) {
-                [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AsyncImageView transIconURL:iconURL]] object:nil];
+                [NOTIFICATION addObserver:self selector:@selector(refresh:) name:[@"imageSet" stringByAppendingString:[AnimatedImageView transIconURL:iconURL]] object:nil];
             }
             [self.icon setUrl:iconURL];
             
-            for (int i = 0; i < webViews.count; i++) {
-                [heights replaceObjectAtIndex:i withObject:@0];
-                UIWebView *webView = [webViews objectAtIndex:i];
+            for (int i = 0; i < webViewContainers.count; i++) {
+                heights[i] = @0;
+                CustomWebViewContainer *webViewContainer = webViewContainers[i];
                 NSString *content = i == 0 ? dict[@"intro"] : dict[[NSString stringWithFormat:@"sig%d", i]];
                 if ([content isEqualToString:@"Array"] || content.length == 0) {
-                    content = @"暂无";
+                    content = @"<font color='gray'>暂无</font>";
                 }
-                NSString *htmlString = [ContentViewController htmlStringWithText:nil sig:content textSize:[[DEFAULTS objectForKey:@"textSize"] intValue]];
-                [webView stopLoading];
-                [webView loadHTMLString:htmlString baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
+                content = [ActionPerformer transToHTML:content];
+                NSString *html = [ActionPerformer htmlStringWithText:nil sig:content textSize:textSize];
+                if (webViewContainer.webView.isLoading) {
+                    [webViewContainer.webView stopLoading];
+                }
+                [webViewContainer.webView loadHTMLString:html baseURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?", CHEXIE]]];
             }
             if (heightCheckTimer && [heightCheckTimer isValid]) {
                 [heightCheckTimer invalidate];
             }
             // Do not trigger immediately, the webview might still be showing the previous content.
             heightCheckTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updateWebViewHeight) userInfo:nil repeats:YES];
-            
-            [recentPost removeAllObjects];
-            [recentReply removeAllObjects];
-            for (NSDictionary *dict in result) {
-                if ([dict[@"type"] isEqualToString:@"post"]) {
-                    [recentPost addObject:dict];
-                }
-                if ([dict[@"type"] isEqualToString:@"reply"]) {
-                    [recentReply addObject:dict];
+            for (int i = 1; i < result.count; i++) {
+                if (result[i] && result[i][@"info"]) {
+                    id info = result[i][@"info"];
+                    if (![info isKindOfClass:[NSArray class]]) {
+                        info = @[info];
+                    }
+                    for (NSDictionary *dict in info) {
+                        if ([dict[@"type"] isEqualToString:@"post"]) {
+                            [recentPost addObject:dict];
+                        }
+                        if ([dict[@"type"] isEqualToString:@"reply"]) {
+                            [recentReply addObject:dict];
+                        }
+                    }
                 }
             }
         }
     }];
+}
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    for (int i = 0; i < webViewContainers.count; i++) {
+        heights[i] = @0;
+    }
 }
 
 #pragma mark - Table view data source
@@ -227,7 +260,7 @@
     if (indexPath.row == 0) {
         return UITableViewAutomaticDimension;
     } else if (indexPath.row <= 4) {
-        return MIN(MAX([[heights objectAtIndex:indexPath.row - 1] floatValue], 14) + 35, WEB_VIEW_MAX_HEIGHT);
+        return MIN(MAX([heights[indexPath.row - 1] floatValue], 14) + 35, WEB_VIEW_MAX_HEIGHT);
     } else {
         return 55;
     }
@@ -236,39 +269,60 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 0 && indexPath.row == 7) {
-        if ([CustomMailComposeViewController canSendMail]) {
-            mail = [[CustomMailComposeViewController alloc] init];
-            mail.mailComposeDelegate = self;
-            [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-            [mail.navigationBar setTintColor:[UIColor whiteColor]];
-            [mail setToRecipients:REPORT_EMAIL];
-            if ([self.ID isEqualToString:UID]) {
-                [mail setSubject:@"CAPUBBS 申请删除账号"];
-                [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我申请删除该账号，希望尽快处理，谢谢！", UID] isHTML:YES];
-            } else {
-                [mail setSubject:@"CAPUBBS 举报违规用户"];
-                [mail setMessageBody:[NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID] isHTML:YES];
-            }
-            [self presentViewControllerSafe:mail];
+        if ([self.ID isEqualToString:UID]) {
+            [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+                @"recipients": REPORT_EMAIL,
+                @"subject": @"CAPUBBS 申请删除账号",
+                @"body": [NSString stringWithFormat:@"您好，我是%@，我申请删除该账号，希望尽快处理，谢谢！", UID],
+                @"fallbackMessage": @"请前往网络维护板块反馈"
+            }];
         } else {
-            [self showAlertWithTitle:@"您的设备无法发送邮件" message:@"请前往网络维护板块反馈"];
+            [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+                @"recipients": REPORT_EMAIL,
+                @"subject": @"CAPUBBS 举报违规用户",
+                @"body": [NSString stringWithFormat:@"您好，我是%@，我发现用户 <a href=\"%@/bbs/user/?name=%@\">%@</a> 存在违规行为，希望尽快处理，谢谢！", ([UID length] > 0) ? UID : @"匿名用户", CHEXIE, self.ID, self.ID],
+                @"isHTML": @(YES),
+                @"fallbackMessage": @"请前往网络维护板块反馈"
+            }];
         }
     }
 }
 
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType{ // 处理帖子中的URL
-    // NSLog(@"type=%d,path=%@",navigationType,request.URL.absoluteString);
-    if (navigationType == UIWebViewNavigationTypeLinkClicked) {
-        NSString *path = request.URL.absoluteString;
-        WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
-        CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-        dest.URL = path;
-        navi.modalPresentationStyle = UIModalPresentationFullScreen;
-        [self presentViewControllerSafe:navi];
-        return NO;
-    } else {
-        return YES;
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    // 允许其他类型加载（如 form submit、reload）
+    if (navigationAction.navigationType != WKNavigationTypeLinkActivated) {
+        decisionHandler(WKNavigationActionPolicyAllow);
+        return;
     }
+    
+    NSString *path = navigationAction.request.URL.absoluteString;
+    if ([path hasPrefix:@"x-apple"]) {
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"mailto:"]) {
+        NSString *mailAddress = [path substringFromIndex:@"mailto:".length];
+        [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+            @"recipients": @[mailAddress]
+        }];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    if ([path hasPrefix:@"tel:"]) {
+        // Directly open
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:path] options:@{} completionHandler:nil];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    
+    WebViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"webview"];
+    CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+    dest.URL = path;
+    navi.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewControllerSafe:navi];
+    decisionHandler(WKNavigationActionPolicyCancel);
 }
 
 - (void)updateWebViewHeight {
@@ -277,85 +331,70 @@
         return;
     }
     
-    Boolean hasUpdate = NO;
-    for (int i = 0; i < webViews.count; i++) {
-        UIWebView *webView = [webViews objectAtIndex:i];
-        NSString *height = [webView stringByEvaluatingJavaScriptFromString:@"document.getElementById('body-wrapper').scrollHeight"];
-        if (height.length &&
-            [height floatValue] - [[heights objectAtIndex:i] floatValue] >= 1) {
-            [heights replaceObjectAtIndex:i withObject:height];
-            hasUpdate = YES;
-        }
-    }
-    if (hasUpdate) {
-        [self.tableView beginUpdates];
-        [self.tableView endUpdates];
+    for (int i = 0; i < webViewContainers.count; i++) {
+        CustomWebViewContainer *webviewContainer = webViewContainers[i];
+        [webviewContainer.webView evaluateJavaScript:@"if(document.getElementById('body-wrapper')){document.getElementById('body-wrapper').scrollHeight;}" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
+            if (error) {
+                NSLog(@"JS 执行失败: %@", error);
+                return;
+            }
+            float height = 0;
+            if (result && [result isKindOfClass:[NSNumber class]]) {
+                height = [result floatValue] * (textSize / 100.0);
+            }
+            if (height > 0 && height - [heights[i] floatValue] >= 1) {
+                heights[i] = @(height);
+                [self.tableView beginUpdates];
+                [self.tableView endUpdates];
+            }
+        }];
     }
 }
 
 - (IBAction)sendMail:(id)sender {
-    if (![CustomMailComposeViewController canSendMail]) {
-        return;
-    }
-    mail = [[CustomMailComposeViewController alloc] init];
-    mail.mailComposeDelegate = self;
-    [mail.navigationBar setBarStyle:UIBarStyleBlackTranslucent];
-    [mail.navigationBar setTintColor:[UIColor whiteColor]];
-    [mail setToRecipients:@[self.mailBtn.titleLabel.text]];
-    [self presentViewControllerSafe:mail];
-}
-
-- (void)mailComposeController:(CustomMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
-    [mail dismissViewControllerAnimated:YES completion:nil];
+    [NOTIFICATION postNotificationName:@"sendEmail" object:nil userInfo:@{
+        @"recipients": @[self.mailBtn.titleLabel.text]
+    }];
 }
 
 - (IBAction)tapPic:(UIButton *)sender {
     if (iconURL.length > 0) {
-        [self showPic:[NSURL URLWithString:[AsyncImageView transIconURL:iconURL]]];
+        [self showPic:[AnimatedImageView transIconURL:iconURL]];
     }
 }
-- (void)showPic:(NSURL *)url {
-    [hud showWithProgressMessage:@"正在载入"];
-    NSString *cachePath = [NSString stringWithFormat:@"%@/%@", CACHE_PATH, [ActionPerformer md5:url.absoluteString]];
-    if ([MANAGER fileExistsAtPath:cachePath] && [AsyncImageView fileType:[MANAGER contentsAtPath:cachePath]] == GIF_TYPE) { // GIF是未压缩的格式 可直接调取
+- (void)showPic:(NSString *)url {
+    NSString *md5Url = [ActionPerformer md5:url];
+    NSString *cachePath = [NSString stringWithFormat:@"%@/%@", IMAGE_CACHE_PATH, md5Url];
+    if ([MANAGER fileExistsAtPath:cachePath]) {
         NSData *imageData = [MANAGER contentsAtPath:cachePath];
-        imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:imageData] == GIF_TYPE) ? @"gif" : @"png"];
-        [self presentImage:imageData];
-    } else {
-        [self performSelectorInBackground:@selector(showPicThread:) withObject:url];
-    }
-}
-- (void)showPicThread:(NSURL *)url {
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        if (idata) {
-            imgPath = [NSString stringWithFormat:@"%@/%@.%@", NSTemporaryDirectory(), [ActionPerformer md5:url.absoluteString], ([AsyncImageView fileType:idata] == GIF_TYPE) ? @"gif" : @"png"];
+        // 动图是未压缩的格式 可直接调取
+        if ([AnimatedImageView isAnimated:imageData]) {
+            ImageFileType type = [AnimatedImageView fileType:imageData];
+            [self presentImage:imageData fileName:[NSString stringWithFormat:@"%@.%@", md5Url, [AnimatedImageView fileExtension:type]]];
+            return;
         }
-        [self performSelectorOnMainThread:@selector(presentImage:) withObject:idata waitUntilDone:NO];
+    }
+    [hud showWithProgressMessage:@"正在载入"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable idata, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        ImageFileType type = [AnimatedImageView fileType:idata];
+        if (error || type == ImageFileTypeUnknown) {
+            [hud hideWithFailureMessage:@"载入失败"];
+            return;
+        }
+        [hud hideWithSuccessMessage:@"载入成功"];
+        [self presentImage:idata fileName:[NSString stringWithFormat:@"%@.%@", md5Url, [AnimatedImageView fileExtension:type]]];
     }];
     [task resume];
 }
-- (void)presentImage:(NSData *)image {
-    if (!image || ![UIImage imageWithData:image]) {
-        [hud hideWithFailureMessage:@"载入失败"];
-        return;
-    } else {
-        [hud hideWithSuccessMessage:@"载入成功"];
-    }
-    [image writeToFile:imgPath atomically:YES];
-    dic = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:imgPath]];
-    dic.delegate = self;
-    dic.name = [NSString stringWithFormat:@"%@的头像", self.ID];
-    [dic presentPreviewAnimated:YES];
-}
-- (UIViewController *)documentInteractionControllerViewControllerForPreview:(UIDocumentInteractionController *)controller{
-    return self;
-}
-- (UIView *)documentInteractionControllerViewForPreview:(UIDocumentInteractionController *)controller {
-    return self.icon;
-}
-- (void)documentInteractionControllerDidEndPreview:(UIDocumentInteractionController *)controller {
-    [MANAGER removeItemAtPath:imgPath error:nil];
+
+- (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName {
+    [NOTIFICATION postNotificationName:@"previewFile" object:nil userInfo:@{
+        @"fileData": imageData,
+        @"fileName": fileName,
+        @"fileTitle": [NSString stringWithFormat:@"%@的头像", self.ID],
+        @"frame": self.icon
+    }];
 }
 
 - (IBAction)back:(id)sender {

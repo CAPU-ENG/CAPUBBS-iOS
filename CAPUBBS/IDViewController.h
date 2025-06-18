@@ -10,7 +10,6 @@
 #import "InternalLoginViewController.h"
 
 @interface IDViewController : CustomTableViewController {
-    ActionPerformer *performer;
     NSMutableArray *data;
     BOOL isDelete;
 }

@@ -7,25 +7,24 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MessageUI/MessageUI.h>
-#import "AsyncImageView.h"
+#import <WebKit/WebKit.h>
+#import "AnimatedImageView.h"
+#import "CustomWebViewContainer.h"
 
-@interface UserViewController : CustomTableViewController<UIWebViewDelegate, UIAlertViewDelegate, UIDocumentInteractionControllerDelegate, MFMailComposeViewControllerDelegate> {
-    ActionPerformer *performer;
+@interface UserViewController : CustomTableViewController<WKNavigationDelegate> {
     MBProgressHUD *hud;
-    AsyncImageView *backgroundView;
+    AnimatedImageView *backgroundView;
+    int textSize;
     UIRefreshControl *control;
     NSMutableArray *recentPost;
     NSMutableArray *recentReply;
     NSArray *labels;
-    NSArray *webViews;
+    NSArray<CustomWebViewContainer *> *webViewContainers;
     NSMutableArray *webData;
     NSString *iconURL;
-    NSString *imgPath;
     NSArray *property;
     NSMutableArray *heights;
     UIDocumentInteractionController *dic;
-    CustomMailComposeViewController *mail;
     NSTimer *heightCheckTimer;
 }
 
@@ -48,11 +47,11 @@
 @property (weak, nonatomic) IBOutlet UILabel *reply;
 @property (weak, nonatomic) IBOutlet UILabel *water;
 @property (weak, nonatomic) IBOutlet UILabel *extr;
-@property (weak, nonatomic) IBOutlet UIWebView *intro;
-@property (weak, nonatomic) IBOutlet UIWebView *sig1;
-@property (weak, nonatomic) IBOutlet UIWebView *sig2;
-@property (weak, nonatomic) IBOutlet UIWebView *sig3;
-@property (weak, nonatomic) IBOutlet AsyncImageView *icon;
+@property (weak, nonatomic) IBOutlet CustomWebViewContainer *intro;
+@property (weak, nonatomic) IBOutlet CustomWebViewContainer *sig1;
+@property (weak, nonatomic) IBOutlet CustomWebViewContainer *sig2;
+@property (weak, nonatomic) IBOutlet CustomWebViewContainer *sig3;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *icon;
 @property (weak, nonatomic) IBOutlet UILabel *labelReport;
 
 @end

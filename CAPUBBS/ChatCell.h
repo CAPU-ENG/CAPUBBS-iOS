@@ -7,10 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AsyncImageView.h"
+#import "AnimatedImageView.h"
 
 @interface ChatCell : UITableViewCell
-@property (weak, nonatomic) IBOutlet AsyncImageView *imageIcon;
+@property (weak, nonatomic) IBOutlet AnimatedImageView *imageIcon;
 @property (weak, nonatomic) IBOutlet UIButton *buttonIcon;
 @property (weak, nonatomic) IBOutlet UIImageView *imageChat;
 @property (weak, nonatomic) IBOutlet UITextView *textMessage;

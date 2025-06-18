@@ -81,3 +81,10 @@
 
 @end
 
+@interface UIImage (Extension)
+
+- (UIImage *)imageByApplyingCornerRadius:(CGFloat)cornerRadius;
+
++ (UIImage *)imageWithColor:(UIColor *)color size:(CGSize)size;
+
+@end
