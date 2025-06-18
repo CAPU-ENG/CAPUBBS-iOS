@@ -285,7 +285,9 @@
         }
         [DEFAULTS setObject:data forKey:@"collection"];
         [hud showAndHideWithSuccessMessage:@"删除完成"];
-        [self performSelector:@selector(commitChange) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self commitChange];
+        });
     }];
 }
 
@@ -458,7 +460,9 @@
             [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
         }
         [DEFAULTS setObject:data forKey:@"collection"];
-        [self performSelector:@selector(commitChange) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self commitChange];
+        });
     }
 }
 

@@ -32,7 +32,7 @@
     [targetView addSubview:hud];
     
     [self initiateToolBar];
-    if (!self.bid) {
+    if (!self.bid || [self.bid isEqualToString:@"hot"]) {
         self.bid = @"";
     }
     if (!self.tid) {
@@ -45,9 +45,7 @@
     }
     if (self.defaultTitle) {
         self.textTitle.text = self.defaultTitle;
-    }
-    performer = [[ActionPerformer alloc] init];
-    
+    }    
     [NOTIFICATION addObserver:self selector:@selector(keyboardChange:) name:UIKeyboardWillChangeFrameNotification object:nil];
     [NOTIFICATION addObserver:self selector:@selector(keyboardChange:) name:UIKeyboardDidChangeFrameNotification object:nil];
     [NOTIFICATION addObserver:self selector:@selector(insertContent:) name:@"addContent" object:nil];
@@ -69,12 +67,12 @@
     
     self.textTitle.delegate = self;
     self.textBody.delegate = self;
-    [self updateDismissable];
     // Do any additional setup after loading the view.
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
+    [self updateDismissable];
 //    if (![[DEFAULTS objectForKey:@"FeatureText2.1"] boolValue]) {
 //        [self showAlertWithTitle:@"新功能！" message:@"新增插入带颜色、字号、样式字体的功能" cancelTitle:@"我知道了"];
 //        [DEFAULTS setObject:@(YES) forKey:@"FeatureText2.1"];
@@ -126,6 +124,8 @@
 - (void)updateActivity {
     if (self.bid.length > 0 && self.tid.length > 0) {
         activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/content/?tid=%@&bid=%@", CHEXIE, self.tid, self.bid]];
+    } else if (self.bid.length > 0) {
+        activity.webpageURL = [NSURL URLWithString:[NSString stringWithFormat:@"%@/bbs/main/?bid=%@", CHEXIE, self.bid]];
     } else {
         activity.webpageURL = nil;
     }
@@ -260,7 +260,7 @@
         @"text" : content,
         @"sig" : [NSString stringWithFormat:@"%ld", (long)self.segmentedControl.selectedSegmentIndex]
     };
-    [performer performActionWithDictionary:dict toURL:@"post" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"post" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@", err);
             [hud hideWithFailureMessage:@"发表失败"];
@@ -279,8 +279,12 @@
                     @"isEdit" : @(self.isEdit),
                     @"floor" : self.isEdit ? self.floor : @"",
                 }];
-                [NOTIFICATION postNotificationName:@"refreshList" object:nil userInfo:nil];
-                [self performSelector:@selector(dismiss) withObject:nil afterDelay:0.5];
+                if (!self.isEdit) {
+                    [NOTIFICATION postNotificationName:@"refreshList" object:nil userInfo:nil];
+                }
+                dispatch_main_after(0.5, ^{
+                    [self dismiss];
+                });
                 break;
             }
             case 1:{
@@ -569,7 +573,7 @@ CGSize scaledSizeForImage(UIImage *image, CGFloat maxLength) {
         }
         NSLog(@"Image Size:%dkB", (int)imageData.length / 1024);
         [hud showWithProgressMessage:@"正在上传"];
-        [performer performActionWithDictionary:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [hud hideWithFailureMessage:@"上传失败"];
                 callback(nil);

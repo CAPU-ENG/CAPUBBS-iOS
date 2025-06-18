@@ -25,7 +25,6 @@
     }
     [NOTIFICATION addObserver:self selector:@selector(userChanged:) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(userChanged:) name:@"infoRefreshed" object:nil];
-    performer = [[ActionPerformer alloc] init];
     [self userChanged:nil];
     
     // Uncomment the following line to preserve selection between presentations.
@@ -96,7 +95,9 @@
         [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
         isDelete = NO;
         if (data.count + 1 == MAX_ID_NUM) {
-            [self.tableView performSelector:@selector(reloadData) withObject:nil afterDelay:0.5];
+            dispatch_main_after(0.5, ^{
+                [self.tableView reloadData];
+            });
         }
     }  
 }
@@ -122,7 +123,7 @@
 
 - (IBAction)logOut:(id)sender {
     [self showAlertWithTitle:@"警告" message:@"您确定要注销当前账号吗？" confirmTitle:@"确定" confirmAction:^(UIAlertAction *action) {
-        [performer performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
+        [ActionPerformer callApiWithParams:nil toURL:@"logout" callback:^(NSArray *result, NSError *err) {}];
         NSLog(@"Logout - %@", UID);
         [GROUP_DEFAULTS removeObjectForKey:@"uid"];
         [GROUP_DEFAULTS removeObjectForKey:@"pass"];

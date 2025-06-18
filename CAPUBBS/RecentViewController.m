@@ -100,7 +100,7 @@
         NSDictionary *dict = self.data[[self.tableView indexPathForCell:(UITableViewCell *)sender].row];
         dest.bid = dict[@"bid"];
         dest.tid = dict[@"tid"];
-        dest.floor = dict[@"pid"];
+        dest.destinationFloor = dict[@"pid"];
         dest.title = dict[@"title"];
         dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done)];
     }

@@ -10,7 +10,6 @@
 #import "IndexViewCell.h"
 
 @interface IndexViewController : CustomViewController<UICollectionViewDelegate> {
-    ActionPerformer *performer;
     MBProgressHUD *hud;
     BOOL shouldVibrate;
     CGFloat cellWidth;

@@ -45,8 +45,6 @@
         }
     }
     isFirstTime = YES;
-    performer = [[ActionPerformer alloc] init];
-    performerReply = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(shouldRefresh) name:@"refreshList" object:nil];
     [NOTIFICATION addObserver:self.tableView selector:@selector(reloadData) name:@"collectionChanged" object:nil];
     self.title = ([self.bid isEqualToString:@"hot"] ? @"🔥论坛热点🔥" : [ActionPerformer getBoardTitle:self.bid]);
@@ -61,6 +59,10 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self.navigationController setToolbarHidden:NO];
+    activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".list"]];
+    activity.webpageURL = [self getCurrentUrl];
+    [activity becomeCurrent];
+    
     if (![self.bid isEqualToString:@"hot"]) {
 //        if (![[DEFAULTS objectForKey:@"FeatureSwipe2.0"] boolValue]) {
 //            [self showAlertWithTitle:@"新功能！" message:@"帖子和列表界面可以左右滑动翻页" cancelTitle:@"我知道了"];
@@ -78,6 +80,21 @@
     [super viewWillDisappear:animated];
     isRobbingSofa = NO;
     [hudSofa hideWithFailureMessage:@"页面退出"];
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    [activity invalidate];
+}
+
+- (NSURL *)getCurrentUrl {
+    NSString *url;
+    if ([self.bid isEqualToString:@"hot"]) {
+        url = [NSString stringWithFormat:@"%@/bbs/index", CHEXIE];
+    } else {
+        url = [NSString stringWithFormat:@"%@/bbs/main/?bid=%@&p=%ld", CHEXIE, self.bid, self.page];
+    }
+    return [NSURL URLWithString:url];
 }
 
 - (void)shouldRefresh{
@@ -102,7 +119,7 @@
             @"p" : [NSString stringWithFormat:@"%ld", (long)pageNum],
             @"raw": @"YES"
         };
-        [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"show" callback:^(NSArray *result, NSError *err) {
             if (self.refreshControl.isRefreshing) {
                 [self.refreshControl endRefreshing];
             }
@@ -129,6 +146,7 @@
                     [hud hideWithSuccessMessage:@"读取成功"];
                 }
                 
+                activity.webpageURL = [self getCurrentUrl];
                 self.buttonForward.enabled = !isLast;
                 self.buttonJump.enabled = ([pages integerValue] > 1);
                 if (isFirstTime) {
@@ -147,8 +165,8 @@
         self.buttonBack.enabled = NO;
         self.buttonForward.enabled = NO;
         self.buttonJump.enabled = NO;
-        [performer performActionWithDictionary:nil toURL:@"globaltop" withBlock:^(NSArray *topResult, NSError *topErr) {
-            [performer performActionWithDictionary:@{@"hotnum":[NSString stringWithFormat:@"%d", HOT_NUM]} toURL:@"hot" withBlock:^(NSArray *hotResult, NSError *hotErr) {
+        [ActionPerformer callApiWithParams:nil toURL:@"globaltop" callback:^(NSArray *topResult, NSError *topErr) {
+            [ActionPerformer callApiWithParams:@{@"hotnum":[NSString stringWithFormat:@"%d", HOT_NUM]} toURL:@"hot" callback:^(NSArray *hotResult, NSError *hotErr) {
                 if (self.refreshControl.isRefreshing) {
                     self.page = 1;
                     [self.refreshControl endRefreshing];
@@ -222,13 +240,17 @@
                     // NSLog(@"%d", (int)time);
                     if ((int)time <= 60) { // 一分钟之内的帖子(允许服务器时间误差)
                         NSLog(@"New Post Found");
-                        [self performSelector:@selector(robSofa:) withObject:dict afterDelay:0];
+                        dispatch_global_default_async(^{
+                            [self robSofa:dict];
+                        });
                         return;
                     }
                 }
             }
             float delay = 1 + (float)(arc4random() % 200) / 100; // 随机在1~3秒后刷新
-            [self performSelector:@selector(refresh) withObject:nil afterDelay:isFastRobSofa ? delay * 0.1 : delay];
+            dispatch_main_after(isFastRobSofa ? delay * 0.1 : delay, ^{
+                [self refresh];
+            });
         }
         [UIApplication sharedApplication].idleTimerDisabled = YES; // 关闭自动锁屏
     } else {
@@ -244,7 +266,7 @@
         @"text" : sofaContent,
         @"sig" : @"0"
     };
-    [performerReply performActionWithDictionary:dict toURL:@"post" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"post" callback:^(NSArray *result, NSError *err) {
         BOOL fail = NO;
         if (err || result.count == 0) {
             fail = YES;
@@ -259,7 +281,9 @@
         } else {
             failCount++;
         }
-        [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self refresh];
+        });
     }];
 }
 
@@ -306,6 +330,7 @@
         
         NSString *author = dict[@"author"];
         NSString *replyer = dict[@"replyer"];
+        // pid is reply num
         if ([dict[@"pid"] integerValue] == 0 || [replyer isEqualToString:@"Array"]) {
             cell.authorText.text = author;
         } else {
@@ -545,10 +570,12 @@
         @"method" : method
     };
     [hud showWithProgressMessage:@"正在操作"];
-    [performer performActionWithDictionary:dict toURL:@"action" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"action" callback:^(NSArray *result, NSError *err) {
         if (result.count > 0 && [result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"操作成功"];
-            [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+            dispatch_main_after(0.5, ^{
+                [self refresh];
+            });
         } else {
             [hud hideWithFailureMessage:@"操作失败"];
             [self showAlertWithTitle:@"错误" message:result.count > 0 ? result[0][@"msg"] : @"未知错误"];
@@ -562,12 +589,14 @@
         @"tid" : data[selectedRow][@"tid"]
     };
     [hud showWithProgressMessage:@"正在操作"];
-    [performer performActionWithDictionary:dict toURL:@"delete" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"delete" callback:^(NSArray *result, NSError *err) {
         if (result.count > 0 && [result[0][@"code"] integerValue] == 0) {
             [hud hideWithSuccessMessage:@"操作成功"];
             [data removeObjectAtIndex:selectedRow];
             [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:selectedRow inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
-            [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+            dispatch_main_after(0.5, ^{
+                [self refresh];
+            });
         } else {
             [hud hideWithFailureMessage:@"操作失败"];
             [self showAlertWithTitle:@"错误" message:result.count > 0 ? result[0][@"msg"] : @"未知错误"];
@@ -606,8 +635,8 @@
         dest.tid = one[@"tid"];
         dest.bid = one[@"bid"];
         if ([self.bid isEqualToString: @"hot"] && indexPath.row >= globalTopCount) {
-            dest.floor = one[@"pid"];
-            dest.willScrollToBottom = YES;
+            // pid is reply num, floor # is reply num + 1
+            dest.destinationFloor = [NSString stringWithFormat:@"%ld", [one[@"pid"] integerValue] + 1];
         }
         dest.title = [ActionPerformer restoreTitle:one[@"text"]];
     }

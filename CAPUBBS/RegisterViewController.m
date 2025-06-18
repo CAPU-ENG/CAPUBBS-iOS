@@ -23,8 +23,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
-    performerPsd = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(setUserIcon:) name:@"selectIcon" object:nil];
     [self.labelUidGuide setTextColor:BLUE];
     
@@ -230,7 +228,7 @@
     };
     if (self.isEdit == NO) {
         [hud showWithProgressMessage:@"注册中"];
-        [performer performActionWithDictionary:dict toURL:@"register" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"register" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [self showAlertWithTitle:@"注册失败" message:[err localizedDescription]];
                 [hud hideWithFailureMessage:@"注册失败"];
@@ -246,7 +244,9 @@
                     [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
                     [GROUP_DEFAULTS setObject:pass forKey:@"pass"];
                     [GROUP_DEFAULTS setObject:result[0][@"token"] forKey:@"token"];
-                    [self performSelector:@selector(dismiss) withObject:nil afterDelay:0.5];
+                    dispatch_main_after(0.5, ^{
+                        [self dismissViewControllerAnimated:YES completion:nil];
+                    });
                     break;
                 }
                 case 6:{
@@ -274,7 +274,7 @@
         }];
     } else {
         [hud showWithProgressMessage:@"修改中"];
-        [performer performActionWithDictionary:dict toURL:@"edituser" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"edituser" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
                 [hud hideWithFailureMessage:@"修改失败"];
@@ -295,7 +295,9 @@
                             textField.secureTextEntry = YES;
                         }];
                         [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                            [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                            dispatch_main_after(0.5, ^{
+                                [self back];
+                            });
                         }]];
                         [alert addAction:[UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                             NSString *oldPassword = alert.textFields.firstObject.text;
@@ -303,7 +305,9 @@
                         }]];
                         [self presentViewControllerSafe:alert];
                     } else {
-                        [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                        dispatch_main_after(0.5, ^{
+                            [self back];
+                        });
                     }
                     break;
                 }
@@ -321,13 +325,6 @@
     }
 }
 
-- (void)dismiss {
-    dispatch_main_async_safe(^{
-        [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
-    });
-    [self dismissViewControllerAnimated:YES completion:nil];
-}
-
 - (void)back {
     [NOTIFICATION postNotificationName:@"userUpdated" object:nil userInfo:nil];
     [self.navigationController popViewControllerAnimated:YES];
@@ -339,7 +336,7 @@
         @"old" : [ActionPerformer md5:oldPassword],
         @"new" : [ActionPerformer md5:self.textPsd.text]
     };
-    [performerPsd performActionWithDictionary:dict toURL:@"changepsd" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"changepsd" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             [self showAlertWithTitle:@"修改失败" message:[err localizedDescription]];
             [hud hideWithFailureMessage:@"修改失败"];
@@ -355,7 +352,9 @@
             case 0: {
                 [GROUP_DEFAULTS setObject:self.textPsd.text forKey:@"pass"];
                 [GROUP_DEFAULTS setObject:result[0][@"msg"] forKey:@"token"];
-                [self performSelector:@selector(back) withObject:nil afterDelay:0.5];
+                dispatch_main_after(0.5, ^{
+                    [self back];
+                });
                 break;
             }
             case 1:{
@@ -393,7 +392,7 @@
         [self.imageUidAvailable setImage:QUESTIONMARK];
         return;
     }
-    [performer performActionWithDictionary:@{@"uid":sender.text} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"uid":sender.text} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
         // NSLog(@"%@", result);
         if (err || result.count == 0 || [result[0][@"username"] length] == 0) {
             [self.imageUidAvailable setImage:SUCCESSMARK];
@@ -402,8 +401,10 @@
             [self.imageUidAvailable setImage:FAILMARK];
             [self.labelUidGuide setText:@"该ID已经存在！"];
             [self.labelUidGuide setTextColor:[UIColor redColor]];
-            [self.labelUidGuide performSelector:@selector(setText:) withObject:@"如何才能取一个好的ID？" afterDelay:1.0];
-            [self.labelUidGuide performSelector:@selector(setTextColor:) withObject:BLUE afterDelay:1.0];
+            dispatch_main_after(1.0, ^{
+                [self.labelUidGuide setText:@"如何才能取一个好的ID？"];
+                [self.labelUidGuide setTextColor:BLUE];
+            });
         }
     }];
 }

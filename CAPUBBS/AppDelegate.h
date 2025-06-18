@@ -11,9 +11,8 @@
 #import <QuickLook/QuickLook.h>
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate, MFMailComposeViewControllerDelegate, QLPreviewControllerDelegate, QLPreviewControllerDataSource> {
-    ActionPerformer *performer;
     NSString *previewFilePath;
-    NSString *previewFileName;
+    NSString *previewFileTitle;
     UIView *previewFrame;
 }
 

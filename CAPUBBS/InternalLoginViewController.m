@@ -22,8 +22,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
-    performerLogout = [[ActionPerformer alloc] init];
     self.textUid.text = self.defaultUid;
     self.textPass.text = self.defaultPass;
     [self.buttonLogin.layer setCornerRadius:10.0];
@@ -75,7 +73,7 @@
         @"username" : uid,
         @"password" : [ActionPerformer md5:pass],
     };
-    [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"login" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             [hud hideWithFailureMessage:@"登录失败"];
 //            [self showAlertWithTitle:@"登录失败" message:[err localizedDescription]];
@@ -98,7 +96,7 @@
             return ;
         } else if ([result[0][@"code"] isEqualToString:@"0"]) {
             if ([UID length] > 0 && ![uid isEqualToString:UID]) { // 注销之前的账号
-                [performerLogout performActionWithDictionary:nil toURL:@"logout" withBlock:^(NSArray *result, NSError *err) {}];
+                [ActionPerformer callApiWithParams:nil toURL:@"logout" callback:^(NSArray *result, NSError *err) {}];
                 NSLog(@"Logout - %@", UID);
             }
             [GROUP_DEFAULTS setObject:uid forKey:@"uid"];
@@ -111,7 +109,9 @@
             });
             [ActionPerformer checkPasswordLength];
             shouldPop = YES;
-            [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:@(YES) afterDelay:0.5];
+            dispatch_main_after(0.5, ^{
+                [self.navigationController popViewControllerAnimated:YES];
+            });
         } else {
             [self showAlertWithTitle:@"登录失败" message:@"发生未知错误！"];
         }

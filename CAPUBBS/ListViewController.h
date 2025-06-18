@@ -9,12 +9,11 @@
 #import <UIKit/UIKit.h>
 
 @interface ListViewController : CustomTableViewController {
-    ActionPerformer *performer;
-    ActionPerformer *performerReply;
     NSMutableArray *data;
     NSInteger globalTopCount;
     MBProgressHUD *hud;
     MBProgressHUD *hudSofa;
+    NSUserActivity *activity;
     int failCount;
     BOOL isFirstTime;
     BOOL isLast;

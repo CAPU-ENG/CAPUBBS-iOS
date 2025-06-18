@@ -11,7 +11,6 @@
 #import "AnimatedImageView.h"
 
 @interface SearchViewController : CustomViewController<UITableViewDelegate> {
-    ActionPerformer *performer;
     MBProgressHUD *hud;
     AnimatedImageView *backgroundView;
     NSString *text;

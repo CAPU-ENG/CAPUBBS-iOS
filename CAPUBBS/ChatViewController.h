@@ -10,9 +10,6 @@
 #import "ChatCell.h"
 
 @interface ChatViewController : CustomTableViewController {
-    ActionPerformer *performer;
-    ActionPerformer *performerUser;
-    ActionPerformer *performerSend;
     MBProgressHUD *hud;
     AnimatedImageView *backgroundView;
     CGFloat width;

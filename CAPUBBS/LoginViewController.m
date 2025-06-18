@@ -28,9 +28,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
-    performerInfo = [[ActionPerformer alloc] init];
-    performerUser = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(userChanged) name:@"userChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(refreshIcon) name:@"infoRefreshed" object:nil];
     userInfoRefreshing = NO;
@@ -150,7 +147,7 @@
                 @"method" : @"delete",
                 @"time" : item[@"time"]
             };
-            [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
+            [ActionPerformer callApiWithParams:dict toURL:@"news" callback:^(NSArray *result, NSError *err) {
                 if (err || result.count == 0) {
                     [hud hideWithFailureMessage:@"操作失败"];
                 } else {
@@ -165,7 +162,9 @@
                         [self showAlertWithTitle:@"操作失败" message:result[0][@"msg"]];
                     }
                 }
-                [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
+                dispatch_global_after(0.5, ^{
+                    [self getNewsAndInfo];
+                });
             }];
         }];
     }
@@ -201,7 +200,7 @@
             @"text" : text,
             @"url" : url
         };
-        [performerInfo performActionWithDictionary:dict toURL:@"news" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"news" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [hud hideWithFailureMessage:@"操作失败"];
             } else {
@@ -212,7 +211,9 @@
                     [self showAlertWithTitle:@"操作失败" message:result[0][@"msg"]];
                 }
             }
-            [self performSelector:@selector(getNewsAndInfo) withObject:nil afterDelay:0.5];
+            dispatch_global_after(0.5, ^{
+                [self getNewsAndInfo];
+            });
         }];
     }]];
     [self presentViewControllerSafe:alert];
@@ -229,7 +230,7 @@
             [self refreshIcon];
             if (userInfoRefreshing == NO) {
                 userInfoRefreshing = YES;
-                [performerUser performActionWithDictionary:@{@"uid": UID} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+                [ActionPerformer callApiWithParams:@{@"uid": UID} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
                     userInfoRefreshing = NO;
                     if (!err && result.count > 0) {
                         [GROUP_DEFAULTS setObject:[NSDictionary dictionaryWithDictionary:result[0]] forKey:@"userInfo"];
@@ -322,7 +323,7 @@
         @"device" : [ActionPerformer doDevicePlatform],
         @"version" : [[UIDevice currentDevice] systemVersion]
     };
-    [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"login" callback:^(NSArray *result, NSError *err) {
         //NSLog(@"%@",result);
         if (err || result.count == 0) {
             [hud hideWithFailureMessage:@"登录失败"];
@@ -392,7 +393,7 @@
         return;
     }
     newsRefreshing = YES;
-    [performerInfo performActionWithDictionary:@{@"more":@"YES"} toURL:@"main" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"more":@"YES"} toURL:@"main" callback:^(NSArray *result, NSError *err) {
         newsRefreshing = NO;
         if (control.isRefreshing) {
             [control endRefreshing];

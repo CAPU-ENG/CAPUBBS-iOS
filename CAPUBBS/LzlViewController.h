@@ -10,7 +10,6 @@
 #import "LzlCell.h"
 
 @interface LzlViewController : CustomTableViewController<UITextViewDelegate> {
-    ActionPerformer *performer;
     UIImageView *backgroundView;
     NSUserActivity *activity;
     NSArray *data;

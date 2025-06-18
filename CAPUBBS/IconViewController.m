@@ -26,7 +26,6 @@
     [targetView addSubview:hud];
     
     largeCellSize = smallCellSize = 0;
-    performer = [[ActionPerformer alloc] init];
     previewImageView = [[AnimatedImageView alloc] init];
     [previewImageView setBackgroundColor:self.view.backgroundColor];
     [previewImageView setContentMode:UIViewContentModeScaleAspectFill];
@@ -268,7 +267,7 @@
         }
         NSLog(@"Icon Size:%dkB", (int)imageData.length / 1024);
         [hud showWithProgressMessage:@"正在上传"];
-        [performer performActionWithDictionary:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" withBlock:^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:@{ @"image" : [imageData base64EncodedStringWithOptions:0] } toURL:@"image" callback:^(NSArray *result, NSError *err) {
             if (err || result.count == 0) {
                 [hud hideWithFailureMessage:@"上传失败"];
                 return;

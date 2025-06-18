@@ -25,7 +25,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
     messageRefreshing = NO;
     isFirstTime = YES;
     [NOTIFICATION addObserver:self selector:@selector(backgroundRefresh) name:@"userChanged" object:nil];
@@ -47,7 +46,6 @@
     } else {
         self.segmentType.tintColor = GREEN_DARK;
     }
-//    [self.segmentType setTintColor:GREEN_DARK];
     [self typeChanged:self.segmentType];
     // Do any additional setup after loading the view.
 }
@@ -86,7 +84,7 @@
             @"type" : type,
             @"page" : [NSString stringWithFormat:@"%ld", (long)page]
         };
-        [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
+        [ActionPerformer callApiWithParams:dict toURL:@"msg" callback: ^(NSArray *result, NSError *err) {
             if (control.isRefreshing) {
                 [control endRefreshing];
             }
@@ -370,7 +368,7 @@
         ContentViewController *dest = [segue destinationViewController];
         dest.tid = dict[@"tid"];
         dest.bid = dict[@"bid"];
-        dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+        dest.destinationPage = dict[@"p"];
         // NSLog(@"%@", dict[@"url"]);
         NSString *floor = [ActionPerformer getLink:dict[@"url"]][@"floor"];
         if ([floor intValue] > 0) {

@@ -31,9 +31,6 @@
     } else if (self.directTalk == YES) {
         self.navigationItem.rightBarButtonItems = @[self.buttonInfo];
     }
-    performer = [[ActionPerformer alloc] init];
-    performerUser = [[ActionPerformer alloc] init];
-    performerSend = [[ActionPerformer alloc] init];
     shouldShowHud = YES;
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
@@ -129,7 +126,7 @@
         @"type" : @"chat",
         @"chatter" : self.ID
     };
-    [performer performActionWithDictionary:dict toURL:@"msg" withBlock: ^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"msg" callback: ^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
@@ -156,13 +153,15 @@
             [self checkID:NO];
         }
         [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-        [self performSelector:@selector(scrollTableView) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self scrollTableView];
+        });
         shouldShowHud = NO;
     }];
 }
 
 - (void)checkID:(BOOL)hudVisible {
-    [performerUser performActionWithDictionary:@{@"uid":self.ID, @"recent":@"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"uid":self.ID, @"recent":@"YES"} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             return;
         }
@@ -192,7 +191,9 @@
 - (void)scrollTableView {
     [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1] atScrollPosition:UITableViewScrollPositionBottom animated:YES];
     if (self.directTalk == YES) {
-        [self.textSend performSelector:@selector(becomeFirstResponder) withObject:nil afterDelay:0.5];
+        dispatch_main_after(0.5, ^{
+            [self.textSend becomeFirstResponder];
+        });
     }
     self.directTalk = NO;
 }
@@ -257,7 +258,9 @@
 
 - (IBAction)startCompose:(id)sender {
     [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:1] atScrollPosition:UITableViewScrollPositionBottom animated:YES];
-    [self.textSend performSelector:@selector(becomeFirstResponder) withObject:nil afterDelay:0.5];
+    dispatch_main_after(0.5, ^{
+        [self.textSend becomeFirstResponder];
+    });
 }
 
 - (IBAction)buttonSend:(id)sender {
@@ -275,7 +278,7 @@
         @"to" : self.ID,
         @"text" : text
     };
-    [performerSend performActionWithDictionary:dict toURL:@"sendmsg" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"sendmsg" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             NSLog(@"%@",err);
             [hud hideWithFailureMessage:@"发送失败"];

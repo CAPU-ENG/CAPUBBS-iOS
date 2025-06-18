@@ -13,9 +13,6 @@
     MBProgressHUD *hud;
     NSArray *news;
     NSString *title;
-    ActionPerformer *performer;
-    ActionPerformer *performerInfo;
-    ActionPerformer *performerUser;
     UIRefreshControl *control;
     BOOL userInfoRefreshing;
     BOOL newsRefreshing;

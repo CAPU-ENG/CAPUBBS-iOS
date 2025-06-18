@@ -11,7 +11,6 @@
 
 @interface ContentViewController : CustomTableViewController<WKNavigationDelegate, WKScriptMessageHandler> {
     MBProgressHUD *hud;
-    ActionPerformer *performer;
     NSUserActivity *activity;
     NSString *URL;
     NSMutableArray *data;
@@ -34,7 +33,7 @@
 
 @property NSString *bid;
 @property NSString *tid;
-@property NSString *floor;
+@property NSString *destinationPage;
 /// If set, will try to scroll to the desired flor
 @property NSString *destinationFloor;
 /// If set, will popup lzl for the desired floor

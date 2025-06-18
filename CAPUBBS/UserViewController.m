@@ -63,7 +63,6 @@
     recentPost = [NSMutableArray array];
     recentReply = [NSMutableArray array];
     property = @[@"rights", @"sign", @"hobby", @"qq", @"mail", @"place", @"regdate", @"lastdate", @"post", @"reply", @"water", @"extr"];
-    performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(getInformation) name:@"userUpdated" object:nil];
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
@@ -149,7 +148,7 @@
 - (void)getInformation {
     [self setDefault];
     [hud showWithProgressMessage:@"查询中"];
-    [performer performActionWithDictionary:@{@"uid": self.ID, @"recent": @"YES", @"raw": @"YES"} toURL:@"userinfo" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:@{@"uid": self.ID, @"recent": @"YES", @"raw": @"YES"} toURL:@"userinfo" callback:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
@@ -390,11 +389,11 @@
 }
 
 - (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName {
-    NSString *filePath = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), fileName];
-    [imageData writeToFile:filePath atomically:YES];
-    [NOTIFICATION postNotificationName:@"previewFile" object:self.icon userInfo:@{
-        @"filePath": filePath,
-        @"fileName": [NSString stringWithFormat:@"%@的头像", self.ID],
+    [NOTIFICATION postNotificationName:@"previewFile" object:nil userInfo:@{
+        @"fileData": imageData,
+        @"fileName": fileName,
+        @"fileTitle": [NSString stringWithFormat:@"%@的头像", self.ID],
+        @"frame": self.icon
     }];
 }
 

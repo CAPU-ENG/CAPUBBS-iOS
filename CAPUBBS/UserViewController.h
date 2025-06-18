@@ -12,7 +12,6 @@
 #import "CustomWebViewContainer.h"
 
 @interface UserViewController : CustomTableViewController<WKNavigationDelegate> {
-    ActionPerformer *performer;
     MBProgressHUD *hud;
     AnimatedImageView *backgroundView;
     int textSize;

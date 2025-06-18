@@ -26,14 +26,12 @@
     [targetView addSubview:hud];
     
     [self refreshBackgroundViewAnimated:NO];
-    [self.inputType setTintColor:GREEN_DARK];
     [self.inputText becomeFirstResponder];
     [self setDate];
     self.labelB.text = [ActionPerformer getBoardTitle:self.bid];
     control = [[UIRefreshControl alloc] init];
     [control addTarget:self action:@selector(refreshControlValueChanged:) forControlEvents:UIControlEventValueChanged];
     [self.tableview addSubview:control];
-    performer = [[ActionPerformer alloc] init];
     // Do any additional setup after loading the view.
 }
 
@@ -251,7 +249,7 @@
         @"endtime" : endTime,
         @"username" : author
     };
-    [performer performActionWithDictionary:dict toURL:@"search" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"search" callback:^(NSArray *result, NSError *err) {
         if (control.isRefreshing) {
             [control endRefreshing];
         }
@@ -304,7 +302,7 @@
         dest.bid = one[@"bid"];
         dest.tid = one[@"tid"];
         if (one[@"floor"]) {
-            dest.floor = one[@"floor"];
+            dest.destinationFloor = one[@"floor"];
         }
         NSString *titleText = one[@"title"] ? one[@"title"] : one[@"text"];
         dest.title = [ActionPerformer restoreTitle:titleText];

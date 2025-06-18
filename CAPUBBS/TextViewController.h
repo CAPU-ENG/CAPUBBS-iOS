@@ -9,10 +9,11 @@
 #import <UIKit/UIKit.h>
 
 @interface TextViewController : CustomTableViewController<UITextViewDelegate> {
-    NSMutableAttributedString *textPreview;
     int color;
     NSArray *colors;
     NSArray *colorNames;
+    NSArray *fontSizes;
+    NSArray *fontNames;
     int fontSize;
     BOOL isBold;
     BOOL isItalics;
@@ -24,7 +25,6 @@
 @property (weak, nonatomic) IBOutlet UISegmentedControl *segmentColor;
 @property (weak, nonatomic) IBOutlet UISlider *sliderSize;
 @property (weak, nonatomic) IBOutlet UILabel *labelSize;
-@property (weak, nonatomic) IBOutlet UILabel *labelDefault;
 @property (weak, nonatomic) IBOutlet UISwitch *switchBold;
 @property (weak, nonatomic) IBOutlet UISwitch *switchItalics;
 @property (weak, nonatomic) IBOutlet UISwitch *switchUnderscore;

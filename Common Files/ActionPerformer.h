@@ -10,10 +10,9 @@
 
 typedef void (^ActionPerformerResultBlock)(NSArray* result, NSError* err);
 
-@interface ActionPerformer: NSObject {
-}
+@interface ActionPerformer: NSObject
 
-- (void)performActionWithDictionary:(NSDictionary*)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block;
++ (void)callApiWithParams:(NSDictionary*)params toURL:(NSString*)url callback:(ActionPerformerResultBlock)block;
 + (BOOL)checkLogin:(BOOL)showAlert;
 + (int)checkRight;
 + (void)checkPasswordLength;

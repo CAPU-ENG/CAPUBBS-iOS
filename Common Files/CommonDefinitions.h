@@ -71,7 +71,15 @@ static inline void dispatch_main_sync_safe(dispatch_block_t block) {
 }
 
 static inline void dispatch_global_default_async(dispatch_block_t block) {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), block);
+}
+
+static inline void dispatch_main_after(double seconds, dispatch_block_t block) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), block);
+}
+
+static inline void dispatch_global_after(double seconds, dispatch_block_t block) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), block);
 }
 
 #define WEB_VIEW_MAX_HEIGHT 100000

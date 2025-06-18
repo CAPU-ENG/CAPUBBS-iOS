@@ -10,8 +10,6 @@
 #import "AnimatedImageView.h"
 
 @interface RegisterViewController : CustomTableViewController {
-    ActionPerformer *performer;
-    ActionPerformer *performerPsd;
     MBProgressHUD *hud;
     NSString *iconURL;
 }

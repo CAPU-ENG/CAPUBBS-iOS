@@ -39,7 +39,7 @@
     }
     self.monitor = nw_path_monitor_create();
     
-    nw_path_monitor_set_queue(self.monitor, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
+    nw_path_monitor_set_queue(self.monitor, dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0));
     nw_path_monitor_set_update_handler(self.monitor, ^(nw_path_t path) {
         if (nw_path_get_status(path) == nw_path_status_satisfied) {
             if (nw_path_uses_interface_type(path, nw_interface_type_wifi)) {

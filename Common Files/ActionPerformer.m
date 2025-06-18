@@ -15,7 +15,7 @@
 
 #pragma mark Web Request
 
-- (NSString *)encodeURIComponent:(NSString *)string {
++ (NSString *)encodeURIComponent:(NSString *)string {
     static NSCharacterSet *allowedCharacters = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -31,7 +31,7 @@
  * @param replacement 无效字节的替换，默认为空（跳过）
  * @return 清理和解码后的NSString
  */
-- (NSString *)forceDecodeUTF8StringFromData:(NSData *)corruptData replacement:(NSString *)replacement {
++ (NSString *)forceDecodeUTF8StringFromData:(NSData *)corruptData replacement:(NSString *)replacement {
     if (!corruptData || corruptData.length == 0) {
         return nil;
     }
@@ -96,10 +96,10 @@
     return [[NSString alloc] initWithData:cleanedData encoding:NSUTF8StringEncoding];
 }
 
-- (void)performActionWithDictionary:(NSDictionary *)dict toURL:(NSString*)url withBlock:(ActionPerformerResultBlock)block {
++ (void)callApiWithParams:(NSDictionary *)params toURL:(NSString*)url callback:(ActionPerformerResultBlock)block {
     NSString *postUrl = [NSString stringWithFormat:@"%@/api/client.php?ask=%@",CHEXIE, url];
     
-    NSMutableDictionary *requestDict = [@{
+    NSMutableDictionary *requestParams = [@{
         @"os": @"ios",
         @"device": [ActionPerformer doDevicePlatform],
         @"version": [[UIDevice currentDevice] systemVersion],
@@ -107,12 +107,12 @@
         @"clientbuild": APP_BUILD,
         @"token": TOKEN
     } mutableCopy];
-    for (NSString *key in [dict allKeys]) {
-        NSString *data = dict[key];
+    for (NSString *key in [params allKeys]) {
+        NSString *data = params[key];
         if ([data hasPrefix:@"@"]) { // 修复字符串首带有@时的错误
             data = [@" " stringByAppendingString:data];
         }
-        requestDict[key] = data;
+        requestParams[key] = data;
     }
     
     NSMutableURLRequest *request = [NSMutableURLRequest
@@ -122,12 +122,10 @@
     
     // Convert parameters to x-www-form-urlencoded (or JSON, depending on server)
     NSMutableArray *bodyParts = [NSMutableArray array];
-    [requestDict enumerateKeysAndObjectsUsingBlock:^(id key,
-                                                           id obj,
-                                                           BOOL *stop) {
+    [requestParams enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         NSString *part = [NSString stringWithFormat:@"%@=%@",
-                          [self encodeURIComponent: key],
-                          [self encodeURIComponent: obj]];
+                          [self encodeURIComponent:key],
+                          [self encodeURIComponent:obj]];
         [bodyParts addObject:part];
     }];
     NSString *bodyString = [bodyParts componentsJoinedByString:@"&"];

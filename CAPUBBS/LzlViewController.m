@@ -26,7 +26,6 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    performer = [[ActionPerformer alloc] init];
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     self.refreshControl = [[UIRefreshControl alloc] init];
@@ -97,7 +96,7 @@
         @"fid" : self.fid,
         @"method" : @"show"
     };
-    [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"lzl" callback:^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
@@ -114,15 +113,13 @@
         shouldShowHud = NO;
         
         data = [result subarrayWithRange:NSMakeRange(1, result.count - 1)];
-        [self performSelector:@selector(postRefreshLzlNotification) withObject:nil afterDelay:0.5];
         [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-    }];
-}
-
-- (void)postRefreshLzlNotification {
-    [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:@{
-        @"fid" : self.fid,
-        @"details": data,
+        dispatch_main_after(0.5, ^{
+            [NOTIFICATION postNotificationName:@"refreshLzl" object:nil userInfo:@{
+                @"fid" : self.fid,
+                @"details": data,
+            }];
+        });
     }];
 }
 
@@ -204,7 +201,7 @@
                     ContentViewController *dest = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
                     dest.bid = dict[@"bid"];
                     dest.tid = dict[@"tid"];
-                    dest.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+                    dest.destinationPage = dict[@"p"];
                     dest.title=@"帖子跳转中";
                     dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done)];
                     CustomNavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
@@ -255,7 +252,7 @@
                 @"fid" : self.fid,
                 @"id" : info[@"id"]
             };
-            [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
+            [ActionPerformer callApiWithParams:dict toURL:@"lzl" callback:^(NSArray *result, NSError *err) {
                 if (err || result.count == 0) {
                     [hud hideWithFailureMessage:@"删除失败"];
                     return;
@@ -266,7 +263,9 @@
                     [temp removeObjectAtIndex:indexPath.row];
                     data = [NSArray arrayWithArray:temp];
                     [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-                    [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
+                    dispatch_global_after(0.5, ^{
+                        [self loadData];
+                    });
                 } else {
                     [hud hideWithFailureMessage:@"删除失败"];
                     [self showAlertWithTitle:@"删除失败" message:result[0][@"msg"]];
@@ -297,7 +296,7 @@
         @"fid" : self.fid,
         @"text" : self.textPost.text
     };
-    [performer performActionWithDictionary:dict toURL:@"lzl" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"lzl" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             [hud hideWithFailureMessage:@"发布失败"];
             return;
@@ -306,7 +305,9 @@
                 [hud hideWithSuccessMessage:@"发布成功"];
                 [SKStoreReviewController requestReview];
                 self.textPost.text = @"";
-                [self performSelector:@selector(loadData) withObject:nil afterDelay:0.5];
+                dispatch_global_after(0.5, ^{
+                    [self loadData];
+                });
             } else {
                 [hud hideWithFailureMessage:@"发布失败"];
                 [self showAlertWithTitle:@"发布失败" message:result[0][@"msg"]];
@@ -319,11 +320,9 @@
     if (sender == nil) {
         [self.textPost insertText:[NSString stringWithFormat:@"回复 @%@: ",lzlAuthor]];
     }
-    [self performSelector:@selector(inputText) withObject:nil afterDelay:0.5];
-}
-
-- (void)inputText {
-    [self.textPost becomeFirstResponder];
+    dispatch_global_after(0.5, ^{
+        [self.textPost becomeFirstResponder];
+    });
 }
 
 - (void)textViewDidChange:(UITextView *)textView {

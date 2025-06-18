@@ -197,7 +197,7 @@
         ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
         next.bid = dict[@"bid"];
         next.tid = dict[@"tid"];
-        next.floor = [NSString stringWithFormat:@"%d", [dict[@"p"] intValue] * 12];
+        next.destinationPage = dict[@"p"];
         next.title=@"帖子跳转中";
         [self.navigationController pushViewController:next animated:YES];
         return;

@@ -32,9 +32,10 @@ static const CGFloat kWebViewMinHeight = 40;
     [targetView addSubview:hud];
     
     textSize = [[DEFAULTS objectForKey:@"textSize"] intValue];
-    performer = [[ActionPerformer alloc] init];
-    if ([self.floor integerValue] > 0) { // 进入时直接跳至指定页
-        page = ceil([self.floor floatValue] / 12);
+    if ([self.destinationPage intValue] > 0) { // 进入时直接跳至指定页
+        page = [self.destinationPage intValue];
+    } else if ([self.destinationFloor intValue] > 0) {
+        page = ceil([self.destinationFloor floatValue] / 12);
     } else {
         page = 1;
     }
@@ -113,7 +114,7 @@ static const CGFloat kWebViewMinHeight = 40;
         @"tid" : self.tid,
         @"raw" : @"YES",
     };
-    [performer performActionWithDictionary:dict toURL:@"show" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"show" callback:^(NSArray *result, NSError *err) {
         if (self.refreshControl.isRefreshing) {
             [self.refreshControl endRefreshing];
         }
@@ -216,7 +217,7 @@ static const CGFloat kWebViewMinHeight = 40;
                     if (self.destinationFloor.length > 0 && [dict[@"floor"] isEqualToString:self.destinationFloor]) {
                         [self tryScrollTo:i animated:NO];
                         if (self.openDestinationLzl) {
-                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                            dispatch_main_after(0.5, ^{
                                 selectedIndex = [data indexOfObject:dict];
                                 [self performSegueWithIdentifier:@"lzl" sender:nil];
                             });
@@ -722,11 +723,10 @@ static const CGFloat kWebViewMinHeight = 40;
 }
 
 - (void)presentImage:(NSData *)imageData fileName:(NSString *)fileName alt:(NSString *)alt {
-    NSString *filePath = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), fileName];
-    [imageData writeToFile:filePath atomically:YES];
     [NOTIFICATION postNotificationName:@"previewFile" object:nil userInfo:@{
-        @"filePath": filePath,
-        @"fileName": alt.length > 0 ? alt : @"查看帖子图片",
+        @"fileData": imageData,
+        @"fileName": fileName,
+        @"fileTitle": alt.length > 0 ? alt : @"查看帖子图片"
     }];
 }
 
@@ -797,7 +797,12 @@ static const CGFloat kWebViewMinHeight = 40;
             ContentViewController *next = [self.storyboard instantiateViewControllerWithIdentifier:@"content"];
             next.bid = dict[@"bid"];
             next.tid = dict[@"tid"];
-            next.floor = [NSString stringWithFormat:@"%d", page * 12];
+            if (p > 0) {
+                next.destinationPage = dict[@"p"];
+            }
+            if (floor > 0) {
+                next.destinationFloor = dict[@"floor"];
+            }
             next.title = @"帖子跳转中";
             [self.navigationController pushViewController:next animated:YES];
         }
@@ -821,7 +826,7 @@ static const CGFloat kWebViewMinHeight = 40;
         @"tid" : self.tid,
         @"pid" : data[selectedIndex][@"floor"]
     };
-    [performer performActionWithDictionary:dict toURL:@"delete" withBlock:^(NSArray *result, NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"delete" callback:^(NSArray *result, NSError *err) {
         if (err || result.count == 0) {
             [hud hideWithFailureMessage:@"删除失败"];
             [self showAlertWithTitle:@"错误" message:err.localizedDescription];
@@ -841,13 +846,19 @@ static const CGFloat kWebViewMinHeight = 40;
                 if ([self.tableView numberOfRowsInSection:0] == 0) {
                     if (page > 1) {
                         page--;
-                        [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+                        dispatch_main_after(0.5, ^{
+                            [self refresh];
+                        });
                     } else {
-                        [self.navigationController performSelector:@selector(popViewControllerAnimated:) withObject:@(YES) afterDelay:0.5];
                         [NOTIFICATION postNotificationName:@"refreshList" object:nil];
+                        dispatch_main_after(0.5, ^{
+                            [self.navigationController popViewControllerAnimated:YES];
+                        });
                     }
                 } else {
-                    [self performSelector:@selector(refresh) withObject:nil afterDelay:0.5];
+                    dispatch_main_after(0.5, ^{
+                        [self refresh];
+                    });
                 }
             }
                 break;

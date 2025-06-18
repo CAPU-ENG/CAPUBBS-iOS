@@ -60,10 +60,10 @@
         if ([ActionPerformer checkLogin:NO]) {
             self.textUid.text = UID;
             self.textUidInfo.text = @"加载中...";
-            self.cellUser.accessoryType = UITableViewCellAccessoryDetailButton;
+            self.cellUser.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
             self.cellUser.userInteractionEnabled = YES;
         } else {
-            [self.iconUser performSelectorOnMainThread:@selector(setImage:) withObject:PLACEHOLDER waitUntilDone:NO];
+            self.iconUser.image = PLACEHOLDER;
             self.textUid.text = @"未登录";
             self.textUidInfo.text = @"请在账号管理中登录";
             self.cellUser.accessoryType = UITableViewCellAccessoryNone;

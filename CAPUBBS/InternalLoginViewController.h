@@ -10,8 +10,6 @@
 
 @interface InternalLoginViewController : CustomViewController {
     MBProgressHUD *hud;
-    ActionPerformer *performer;
-    ActionPerformer *performerLogout;
     BOOL shouldPop;
 }
 

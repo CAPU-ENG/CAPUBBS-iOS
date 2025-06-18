@@ -10,7 +10,6 @@
 #import "MessageCell.h"
 
 @interface MessageViewController : CustomViewController<UITableViewDelegate> {
-    ActionPerformer *performer;
     MBProgressHUD *hud;
     UIRefreshControl *control;
     NSArray *data;

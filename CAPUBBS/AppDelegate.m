@@ -117,7 +117,6 @@
     dispatch_global_default_async(^{
         [self transport];
     });
-    performer = [[ActionPerformer alloc] init];
     [NOTIFICATION addObserver:self selector:@selector(showAlert:) name:@"showAlert" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(collectionChanged) name:@"collectionChanged" object:nil];
     [NOTIFICATION addObserver:self selector:@selector(sendEmail:) name:@"sendEmail" object:nil];
@@ -226,11 +225,36 @@
 }
 
 - (void)previewFile:(NSNotification *)noti {
+    [self _previewFile:noti attempt:1];
+}
+
+- (void)_previewFile:(NSNotification *)noti attempt:(int)attempt {
     NSDictionary *dict = noti.userInfo;
-    previewFilePath = dict[@"filePath"];
-    previewFileName = dict[@"fileName"];
-    if (noti.object && [noti.object isKindOfClass:[UIView class]]) {
-        previewFrame = noti.object;
+    // Already previewing a file
+    if (previewFilePath) {
+        if (attempt <= 10) {
+            dispatch_global_after(0.2, ^{
+                [self _previewFile:noti attempt:attempt + 1];
+            });
+        }
+        return;
+    }
+    NSData *previewFileData = dict[@"fileData"];
+    NSString *previewFileName = dict[@"fileName"];
+    if (!previewFileData || !previewFileName) {
+        return;
+    }
+    NSString *path = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), previewFileName];
+    if (![previewFileData writeToFile:path atomically:YES]) {
+        return;
+    }
+    
+    previewFilePath = path;
+    previewFileTitle = dict[@"fileTitle"];
+    if (dict[@"frame"] && [dict[@"frame"] isKindOfClass:[UIView class]]) {
+        previewFrame = dict[@"frame"];
+    } else {
+        previewFrame = nil;
     }
     
     dispatch_main_sync_safe(^{
@@ -242,23 +266,24 @@
 }
 
 - (NSInteger)numberOfPreviewItemsInPreviewController:(QLPreviewController *)controller {
-    return previewFilePath ? 1 : 0;
+    return 1;
 }
 
 - (id<QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndex:(NSInteger)index {
     PreviewItemWithName *item = [[PreviewItemWithName alloc] init];
     item.previewItemURL = [NSURL fileURLWithPath:previewFilePath];
-    item.previewItemTitle = previewFileName;
+    item.previewItemTitle = previewFileTitle;
     return item;
 }
 
-- (void)previewControllerWillDismiss:(QLPreviewController *)controller {
-    if (previewFilePath) {
-        [MANAGER removeItemAtPath:previewFilePath error:nil];
-        previewFilePath = nil;
-        previewFileName = nil;
-        previewFrame = nil;
+- (void)previewControllerDidDismiss:(QLPreviewController *)controller {
+    if (!previewFilePath) {
+        return;
     }
+    [MANAGER removeItemAtPath:previewFilePath error:nil];
+    previewFilePath = nil;
+    previewFileTitle = nil;
+    previewFrame = nil;
 }
 
 - (UIImage *)previewController:(QLPreviewController *)controller
@@ -303,12 +328,14 @@
         }
     }
     
+    NSDictionary *activityInfo = userActivity.userInfo;
+    BOOL isCompose = activityInfo && [activityInfo[@"type"] isEqualToString:@"compose"];
     NSDictionary *linkInfo;
     if (userActivity.webpageURL && userActivity.webpageURL.absoluteString.length > 0) {
         linkInfo = [ActionPerformer getLink:userActivity.webpageURL.absoluteString];
     }
     // From universal link or handfoff
-    if (linkInfo.count > 0 && [linkInfo[@"bid"] length] > 0) {
+    if ([linkInfo[@"bid"] length] > 0) {
         NSDictionary *naviDict;
         if ([linkInfo[@"tid"] length] > 0) {
             naviDict = @{
@@ -317,7 +344,7 @@
                 @"tid": linkInfo[@"tid"],
                 @"page": linkInfo[@"p"],
                 @"floor": linkInfo[@"floor"],
-                @"naviTitle": userActivity.title ?: @""
+                @"naviTitle": isCompose ? @"" : (userActivity.title ?: @"")
             };
         } else {
             naviDict = @{
@@ -329,24 +356,18 @@
         dispatch_global_default_async(^{
             [self _handleUrlRequestWithDictionary:naviDict];
         });
-        return YES;
+        if (!isCompose) {
+            return YES;
+        }
     }
     
-    NSDictionary *activityInfo = userActivity.userInfo;
-    if (activityInfo && [activityInfo[@"type"] isEqualToString:@"compose"]) {
-        dispatch_global_default_async(^{
-            if (userActivity.webpageURL.absoluteString.length == 0 && [activityInfo[@"bid"] length] > 0) {
-                [self _handleUrlRequestWithDictionary:@{
-                    @"open": @"list",
-                    @"bid": activityInfo[@"bid"],
-                }];
-            }
-            
-            NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{@"open": @"compose"}];
+    if (isCompose) {
+        dispatch_global_after(0.5, ^{
+            NSMutableDictionary *naviDict = [NSMutableDictionary dictionaryWithDictionary:@{
+                @"open": @"compose",
+                @"naviTitle": userActivity.title ?: @""
+            }];
             [naviDict addEntriesFromDictionary:activityInfo];
-            if (userActivity.title) {
-                naviDict[@"naviTitle"] = userActivity.title;
-            }
             [self _handleUrlRequestWithDictionary:naviDict];
         });
         return YES;
@@ -524,22 +545,29 @@
             [view presentViewControllerSafe:navi];
         });
     } else if ([open isEqualToString:@"compose"]) {
-        dispatch_main_sync_safe(^{
-            ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
-            
-            if (dict[@"bid"] && dict[@"pid"]) {
-                dest.bid = dict[@"bid"];
-                dest.tid = dict[@"tid"];
-                dest.floor = dict[@"floor"];
-                dest.defaultTitle = dict[@"title"];
-                dest.defaultContent = dict[@"content"];
-                dest.title = dict[@"naviTitle"];
+        [self login:^(BOOL success) {
+            if (!success) {
+                return;
             }
+            [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
             
-            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-            navi.modalPresentationStyle = UIModalPresentationFormSheet;
-            [view presentViewControllerSafe:navi];
-        });
+            dispatch_main_sync_safe(^{
+                ComposeViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"compose"];
+                
+                if (dict[@"bid"]) {
+                    dest.bid = dict[@"bid"];
+                    dest.tid = dict[@"tid"];
+                    dest.floor = dict[@"floor"];
+                    dest.defaultTitle = dict[@"title"];
+                    dest.defaultContent = dict[@"content"];
+                    dest.title = dict[@"naviTitle"];
+                }
+                
+                UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+                navi.modalPresentationStyle = UIModalPresentationFormSheet;
+                [view presentViewControllerSafe:navi];
+            });
+        }];
     } else if ([open isEqualToString:@"list"]) {
         dispatch_main_sync_safe(^{
             ListViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"list"];
@@ -556,36 +584,29 @@
             [view presentViewControllerSafe:navi];
         });
     } else if ([open isEqualToString:@"post"]) {
-        [self login:^(BOOL success) {
-            if (!success) {
-                return;
-            }
-            [DEFAULTS setObject:@(NO) forKey:@"wakeLogin"];
+        dispatch_main_sync_safe(^{
+            ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
             
-            dispatch_main_sync_safe(^{
-                ContentViewController *dest = [self.window.rootViewController.storyboard instantiateViewControllerWithIdentifier:@"content"];
-                
-                dest.bid = dict[@"bid"];
-                dest.tid = dict[@"tid"];
-                if (dict[@"page"]) {
-                    dest.floor = [NSString stringWithFormat:@"%d", [dict[@"page"] intValue] * 12];
-                }
-                if (dict[@"floor"]) {
-                    dest.destinationFloor = dict[@"floor"];
-                    // dest.openDestinationLzl = YES; // Do we need it? not tested yet
-                }
-                if (dict[@"naviTitle"]) {
-                    dest.title = dict[@"naviTitle"];
-                } else {
-                    dest.title = @"加载中";
-                }
-                
-                dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
-                UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
-                navi.modalPresentationStyle = UIModalPresentationFullScreen;
-                [view presentViewControllerSafe:navi];
-            });
-        }];
+            dest.bid = dict[@"bid"];
+            dest.tid = dict[@"tid"];
+            if (dict[@"page"]) {
+                dest.destinationPage = dict[@"page"];
+            }
+            if (dict[@"floor"]) {
+                dest.destinationFloor = dict[@"floor"];
+                // dest.openDestinationLzl = YES; // Do we need it? not tested yet
+            }
+            if (dict[@"naviTitle"]) {
+                dest.title = dict[@"naviTitle"];
+            } else {
+                dest.title = @"加载中";
+            }
+            
+            dest.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(back)];
+            UINavigationController *navi = [[CustomNavigationController alloc] initWithRootViewController:dest];
+            navi.modalPresentationStyle = UIModalPresentationFullScreen;
+            [view presentViewControllerSafe:navi];
+        });
     }
     NSLog(@"Open with %@", open);
 }
@@ -710,7 +731,7 @@
         @"username" : uid,
         @"password" : [ActionPerformer md5:PASS],
     };
-    [performer performActionWithDictionary:dict toURL:@"login" withBlock:^(NSArray *result,NSError *err) {
+    [ActionPerformer callApiWithParams:dict toURL:@"login" callback:^(NSArray *result,NSError *err) {
         BOOL success = !err && result.count > 0 && [result[0][@"code"] isEqualToString:@"0"];
         if (!success) {
             if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {

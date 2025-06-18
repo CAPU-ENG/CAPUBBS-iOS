@@ -28,13 +28,16 @@
         self.URL = [@"https://" stringByAppendingString:self.URL];
     }
     
-    activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".web"]];
-    activity.webpageURL = [NSURL URLWithString:self.URL];
-    [activity becomeCurrent];
-    
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.URL]];
     [self.webViewContainer.webView loadRequest:request];
     // Do any additional setup after loading the view.
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    activity = [[NSUserActivity alloc] initWithActivityType:[BUNDLE_IDENTIFIER stringByAppendingString:@".web"]];
+    activity.webpageURL = [NSURL URLWithString:self.URL];
+    [activity becomeCurrent];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -58,7 +61,7 @@
         [self.progressView setProgress:progress animated:YES];
         self.progressView.hidden = progress >= 1.0;
         if (progress >= 1.0) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_main_after(0.25, ^{
                 [self.progressView setProgress:0.0 animated:NO];
             });
         }

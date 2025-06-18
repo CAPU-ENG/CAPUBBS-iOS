@@ -14,7 +14,6 @@
 @interface IconViewController : CustomCollectionViewController<UINavigationControllerDelegate, UIImagePickerControllerDelegate> {
     NSArray *iconNames;
     MBProgressHUD *hud;
-    ActionPerformer *performer;
     AnimatedImageView *previewImageView;
     int newIconNum;
     int oldIconNum;

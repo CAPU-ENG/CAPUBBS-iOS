@@ -11,7 +11,6 @@
 
 @interface ComposeViewController : CustomViewController<UITextFieldDelegate, UITextViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate> {
     MBProgressHUD *hud;
-    ActionPerformer *performer;
     NSUserActivity *activity;
     int toolbarEditor;
     UIToolbar *toolbar;

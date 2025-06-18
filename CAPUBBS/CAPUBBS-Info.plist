@@ -63,6 +63,7 @@
 	<string>需要您的允许才能访问照片库</string>
 	<key>NSUserActivityTypes</key>
 	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).list</string>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).compose</string>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).content</string>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).lzl</string>
