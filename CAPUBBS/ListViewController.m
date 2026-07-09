@@ -356,7 +356,7 @@
         } else {
             cell.authorText.text = [NSString stringWithFormat:@"%@ / %@", author, replyer];
         }
-        NSString *time = [dict[@"time"] substringFromIndex:5];
+        NSString *time = [dict[@"time"] substringWithRange:NSMakeRange(5, 11)];
         if (SIMPLE_VIEW) {
             cell.timeText.text = time;
         } else {
@@ -390,7 +390,7 @@
             cell.timeText.numberOfLines = 2;
             cell.timeText.text = [NSString stringWithFormat:@"%@ • %@\n查看：%@ 回复：%@", author, dict[@"postdate"], dict[@"click"], dict[@"reply"]];
             if (replyer) {
-                cell.authorText.text = [NSString stringWithFormat:@"%@\n%@", replyer, dict[@"time"]];
+                cell.authorText.text = [NSString stringWithFormat:@"%@\n%@", replyer, [dict[@"time"] substringToIndex:16]];
             } else {
                 cell.authorText.text = @"";
             }

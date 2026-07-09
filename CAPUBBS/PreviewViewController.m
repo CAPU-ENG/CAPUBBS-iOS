@@ -31,7 +31,7 @@
     if (self.sig > 0) {
         NSDictionary *dict = USERINFO;
         NSString *sigKey = [NSString stringWithFormat:@"sig%d", self.sig];
-        if ([dict isEqual:@""] || [dict[sigKey] length] == 0 || [dict[sigKey] isEqualToString:@"Array"]) {
+        if (!dict || [dict isEqual:@""] || [dict[sigKey] length] == 0 || [dict[sigKey] isEqualToString:@"Array"]) {
             sig = [NSString stringWithFormat:@"[您选择了第%d个签名档]", self.sig];
         } else {
             sig = [Helper transToHTML:dict[sigKey]];

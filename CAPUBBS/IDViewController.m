@@ -129,6 +129,7 @@
         [GROUP_DEFAULTS removeObjectForKey:@"pass"];
         [GROUP_DEFAULTS removeObjectForKey:@"token"];
         [GROUP_DEFAULTS removeObjectForKey:@"userInfo"];
+        [GROUP_DEFAULTS removeObjectForKey:@"userInfoUpdateTime"];
         [NOTIFICATION postNotificationName:@"userChanged" object:nil userInfo:nil];
     }]];
     [alertController addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];

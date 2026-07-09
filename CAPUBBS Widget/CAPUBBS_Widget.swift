@@ -10,17 +10,19 @@ import WidgetKit
 import SwiftUI
 
 let DATA_FRESHNESS = 15 * 60.0
+let TINT_COLOR = Color(hue: 142.0/360, saturation: 0.64, brightness: 0.58)
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> WidgetEntry {
-        WidgetEntry(date: Date(), username: "", newmsg: 0, hotPosts: [], globalTopCount: 0)
+        WidgetEntry(date: Date(), simpleView: false, username: "", newmsg: 0, hotPosts: [], globalTopCount: 0)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (WidgetEntry) -> ()) {
+        let simpleView = getIsSimpleView()
         let (username, newmsg) = getUserInfo()
         let (hotPosts, globalTopCount) = getHotPosts()
         let displayDate = self.getEarliestUpdateTime() ?? Date()
-        let entry = WidgetEntry(date: displayDate, username: username, newmsg: newmsg, hotPosts: hotPosts, globalTopCount: globalTopCount)
+        let entry = WidgetEntry(date: displayDate, simpleView: simpleView, username: username, newmsg: newmsg, hotPosts: hotPosts, globalTopCount: globalTopCount)
         completion(entry)
     }
 
@@ -57,13 +59,14 @@ struct Provider: TimelineProvider {
         }
         
         group.notify(queue: .main) {
+            let simpleView = getIsSimpleView()
             let (username, newmsg) = self.getUserInfo()
             let (hotPosts, globalTopCount) = self.getHotPosts()
             
             // 重新取两者更早的时间作为重新 render 的展示时间
             let displayDate = self.getEarliestUpdateTime() ?? currentDate
             
-            let entry = WidgetEntry(date: displayDate, username: username, newmsg: newmsg, hotPosts: hotPosts, globalTopCount: globalTopCount)
+            let entry = WidgetEntry(date: displayDate, simpleView: simpleView, username: username, newmsg: newmsg, hotPosts: hotPosts, globalTopCount: globalTopCount)
             let timeline = Timeline(entries: [entry], policy: .after(nextTimelineRefresh))
             completion(timeline)
         }
@@ -76,6 +79,7 @@ struct Provider: TimelineProvider {
         
         let userTimeRaw = sharedDefaults.double(forKey: "userInfoUpdateTime")
         let hotTimeRaw = sharedDefaults.double(forKey: "hotPostsUpdateTime")
+        NSLog("userTimeRaw: \(userTimeRaw), hotTimeRaw: \(hotTimeRaw)")
         
         // 确保两个时间均存在且大于0，如果某一个没保存过，使用另一个
         if userTimeRaw > 0 && hotTimeRaw > 0 {
@@ -88,6 +92,14 @@ struct Provider: TimelineProvider {
         }
         
         return nil
+    }
+    
+    private func getIsSimpleView() -> Bool {
+        guard let sharedDefaults = UserDefaults(suiteName: APP_GROUP_IDENTIFIER) else {
+            return false
+        }
+                
+        return sharedDefaults.bool(forKey: "simpleView")
     }
 
     private func getUserInfo() -> (username: String, newmsg: Int) {
@@ -117,6 +129,7 @@ struct Provider: TimelineProvider {
 
 struct WidgetEntry: TimelineEntry {
     let date: Date
+    let simpleView: Bool
     let username: String
     let newmsg: Int
     let hotPosts: [[String: Any]]
@@ -131,14 +144,15 @@ struct CAPUBBS_WidgetEntryView : View {
         VStack {
             Spacer()
             
-            Link(destination: URL(string: "capubbs://?open=message")!) {
-                HStack {
-                    Text(entry.username.isEmpty ? "未登录" : entry.username)
-                        .font(.system(size: 12, weight: .medium))
-                    if !entry.username.isEmpty {
-                        Text(entry.newmsg > 0 ? "\(entry.newmsg)条新消息" : "暂无新消息")
-                            .font(.system(size: 11))
-                            .foregroundColor(entry.newmsg > 0 ? .primary : .secondary)
+            HStack {
+                Text(entry.username.isEmpty ? "未登录" : entry.username)
+                    .font(.system(size: 12))
+                if !entry.username.isEmpty {
+                    let hasNewMsg = entry.newmsg > 0
+                    Link(destination: URL(string: "capubbs://?open=message")!) {
+                        Text(hasNewMsg ? "\(entry.newmsg)条新消息" : "暂无新消息")
+                            .font(.system(size: 10, weight: hasNewMsg ? .medium : .regular))
+                            .foregroundColor(hasNewMsg ? TINT_COLOR : .secondary)
                     }
                 }
             }
@@ -160,29 +174,24 @@ struct CAPUBBS_WidgetEntryView : View {
                 VStack(alignment: .leading, spacing: 3) {
                     ForEach(displayPosts, id: \.offset) { offset, post in
                         Link(destination: getLink(post: post, offset: offset)) {
-                            HStack(alignment: .center) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(formatTitle(post: post, offset: offset))
-                                        .font(.system(size: 12))
-                                        .lineLimit(1)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(formatTitle(post: post, offset: offset))
+                                    .font(.system(size: 12))
+                                    .lineLimit(1)
+                                HStack(alignment: .center) {
+                                    if !isSmallWidth() {
+                                        Text(formatSubtitle(post: post))
+                                            .font(.system(size: 9))
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                        
+                                        Spacer()
+                                    }
+                                    
                                     Text(formatAuthor(post: post))
                                         .font(.system(size: 9))
                                         .foregroundColor(.brown)
                                         .lineLimit(1)
-                                }
-                                
-                                Spacer()
-                                
-                                let dateTime = parseDateTime(timeStr: post["time"] as? String)
-                                
-                                VStack(alignment: .trailing, spacing: 0) {
-                                    Text(dateTime.date)
-                                        .font(.system(size: 8))
-                                        .foregroundColor(.secondary)
-                                    
-                                    Text(dateTime.time)
-                                        .font(.system(size: 8))
-                                        .foregroundColor(.secondary)
                                 }
                             }
                         }
@@ -204,10 +213,15 @@ struct CAPUBBS_WidgetEntryView : View {
             
             Spacer()
         }
+//        .minimumScaleFactor(isSmallWidth() ? 0.8 : 1.0)
     }
     
     private func isSmallHeight() -> Bool {
         return family == .systemSmall || family == .systemMedium
+    }
+    
+    private func isSmallWidth() -> Bool {
+        return family == .systemSmall
     }
     
     private func getLink(post: [String: Any], offset: Int) -> URL {
@@ -245,9 +259,30 @@ struct CAPUBBS_WidgetEntryView : View {
         }
         return prefix + Helper.restoreTitle(post["text"] as? String ?? "")
     }
-
+    
+    private func formatSubtitle(post: [String: Any]) -> String {
+        let time = post["time"] as? String ?? ""
+        var timeStr = ""
+        if (time.count > 15) {
+            let timeStart = time.index(time.startIndex, offsetBy: 5)
+            let timeEnd = time.index(time.startIndex, offsetBy: 16)
+            timeStr = String(time[timeStart..<timeEnd])
+        }
+        
+        if entry.simpleView {
+            return timeStr
+        }
+        
+        let boardTitle = Helper.getBoardTitle(post["bid"] as? String ?? "") ?? "未知版面"
+        return "\(boardTitle) • \(timeStr)"
+    }
+    
     private func formatAuthor(post: [String: Any]) -> String {
         let author = post["author"] as? String ?? "匿名"
+        if entry.simpleView {
+            return author
+        }
+        
         let replyer = post["replyer"] as? String ?? ""
         let pid = Int(post["pid"] as? String ?? "0") ?? 0
         if pid == 0 || replyer == "Array" || replyer.isEmpty {
@@ -256,27 +291,11 @@ struct CAPUBBS_WidgetEntryView : View {
             return "\(author) / \(replyer)"
         }
     }
-    
-    private func parseDateTime(timeStr: String?) -> (date: String, time: String) {
-        guard let time = timeStr, time.count > 15 else { return ("", "") }
-        
-        // 提取月-日 -> "01-01"
-        let dateStart = time.index(time.startIndex, offsetBy: 5)
-        let dateEnd = time.index(time.startIndex, offsetBy: 10)
-        let datePart = String(time[dateStart..<dateEnd])
-        
-        // 提取时:分 -> "12:00"
-        let timeStart = time.index(time.startIndex, offsetBy: 11)
-        let timeEnd = time.index(time.startIndex, offsetBy: 16)
-        let timePart = String(time[timeStart..<timeEnd])
-        
-        return (datePart, timePart)
-    }
 }
 
 struct CAPUBBS_Widget: Widget {
     let kind: String = "CAPUBBS_Widget"
-    let backgroundColor = Color(hue: 142.0/360, saturation: 0.64, brightness: 0.58, opacity: 0.15)
+    let backgroundColor = TINT_COLOR.opacity(0.15)
     
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
@@ -358,14 +377,14 @@ private struct PreviewData {
             ]
         ]
     static let timeline = [
-        WidgetEntry(date: .now, username: "", newmsg: 0, hotPosts: [], globalTopCount: 0),
-        WidgetEntry(date: .now, username: "好男人", newmsg: 0, hotPosts: hotPosts, globalTopCount: 3),
-        WidgetEntry(date: .now, username: "这是一个很长很长很长很长很长很长很长很长的ID", newmsg: 10086, hotPosts: hotPosts, globalTopCount: 3)
+        WidgetEntry(date: .now, simpleView: true, username: "好男人", newmsg: 0, hotPosts: hotPosts, globalTopCount: 3),
+        WidgetEntry(date: .now, simpleView: false, username: "这是一个很长很长很长很长很长很长很长很长的ID", newmsg: 10086, hotPosts: hotPosts, globalTopCount: 3),
+        WidgetEntry(date: .now, simpleView: false, username: "", newmsg: 0, hotPosts: [], globalTopCount: 0),
     ]
 }
 
 @available(iOS 17.0, *)
-#Preview("Small Widgets", as: .systemSmall) {
+#Preview("Small", as: .systemSmall) {
     CAPUBBS_Widget()
 } timeline: {
     for entry in PreviewData.timeline {
@@ -374,7 +393,7 @@ private struct PreviewData {
 }
 
 @available(iOS 17.0, *)
-#Preview("Medium Widgets", as: .systemMedium) {
+#Preview("Medium", as: .systemMedium) {
     CAPUBBS_Widget()
 } timeline: {
     for entry in PreviewData.timeline {
@@ -383,7 +402,16 @@ private struct PreviewData {
 }
 
 @available(iOS 17.0, *)
-#Preview("Large Widgets", as: .systemLarge) {
+#Preview("Large", as: .systemLarge) {
+    CAPUBBS_Widget()
+} timeline: {
+    for entry in PreviewData.timeline {
+        entry
+    }
+}
+
+@available(iOS 17.0, *)
+#Preview("Extra Large", as: .systemExtraLarge) {
     CAPUBBS_Widget()
 } timeline: {
     for entry in PreviewData.timeline {

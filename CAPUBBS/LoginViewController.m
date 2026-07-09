@@ -276,7 +276,7 @@
 - (void)refreshUserInfo {
     dispatch_main_async_safe((^{
         NSDictionary *infoDict = USERINFO;
-        if (![infoDict isEqual:@""]) {
+        if (infoDict && ![infoDict isEqual:@""]) {
             [self.iconUser setUrl:infoDict[@"icon"]];
             NSInteger newMsg = [infoDict[@"newmsg"] integerValue];
             if ([Helper checkLogin:NO] && newMsg > 0) {

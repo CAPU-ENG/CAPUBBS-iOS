@@ -733,7 +733,7 @@
 
 - (void)askForDownloadAttachment:(NSString *)path {
     NSDictionary *userInfo = USERINFO;
-    if (![Helper checkLogin:NO] || [USERINFO isEqual:@""]) {
+    if (![Helper checkLogin:NO] || !userInfo || [userInfo isEqual:@""]) {
         [self showAlertWithTitle:@"错误" message:@"您未登录，无法下载附件"];
         return;
     }

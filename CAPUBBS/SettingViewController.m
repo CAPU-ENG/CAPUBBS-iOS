@@ -80,8 +80,8 @@
 
 - (void)refreshInfo {
     dispatch_main_async_safe((^{
-        if ([Helper checkLogin:NO] && ![USERINFO isEqual:@""]) {
-            NSDictionary *info = USERINFO;
+        NSDictionary *info = USERINFO;
+        if ([Helper checkLogin:NO] && info && ![info isEqual:@""]) {
             if ([info[@"sex"] isEqualToString:@"男"]) {
                 self.textUid.text = [info[@"username"] stringByAppendingString:@" ♂"];
             } else if ([info[@"sex"] isEqualToString:@"女"]) {
@@ -199,6 +199,7 @@
 
 - (IBAction)simpleViewChanged:(id)sender {
     [GROUP_DEFAULTS setObject:@(self.switchSimpleView.isOn) forKey:@"simpleView"];
+    [WidgetManager reloadWidgets];
     if (self.switchSimpleView.isOn) {
         [self showAlertWithTitle:@"简洁版内容已启用" message:@"将隐藏部分详细信息\n楼中楼不默认展示\n动图头像将静态显示\n模糊效果将禁用"];
     }

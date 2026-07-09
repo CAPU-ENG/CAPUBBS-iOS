@@ -63,7 +63,7 @@
 - (void)changeNoti {
     NSDictionary *infoDict = USERINFO;
     BOOL loggedIn = [Helper checkLogin:NO];
-    BOOL hasNoti = loggedIn && ![infoDict isEqual:@""] && [infoDict[@"newmsg"] integerValue] > 0;
+    BOOL hasNoti = loggedIn && infoDict && ![infoDict isEqual:@""] && [infoDict[@"newmsg"] integerValue] > 0;
     dispatch_main_async_safe(^{
         self.buttonUser.image = [UIImage systemImageNamed:hasNoti ? @"bell.badge" : @"bell"];
         self.buttonUser.enabled = loggedIn;

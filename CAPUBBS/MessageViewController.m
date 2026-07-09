@@ -219,17 +219,18 @@
 
 - (void)setMessageNum {
     if (data.count > 0 && [data[0][@"sysmsg"] integerValue] > 0) {
-        [activeSegment setTitle:[NSString stringWithFormat:@"系统消息(%@)", data[0][@"sysmsg"]] forSegmentAtIndex:0];
+        [activeSegment setTitle:[NSString stringWithFormat:@"系统(%@)", data[0][@"sysmsg"]] forSegmentAtIndex:0];
     } else {
         [activeSegment setTitle:@"系统消息" forSegmentAtIndex:0];
     }
     if (data.count > 0 && [data[0][@"prvmsg"] integerValue] > 0) {
-        [activeSegment setTitle:[NSString stringWithFormat:@"私信消息(%@)", data[0][@"prvmsg"]] forSegmentAtIndex:1];
+        [activeSegment setTitle:[NSString stringWithFormat:@"私信(%@)", data[0][@"prvmsg"]] forSegmentAtIndex:1];
     } else {
         [activeSegment setTitle:@"私信消息" forSegmentAtIndex:1];
     }
-    if (data.count > 0 && ![USERINFO isEqual:@""]) {
-        NSMutableDictionary *dict = [USERINFO mutableCopy];
+    NSDictionary *infoDict = USERINFO;
+    if (data.count > 0 && infoDict && ![infoDict isEqual:@""]) {
+        NSMutableDictionary *dict = [infoDict mutableCopy];
         NSString *msgNum = [NSString stringWithFormat:@"%d", [data[0][@"sysmsg"] intValue] + [data[0][@"prvmsg"] intValue]];
         [dict setObject:msgNum forKey:@"newmsg"];
         [Helper updateUserInfo:dict];

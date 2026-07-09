@@ -104,7 +104,7 @@
     NSURL *url = navigationAction.request.URL;
     NSString *path = url.absoluteString;
     
-    if ([path hasPrefix:@"about:"]) {
+    if ([path hasPrefix:@"about:"] || [path hasPrefix:@"data:"]) {
         decisionHandler(WKNavigationActionPolicyAllow);
         return;
     }
