@@ -25,9 +25,8 @@
     hud = [[MBProgressHUD alloc] initWithView:targetView];
     [targetView addSubview:hud];
     
-    if ([self.collectionView.collectionViewLayout isKindOfClass:[UICollectionViewFlowLayout class]]) {
-        ((UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout).sectionInsetReference = UICollectionViewFlowLayoutSectionInsetFromSafeArea;
-    }
+    UICollectionViewFlowLayout *flowLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
+    flowLayout.sectionInsetReference = UICollectionViewFlowLayoutSectionInsetFromSafeArea;
     cellWidth = cellHeight = 0;
     
     [NOTIFICATION addObserver:self selector:@selector(changeNoti) name:@"userChanged" object:nil];
@@ -56,8 +55,14 @@
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    cellWidth = cellHeight = 0;
-    [self.collectionView reloadData];
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        cellWidth = cellHeight = 0;
+        [self.collectionView.collectionViewLayout invalidateLayout];
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
+        // Reset again, safe margin is only finalized when animation completes.
+        cellWidth = cellHeight = 0;
+        [self.collectionView.collectionViewLayout invalidateLayout];
+    }];
 }
 
 - (void)changeNoti {
@@ -98,12 +103,11 @@
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     if (cellWidth == 0 || cellHeight == 0) {
         UIEdgeInsets safeArea = collectionView.safeAreaInsets;
-        CGFloat safeAreaWidth = (safeArea.left + safeArea.right) / 2;
-        CGFloat width = collectionView.bounds.size.width;
+        CGFloat width = collectionView.safeAreaLayoutGuide.layoutFrame.size.width;
         int num = width / 450 + 2;
         cellSpace = (0.1 + 0.025 * num) * (width / num);
-        cellMargin = MAX(0, cellSpace - safeAreaWidth);
-        cellWidth = (width - cellSpace * (num - 1) - (cellMargin + safeAreaWidth) * 2) / num;
+        cellMargin = MAX(0, cellSpace - MIN(safeArea.left, safeArea.right));
+        cellWidth = (width - cellSpace * (num - 1) - cellMargin * 2) / num;
         fontSize = MIN(10 + cellWidth / 25, 20);
         cellHeight = cellWidth * (11.0 / 15.0) + 2 * fontSize;
     }
