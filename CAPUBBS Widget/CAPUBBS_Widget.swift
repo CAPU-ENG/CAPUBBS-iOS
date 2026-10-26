@@ -134,6 +134,10 @@ struct WidgetEntry: TimelineEntry {
     let newmsg: Int
     let hotPosts: [[String: Any]]
     let globalTopCount: Int
+    
+    var relevance: TimelineEntryRelevance? {
+        return TimelineEntryRelevance(score: Float(newmsg), duration: DATA_FRESHNESS)
+    }
 }
 
 struct CAPUBBS_WidgetEntryView : View {

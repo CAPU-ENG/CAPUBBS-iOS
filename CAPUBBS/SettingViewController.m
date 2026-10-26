@@ -41,7 +41,6 @@
 }
 
 - (void)setDefault {
-    //[self.segmentProxy setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"proxy"] integerValue]];
     [self.switchAutoLogin setOn:[[DEFAULTS objectForKey:@"autoLogin"] boolValue]];
     [self.switchVibrate setOn:[[DEFAULTS objectForKey:@"vibrate"] boolValue]];
     [self.segmentDirection setSelectedSegmentIndex:[[DEFAULTS objectForKey:@"oppositeSwipe"] intValue]];
@@ -161,10 +160,6 @@
         }
     }
 }
-
-/*- (IBAction)proxyChanged:(id)sender {
-    [DEFAULTS setObject:@(self.segmentProxy.selectedSegmentIndex) forKey:@"proxy"];
-}*/
 
 - (IBAction)loginChanged:(id)sender {
     [DEFAULTS setObject:@(self.switchAutoLogin.isOn) forKey:@"autoLogin"];

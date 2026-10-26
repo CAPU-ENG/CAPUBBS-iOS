@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		010067C5304B40D00026C06B /* HTMLFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 010067C4304B40CE0026C06B /* HTMLFetcher.m */; };
 		0100A0D21C0C562C00A1282D /* AnimatedImageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0100A0D11C0C562C00A1282D /* AnimatedImageView.m */; };
 		011509C11BF21B080076D6F3 /* CollectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 011509C01BF21B080076D6F3 /* CollectionViewController.m */; };
 		0117FF772DF7ECE10005F5D2 /* injection.js in Resources */ = {isa = PBXBuildFile; fileRef = 0117FF762DF7ECD20005F5D2 /* injection.js */; };
@@ -232,6 +233,7 @@
 		8BAC8EAD18B0F2BE00F68A62 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8BAC8EAB18B0F2BE00F68A62 /* InfoPlist.strings */; };
 		8BAC8EAF18B0F2BE00F68A62 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EAE18B0F2BE00F68A62 /* main.m */; };
 		8BAC8EB318B0F2BE00F68A62 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EB218B0F2BE00F68A62 /* AppDelegate.m */; };
+		8BAC8EB318B0F2BE00F68A93 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8EB218B0F2BE00F68A92 /* SceneDelegate.m */; };
 		8BAC8EB918B0F2BE00F68A62 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8BAC8EB718B0F2BE00F68A62 /* Main.storyboard */; };
 		8BAC8ECF18B0F2BE00F68A62 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8BAC8ECD18B0F2BE00F68A62 /* InfoPlist.strings */; };
 		8BAC8ED118B0F2BE00F68A62 /* CAPUBBSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BAC8ED018B0F2BE00F68A62 /* CAPUBBSTests.m */; };
@@ -278,6 +280,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		010067C3304B40C30026C06B /* HTMLFetcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HTMLFetcher.h; sourceTree = "<group>"; };
+		010067C4304B40CE0026C06B /* HTMLFetcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HTMLFetcher.m; sourceTree = "<group>"; };
 		0100A0D01C0C562C00A1282D /* AnimatedImageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AnimatedImageView.h; sourceTree = "<group>"; };
 		0100A0D11C0C562C00A1282D /* AnimatedImageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AnimatedImageView.m; sourceTree = "<group>"; };
 		011509BF1BF21B080076D6F3 /* CollectionViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CollectionViewController.h; sourceTree = "<group>"; };
@@ -539,7 +543,9 @@
 		8BAC8EAE18B0F2BE00F68A62 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		8BAC8EB018B0F2BE00F68A62 /* CAPUBBS-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CAPUBBS-Prefix.pch"; sourceTree = "<group>"; };
 		8BAC8EB118B0F2BE00F68A62 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		8BAC8EB118B0F2BE00F68A91 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
 		8BAC8EB218B0F2BE00F68A62 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = AppDelegate.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
+		8BAC8EB218B0F2BE00F68A92 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = SceneDelegate.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		8BAC8EB818B0F2BE00F68A62 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		8BAC8EC318B0F2BE00F68A62 /* CAPUBBSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CAPUBBSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BAC8ECC18B0F2BE00F68A62 /* CAPUBBSTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "CAPUBBSTests-Info.plist"; sourceTree = "<group>"; };
@@ -642,6 +648,8 @@
 				018590462DF103EA002E73D9 /* CustomProgressHUD.m */,
 				0169A9532DF0B01A00F8978B /* CustomViewControllers.h */,
 				0169A9542DF0B02400F8978B /* CustomViewControllers.m */,
+				010067C3304B40C30026C06B /* HTMLFetcher.h */,
+				010067C4304B40CE0026C06B /* HTMLFetcher.m */,
 				01E1B1591C28061500EC680D /* UIImageEffects.h */,
 				01E1B15A1C28061500EC680D /* UIImageEffects.m */,
 			);
@@ -890,6 +898,8 @@
 				017FE5F11A9DC2E5001BDD15 /* Launch Screen.xib */,
 				8BAC8EB118B0F2BE00F68A62 /* AppDelegate.h */,
 				8BAC8EB218B0F2BE00F68A62 /* AppDelegate.m */,
+				8BAC8EB118B0F2BE00F68A91 /* SceneDelegate.h */,
+				8BAC8EB218B0F2BE00F68A92 /* SceneDelegate.m */,
 				8BAC8EE018B0F58500F68A62 /* LoginViewController.h */,
 				8BAC8EE118B0F58500F68A62 /* LoginViewController.m */,
 				8B7403DE18B5ADC3009753FE /* RegisterViewController.h */,
@@ -1360,12 +1370,14 @@
 				8BAC8EF118B112E300F68A62 /* ListCell.m in Sources */,
 				8BAC8EE518B100B100F68A62 /* Helper.m in Sources */,
 				8BAC8EB318B0F2BE00F68A62 /* AppDelegate.m in Sources */,
+				8BAC8EB318B0F2BE00F68A93 /* SceneDelegate.m in Sources */,
 				01460DA21AA9962000762761 /* SearchViewCell.m in Sources */,
 				8BAC8EAF18B0F2BE00F68A62 /* main.m in Sources */,
 				01F38EB41AE15149007F25D0 /* MessageViewController.m in Sources */,
 				8BAC8EE218B0F58500F68A62 /* LoginViewController.m in Sources */,
 				017785E41AAC48400089361C /* IndexViewCell.m in Sources */,
 				8B94FF3718B4E27500D083A6 /* ComposeViewController.m in Sources */,
+				010067C5304B40D00026C06B /* HTMLFetcher.m in Sources */,
 				0134178B1AB06CFF0086098F /* IDViewController.m in Sources */,
 				017785EA1AADDA700089361C /* FacesViewController.m in Sources */,
 				01B2CB142E8746FD004C2D6A /* CustomViews.m in Sources */,
@@ -1455,7 +1467,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 43007;
+				CURRENT_PROJECT_VERSION = 44301;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
@@ -1471,7 +1483,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 4.3;
+				MARKETING_VERSION = 4.4.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xiongdianpku.CAPUBBS.widget;
@@ -1507,7 +1519,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 43007;
+				CURRENT_PROJECT_VERSION = 44301;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
@@ -1523,7 +1535,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 4.3;
+				MARKETING_VERSION = 4.4.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xiongdianpku.CAPUBBS.widget;
@@ -1676,7 +1688,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 43007;
+				CURRENT_PROJECT_VERSION = 44301;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1685,7 +1697,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = CAPUBBS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.3;
+				MARKETING_VERSION = 4.4.3;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xiongdianpku.CAPUBBS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1709,7 +1721,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 43007;
+				CURRENT_PROJECT_VERSION = 44301;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 674549EE7Z;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1718,7 +1730,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = CAPUBBS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 4.3;
+				MARKETING_VERSION = 4.4.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xiongdianpku.CAPUBBS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

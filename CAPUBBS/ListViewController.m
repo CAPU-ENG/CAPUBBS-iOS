@@ -36,6 +36,12 @@
         if (LIQUID_GLASS) {
             self.toolbarItems = @[self.buttonAction, self.buttonCompose];
         }
+        // Load from cache
+//        NSArray *dataCache = [GROUP_DEFAULTS objectForKey:@"hotPosts"];
+//        if (dataCache && dataCache.count > 0) {
+//            data = dataCache;
+//            globalTopCount = [[GROUP_DEFAULTS objectForKey:@"globalTopCount"] integerValue];
+//        }
     } else {
         if (!SIMPLE_VIEW) {
             AnimatedImageView *backgroundView = [[AnimatedImageView alloc] init];

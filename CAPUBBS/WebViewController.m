@@ -277,6 +277,16 @@
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     [self updateButtonStatus];
     self.URL = webView.URL.absoluteString;
+    if ([self.URL hasPrefix:CHEXIE]) {
+        [webView evaluateJavaScript:@"{"
+         "const match = document.cookie.match(new RegExp('(^| )capubbs_forum_mode=([^;]+)'));"
+         "match ? decodeURIComponent(match[2]) : 'new';"
+         "}" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
+            if (!error && result && [result isKindOfClass:[NSString class]]) {
+                [GROUP_DEFAULTS setObject:result forKey:@"webMode"];
+            }
+        }];
+    }
 }
 
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {

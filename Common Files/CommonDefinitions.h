@@ -14,7 +14,7 @@
 //#define LIQUID_GLASS NO
 #define LIQUID_GLASS @available(iOS 26.0, *)
 
-#define DEFAULT_SERVER_URL @"https://www.chexie.net"
+#define DEFAULT_SERVER_URL @"https://chexie.net"
 #define APP_GROUP_IDENTIFIER @"group.net.chexie.capubbs"
 
 #define REPORT_EMAIL @[@"beidachexie@163.com"]
