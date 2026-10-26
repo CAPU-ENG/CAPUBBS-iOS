@@ -57,11 +57,11 @@
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
         cellWidth = cellHeight = 0;
-        [self.collectionView.collectionViewLayout invalidateLayout];
+        [self.collectionView reloadData];
     } completion:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
         // Reset again, safe margin is only finalized when animation completes.
         cellWidth = cellHeight = 0;
-        [self.collectionView.collectionViewLayout invalidateLayout];
+        [self.collectionView reloadData];
     }];
 }
 

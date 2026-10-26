@@ -374,6 +374,23 @@
 
 #pragma mark - Navigation
 
+- (BOOL)shouldPerformSegueWithIdentifier:(NSString *)identifier sender:(id)sender {
+    if ([identifier isEqualToString:@"post"]) {
+        NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)sender];
+        NSDictionary *dict;
+        if (indexPath != nil) {
+            dict = data[indexPath.row + 1];
+        }
+        NSString *bid = dict[@"bid"];
+        NSString *tid = dict[@"tid"];
+        if (!bid || [bid isEqualToString:@"0"] || !tid || [tid isEqualToString:@"0"]) {
+            [self showAlertWithTitle:@"暂不支持此类消息" message:@"可以前往网页版查看"];
+            return NO;
+        }
+    }
+    return YES;
+}
+
 // In a storyboard-based application, you will often want to do a little preparation before navigation
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     // Get the new view controller using [segue destinationViewController].
